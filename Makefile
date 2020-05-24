@@ -9,11 +9,9 @@ dev:
 doc:
 	swagger generate spec -o ./api.yml && swagger validate ./api.yml 
 
-test: export GO_ENV=test
 test:
 	go test -cover ./...
 
-test-cover: export GO_ENV=test
 test-cover:
 	go test -race -coverprofile=test.out ./... && go tool cover --html=test.out
 
