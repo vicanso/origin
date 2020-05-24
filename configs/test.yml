@@ -1,0 +1,9 @@
+# test 测试环境使用的相关配置
+# redis 配置(pass从env中获取pass这个配置为密码，如果未配置则为空)
+redis:
+  uri: REDIS_URI
+
+# postgres 配置 (pass从env中获取pass这个配置为密码，如果未配置则为空)
+postgres:
+  pass: PG_PASS
+
