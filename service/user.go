@@ -19,10 +19,10 @@ import (
 	"github.com/lib/pq"
 	"github.com/vicanso/elton"
 	session "github.com/vicanso/elton-session"
+	"github.com/vicanso/hes"
 	"github.com/vicanso/origin/cs"
 	"github.com/vicanso/origin/helper"
 	"github.com/vicanso/origin/util"
-	"github.com/vicanso/hes"
 
 	"go.uber.org/zap"
 )
@@ -34,6 +34,8 @@ const (
 	UserLoginAt = "loginAt"
 	// UserRoles user roles
 	UserRoles = "roles"
+	// UserGroups user groups
+	UserGroups = "groups"
 	// UserLoginToken user login token
 	UserLoginToken = "loginToken"
 )
@@ -149,11 +151,15 @@ func (srv *UserSrv) ListStatuses() []*UserStatus {
 func (srv *UserSrv) ListGroups() []*UserGroup {
 	return []*UserGroup{
 		&UserGroup{
-			Name:  "IT",
+			Name:  "研发部",
 			Value: cs.UserGroupIT,
 		},
 		&UserGroup{
-			Name:  "财务",
+			Name:  "市场部",
+			Value: cs.UserGroupMarketing,
+		},
+		&UserGroup{
+			Name:  "财务部",
 			Value: cs.UserGroupFinance,
 		},
 	}
@@ -375,6 +381,27 @@ func (u *UserSession) GetRoles() []string {
 		}
 	}
 	return roles
+}
+
+// SetGroups set user groups
+func (u *UserSession) SetGroups(groups []string) error {
+	return u.se.Set(UserGroups, groups)
+}
+
+// GetGroups get user groups
+func (u *UserSession) GetGroups() []string {
+	result, ok := u.se.Get(UserGroups).([]interface{})
+	if !ok {
+		return nil
+	}
+	groups := []string{}
+	for _, item := range result {
+		group, _ := item.(string)
+		if group != "" {
+			groups = append(groups, group)
+		}
+	}
+	return groups
 }
 
 // Destroy destroy user session

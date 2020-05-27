@@ -5,12 +5,17 @@ import {
   USERS,
   USERS_ID,
   USERS_ME_PROFILE,
-  COMMONS_LIST_USER_ROLE,
-  COMMONS_LIST_USER_STATUS,
-  COMMONS_LIST_USER_GROUPS,
+  USERS_ROLE,
+  USERS_STATUS,
+  USERS_GROUPS,
   USERS_LOGINS
 } from "@/constants/url";
-import { generatePassword, formatDate, queryOmitEmpty } from "@/helpers/util";
+import {
+  generatePassword,
+  formatDate,
+  queryOmitEmpty,
+  addNoCacheQueryParam
+} from "@/helpers/util";
 import { sha256 } from "@/helpers/crypto";
 
 const mutationUserProcessing = "user.processing";
@@ -54,7 +59,8 @@ const state = {
   info: {
     account: "",
     trackID: "",
-    roles: null
+    roles: null,
+    groups: null
   },
 
   // 用户详情信息
@@ -81,7 +87,8 @@ function commitUserInfo(commit, data) {
   commit(mutationUserInfo, {
     account: data.account || "",
     trackID: data.trackID || "",
-    roles: data.roles || []
+    roles: data.roles || [],
+    groups: data.groups || []
   });
 }
 
@@ -133,7 +140,9 @@ async function listUserStatus({ commit }) {
   }
   commit(mutationUserListStatusProcessing, true);
   try {
-    const { data } = await request.get(COMMONS_LIST_USER_STATUS);
+    const { data } = await request.get(USERS_STATUS, {
+      params: addNoCacheQueryParam()
+    });
     commit(mutationuserListStatus, data);
   } finally {
     commit(mutationUserListStatusProcessing, false);
@@ -147,7 +156,9 @@ async function listUserRole({ commit }) {
   }
   commit(mutationUserListRoleProcessing, true);
   try {
-    const { data } = await request.get(COMMONS_LIST_USER_ROLE);
+    const { data } = await request.get(USERS_ROLE, {
+      params: addNoCacheQueryParam()
+    });
     commit(mutationUserListRole, data);
   } finally {
     commit(mutationUserListRoleProcessing, false);
@@ -161,7 +172,9 @@ async function listUserGroup({ commit }) {
   }
   commit(mutationUserListGroupProcessing, true);
   try {
-    const { data } = await request.get(COMMONS_LIST_USER_GROUPS);
+    const { data } = await request.get(USERS_GROUPS, {
+      params: addNoCacheQueryParam()
+    });
     commit(mutationuserListGroup, data);
   } finally {
     commit(mutationUserListGroupProcessing, false);

@@ -74,13 +74,52 @@ var (
 
 // 用户群组
 const (
-	UserGroupIT      = "it"
-	UserGroupFinance = "finance"
+	UserGroupIT        = "it"
+	UserGroupFinance   = "finance"
+	UserGroupMarketing = "marketing"
 )
 
+// 用户分组
 var (
 	UserGroups = []string{
 		UserGroupIT,
 		UserGroupFinance,
+		UserGroupMarketing,
 	}
+)
+
+// 品牌状态
+const (
+	BrandStatusEnabled = iota + 1
+	BrandStatusDisabled
+)
+
+// 品牌状态列表
+var (
+	BrandStatuses = []int{
+		BrandStatusEnabled,
+		BrandStatusDisabled,
+	}
+)
+
+// 产品状态
+const (
+	ProductStatusEnabled = iota + 1
+	ProductStatusDisabled
+)
+
+// 产品状态列表
+var (
+	ProductStatuses = []int{
+		ProductStatusEnabled,
+		ProductStatusDisabled,
+	}
+)
+
+// 地区分类
+const (
+	RegionProvince = "province"
+	RegionCity     = "city"
+	RegionArea     = "area"
+	RegionStreet   = "street"
 )

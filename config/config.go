@@ -75,6 +75,14 @@ type (
 		MaxQueryProcessing  uint32
 		MaxUpdateProcessing uint32
 	}
+
+	// MinioConfig minio config
+	MinioConfig struct {
+		Endpoint        string `validate:"hostname_port"`
+		AccessKeyID     string `validate:"min=3"`
+		SecretAccessKey string `validate:"min=6"`
+		SSL             bool
+	}
 )
 
 const (
@@ -382,4 +390,16 @@ func GetInfluxdbConfig() InfluxdbConfig {
 	}
 	validatePanic(&influxdbConfig)
 	return influxdbConfig
+}
+
+// GetMinioConfig get minio config
+func GetMinioConfig() MinioConfig {
+	prefix := "minio."
+	minioConfig := MinioConfig{
+		Endpoint:        GetString(prefix + "endpoint"),
+		AccessKeyID:     GetStringFromENV(prefix + "accessKeyID"),
+		SecretAccessKey: GetStringFromENV(prefix + "secretAccessKey"),
+		SSL:             GetBool(prefix + "ssl"),
+	}
+	return minioConfig
 }

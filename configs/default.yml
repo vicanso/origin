@@ -67,3 +67,10 @@ mail:
 alarm:
   receiver:
   - tree.xie@outlook.com
+
+# minio配置
+minio:
+  endpoint: 127.0.0.1:9000
+  accessKeyID: origin
+  secretAccessKey: test123456
+  ssl: false

@@ -20,10 +20,11 @@ import (
 )
 
 var (
-	pgCreate    = helper.PGCreate
-	pgGetClient = helper.PGGetClient
-	pgQuery = helper.PGQuery
-	pgCount = helper.PGCount
+	pgCreate        = helper.PGCreate
+	pgGetClient     = helper.PGGetClient
+	pgQuery         = helper.PGQuery
+	pgCount         = helper.PGCount
+	pgFirstOrCreate = helper.PGFirstOrCreate
 
 	logger = log.Default()
 

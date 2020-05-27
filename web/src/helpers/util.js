@@ -9,6 +9,9 @@ export function generatePassword(pass) {
 
 // formatDate 格式化日期
 export function formatDate(str) {
+  if (!str) {
+    return "--";
+  }
   const d = new Date(str);
   return `${d.toLocaleDateString()} ${d.toLocaleTimeString()}`;
 }
@@ -93,4 +96,21 @@ export function tomorrow() {
 // today 获取当天0点时间
 export function yesterday() {
   return new Date(today().getTime() - oneDayMS);
+}
+
+// contains 判断是否包括该元素
+export function contains(arr, value) {
+  let exists = false;
+  arr.forEach(item => {
+    if (item === value) {
+      exists = true;
+    }
+  });
+  return exists;
+}
+
+// addNoCacheQueryParam 添加不缓存query参数
+export function addNoCacheQueryParam(params = {}) {
+  params["cacheControl"] = "no-cache";
+  return params;
 }

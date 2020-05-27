@@ -24,10 +24,10 @@ import (
 	"github.com/iancoleman/strcase"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
+	"github.com/vicanso/hes"
 	"github.com/vicanso/origin/config"
 	"github.com/vicanso/origin/cs"
 	"github.com/vicanso/origin/log"
-	"github.com/vicanso/hes"
 	"go.uber.org/zap"
 )
 
@@ -183,6 +183,12 @@ func init() {
 func PGCreate(data interface{}) (err error) {
 	err = pgClient.Create(data).Error
 	return
+}
+
+// PGFirstOrCreate pg first of create
+func PGFirstOrCreate(out interface{}, where ...interface{}) (err error) {
+	err = pgClient.FirstOrCreate(out, where...).Error
+	return err
 }
 
 // PGGetClient pg client

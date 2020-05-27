@@ -47,13 +47,45 @@ import {
   CONFIG_ROUTER,
   CONFIG_ROUTER_CONCURRENCY,
   USERS,
-  LOGINS
+  LOGINS,
+  BRANDS,
+  PRODUCTS
 } from "@/constants/route";
-import { USER_ADMIN, USER_SU } from "@/constants/user";
+import { USER_ADMIN, USER_SU, GROUP_MARKETING } from "@/constants/user";
 import { mapState } from "vuex";
 import { isAllowedUser } from "@/helpers/util";
 
 const navs = [
+  {
+    name: "产品",
+    icon: "el-icon-files",
+    groups: [GROUP_MARKETING],
+    children: [
+      {
+        name: "品牌",
+        route: BRANDS
+      },
+      {
+        name: "产品",
+        route: PRODUCTS
+      }
+    ]
+  },
+  {
+    name: "用户",
+    icon: "el-icon-user",
+    roles: [USER_ADMIN, USER_SU],
+    children: [
+      {
+        name: "用户列表",
+        route: USERS
+      },
+      {
+        name: "登录记录",
+        route: LOGINS
+      }
+    ]
+  },
   {
     name: "配置",
     icon: "el-icon-setting",
@@ -80,21 +112,6 @@ const navs = [
         route: CONFIG_ROUTER_CONCURRENCY
       }
     ]
-  },
-  {
-    name: "用户",
-    icon: "el-icon-user",
-    roles: [USER_ADMIN, USER_SU],
-    children: [
-      {
-        name: "用户列表",
-        route: USERS
-      },
-      {
-        name: "登录记录",
-        route: LOGINS
-      }
-    ]
   }
 ];
 
@@ -115,11 +132,15 @@ export default {
       if (!userInfo || !userInfo.account) {
         return [];
       }
-      const { roles } = userInfo;
+      const { roles, groups } = userInfo;
       const filterNavs = [];
       navs.forEach(item => {
         // 如果该栏目有配置权限，而且用户无该权限
         if (item.roles && !isAllowedUser(item.roles, roles)) {
+          return;
+        }
+        // 如果该栏目配置了允许分级，而该用户不属于该组
+        if (item.groups && !isAllowedUser(item.groups, groups)) {
           return;
         }
         const clone = Object.assign({}, item);
@@ -127,10 +148,17 @@ export default {
           Object.assign({}, subItem)
         );
         clone.children = children.filter(subItem => {
-          if (!subItem.roles || isAllowedUser(subItem.roles, roles)) {
+          // 如果未配置色色与分组限制
+          if (!subItem.roles && !subItem.groups) {
             return true;
           }
-          return false;
+          if (subItem.roles && !isAllowedUser(subItem.roles, roles)) {
+            return false;
+          }
+          if (subItem.groups && !isAllowedUser(subItem.groups, groups)) {
+            return false;
+          }
+          return true;
         });
         filterNavs.push(clone);
       });

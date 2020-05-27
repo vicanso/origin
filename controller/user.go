@@ -22,9 +22,9 @@ import (
 
 	"github.com/lib/pq"
 	"github.com/tidwall/gjson"
+	"github.com/vicanso/hes"
 	"github.com/vicanso/origin/middleware"
 	"github.com/vicanso/origin/validate"
-	"github.com/vicanso/hes"
 
 	"github.com/vicanso/elton"
 	"github.com/vicanso/origin/config"
@@ -46,6 +46,9 @@ type (
 		// 角色
 		// Example: ["su", "admin"]
 		Roles []string `json:"roles"`
+		// 分组
+		// Example: ["su", "admin"]
+		Groups []string `json:"groups"`
 		// 系统时间
 		// Example: 2019-10-26T10:11:25+08:00
 		Date string `json:"date"`
@@ -82,7 +85,7 @@ type (
 
 	listUserParams struct {
 		listParams
-		Keyword string `json:"keyword" validate:"omitempty,xUserAccountKeyword"`
+		Keyword string `json:"keyword" validate:"omitempty,xKeyword"`
 		Role    string `json:"role" validate:"omitempty,xUserRole"`
 		Group   string `json:"group" validate:"omitempty,xUserGroup"`
 		Status  string `json:"status" validate:"omitempty,xUserStatusString"`
@@ -112,8 +115,10 @@ var (
 )
 
 func init() {
+	prefix := "/users"
+	g := router.NewGroup(prefix, loadUserSession)
+	gNoneSession := router.NewGroup(prefix)
 
-	g := router.NewGroup("/users", loadUserSession)
 	ctrl := userCtrl{}
 	// 获取用户列表
 	g.GET(
@@ -124,10 +129,10 @@ func init() {
 
 	// 更新用户信息
 	g.PATCH(
-		"/v1/{userID}",
+		"/v1/{id}",
 		shouldBeAdmin,
 		newTracker(cs.ActionUserInfoUpdate),
-		ctrl.update,
+		ctrl.updateByID,
 	)
 
 	// 获取用户信息
@@ -192,6 +197,19 @@ func init() {
 		shouldBeAdmin,
 		ctrl.listLoginRecord,
 	)
+
+	gNoneSession.GET(
+		"/v1/roles",
+		ctrl.listRoles,
+	)
+	gNoneSession.GET(
+		"/v1/statuses",
+		ctrl.listStatuses,
+	)
+	gNoneSession.GET(
+		"/v1/groups",
+		ctrl.listGroups,
+	)
 }
 
 // toConditions get conditions of list user
@@ -207,7 +225,7 @@ func (params *listUserParams) toConditions() (conditions []interface{}) {
 		args = append(args, params.Group)
 	}
 	if params.Keyword != "" {
-		queryList = append(queryList, "account LIKE ?")
+		queryList = append(queryList, "account ILIKE ?")
 		args = append(args, "%"+params.Keyword+"%")
 	}
 	if params.Status != "" {
@@ -259,6 +277,7 @@ func pickUserInfo(c *elton.Context) (userInfo *userInfoResp) {
 	if account != "" {
 		userInfo.Account = account
 		userInfo.Roles = us.GetRoles()
+		userInfo.Groups = us.GetGroups()
 		userInfo.Anonymous = false
 	}
 	return
@@ -429,6 +448,7 @@ func (ctrl userCtrl) login(c *elton.Context) (err error) {
 	omitUserInfo(u)
 	_ = us.SetAccount(u.Account)
 	_ = us.SetRoles(u.Roles)
+	_ = us.SetGroups(u.Groups)
 	c.Body = u
 	return
 }
@@ -480,7 +500,8 @@ func (ctrl userCtrl) refresh(c *elton.Context) (err error) {
 
 // refresh user refresh
 func (ctrl userCtrl) updateMe(c *elton.Context) (err error) {
-	if len(c.RequestBody) == 0 {
+	// 如果没有数据要更新，如{}
+	if len(c.RequestBody) <= 2 {
 		return ctrl.refresh(c)
 	}
 	us := getUserSession(c)
@@ -530,7 +551,7 @@ func (ctrl userCtrl) list(c *elton.Context) (err error) {
 	}
 	count := -1
 	args := params.toConditions()
-	queryParams := params.listParams.toPGQueryParams()
+	queryParams := params.toPGQueryParams()
 	if queryParams.Offset == 0 {
 		count, err = userSrv.Count(args...)
 		if err != nil {
@@ -551,14 +572,14 @@ func (ctrl userCtrl) list(c *elton.Context) (err error) {
 	return
 }
 
-// update user update
-func (ctrl userCtrl) update(c *elton.Context) (err error) {
-	id, err := strconv.Atoi(c.Param("userID"))
+// updateByID user update
+func (ctrl userCtrl) updateByID(c *elton.Context) (err error) {
+	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		return
 	}
-	params := &updateUserParams{}
-	err = validate.Do(params, c.RequestBody)
+	params := updateUserParams{}
+	err = validate.Do(&params, c.RequestBody)
 	if err != nil {
 		return
 	}
@@ -590,12 +611,12 @@ func (ctrl userCtrl) update(c *elton.Context) (err error) {
 
 // listLoginRecord list login record
 func (ctrl userCtrl) listLoginRecord(c *elton.Context) (err error) {
-	params := &listUserLoginRecordParams{}
-	err = validate.Do(params, c.Query())
+	params := listUserLoginRecordParams{}
+	err = validate.Do(&params, c.Query())
 	if err != nil {
 		return
 	}
-	queryParams := params.listParams.toPGQueryParams()
+	queryParams := params.toPGQueryParams()
 	count := -1
 	args := params.toConditions()
 	if queryParams.Offset == 0 {
@@ -615,6 +636,33 @@ func (ctrl userCtrl) listLoginRecord(c *elton.Context) (err error) {
 	}{
 		result,
 		count,
+	}
+	return
+}
+
+// listRoles list user roles
+func (ctrl userCtrl) listRoles(c *elton.Context) (err error) {
+	c.CacheMaxAge("5m")
+	c.Body = map[string][]*service.UserRole{
+		"roles": userSrv.ListRoles(),
+	}
+	return
+}
+
+// listStatuses list user status
+func (ctrl userCtrl) listStatuses(c *elton.Context) (err error) {
+	c.CacheMaxAge("5m")
+	c.Body = map[string][]*service.UserStatus{
+		"statuses": userSrv.ListStatuses(),
+	}
+	return
+}
+
+// listGroups list user group
+func (ctrl userCtrl) listGroups(c *elton.Context) (err error) {
+	c.CacheMaxAge("5m")
+	c.Body = map[string][]*service.UserGroup{
+		"groups": userSrv.ListGroups(),
 	}
 	return
 }

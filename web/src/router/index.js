@@ -12,7 +12,9 @@ import {
   CONFIG_ROUTER_CONCURRENCY,
   USERS,
   PROFILE,
-  LOGINS
+  LOGINS,
+  BRANDS,
+  PRODUCTS
 } from "@/constants/route";
 import Home from "@/views/Home.vue";
 import Login from "@/views/Login.vue";
@@ -24,6 +26,8 @@ import Router from "@/views/configs/Router.vue";
 import RouterConcurrency from "@/views/configs/RouterConcurrency.vue";
 import Users from "@/views/Users.vue";
 import Logins from "@/views/Logins.vue";
+import Brands from "@/views/Brands.vue";
+import Products from "@/views/Products.vue";
 
 Vue.use(VueRouter);
 
@@ -103,6 +107,22 @@ const routes = [
     path: "/profile",
     name: PROFILE,
     component: () => import("@/views/Profile.vue"),
+    meta: {
+      requiresAuth: true
+    }
+  },
+  {
+    path: "/brands",
+    name: BRANDS,
+    component: Brands,
+    meta: {
+      requiresAuth: true
+    }
+  },
+  {
+    path: "/products",
+    name: PRODUCTS,
+    component: Products,
     meta: {
       requiresAuth: true
     }

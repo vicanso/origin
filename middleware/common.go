@@ -20,8 +20,8 @@ import (
 	"time"
 
 	"github.com/vicanso/elton"
-	"github.com/vicanso/origin/service"
 	"github.com/vicanso/hes"
+	"github.com/vicanso/origin/service"
 )
 
 const (
@@ -92,5 +92,16 @@ func ValidateCaptcha(magicalCaptcha string) elton.Handler {
 			return
 		}
 		return c.Next()
+	}
+}
+
+// NewNoCacheWithCondition create a nocache middleware
+func NewNoCacheWithCondition(key, value string) elton.Handler {
+	return func(c *elton.Context) (err error) {
+		err = c.Next()
+		if c.QueryParam(key) == value {
+			c.NoCache()
+		}
+		return
 	}
 }

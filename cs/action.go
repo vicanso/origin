@@ -33,4 +33,17 @@ const (
 	ActionConfigurationUpdate = "update-configuration"
 	// ActionConfigurationDelete delete configuration
 	ActionConfigurationDelete = "delete-configuration"
+
+	// ActionFileUpload upload file
+	ActionFileUpload = "upload-file"
+
+	// ActionBrandAdd add brand
+	ActionBrandAdd = "add-brand"
+	// ActionBrandUpdate update brand
+	ActionBrandUpdate = "update-brand"
+
+	// ActionProductAdd add product
+	ActionProductAdd = "add-product"
+	// ActionProductUpdate update product
+	ActionProductUpdate = "update-product"
 )

@@ -22,12 +22,12 @@ import (
 	"github.com/vicanso/origin/helper"
 
 	"github.com/vicanso/elton"
+	"github.com/vicanso/hes"
 	"github.com/vicanso/origin/cs"
 	"github.com/vicanso/origin/log"
 	"github.com/vicanso/origin/middleware"
 	"github.com/vicanso/origin/service"
 	"github.com/vicanso/origin/util"
-	"github.com/vicanso/hes"
 
 	"go.uber.org/zap"
 
@@ -53,6 +53,14 @@ var (
 	configSrv = new(service.ConfigurationSrv)
 	// 用户服务
 	userSrv = new(service.UserSrv)
+	// 品牌服务
+	brandSrv = new(service.BrandSrv)
+	// 文件服务
+	fileSrv = new(service.FileSrv)
+	// 产品服务
+	productSrv = new(service.ProductSrv)
+	// 地区服务
+	regionSrv = new(service.RegionSrv)
 
 	// 创建新的并发控制中间件
 	newConcurrentLimit = middleware.NewConcurrentLimit
@@ -69,13 +77,20 @@ var (
 	// 判断用户是否未登录
 	shouldAnonymous = checkAnonymous
 	// 判断用户是否admin权限
-	shouldBeAdmin = newCheckRoles([]string{
+	shouldBeAdmin = newCheckRolesMiddleware([]string{
 		cs.UserRoleSu,
 		cs.UserRoleAdmin,
 	})
 	// shouldBeSu 判断用户是否su权限
-	shouldBeSu = newCheckRoles([]string{
+	shouldBeSu = newCheckRolesMiddleware([]string{
 		cs.UserRoleSu,
+	})
+	// noCacheIfSetNoCache 如果query指定了no cache，则设置不缓存
+	noCacheIfSetNoCache = middleware.NewNoCacheWithCondition("cacheControl", "no-cache")
+
+	// checkMarketingGroup 判断用户组是否marketing
+	checkMarketingGroup = newCheckGroupsMiddleware([]string{
+		cs.UserGroupMarketing,
 	})
 
 	// 图形验证码校验
@@ -160,7 +175,7 @@ func checkAnonymous(c *elton.Context) (err error) {
 	return c.Next()
 }
 
-func newCheckRoles(validRoles []string) elton.Handler {
+func newCheckRolesMiddleware(validRoles []string) elton.Handler {
 	return func(c *elton.Context) (err error) {
 		if !isLogin(c) {
 			err = errShouldLogin
@@ -169,6 +184,23 @@ func newCheckRoles(validRoles []string) elton.Handler {
 		us := service.NewUserSession(c)
 		roles := us.GetRoles()
 		valid := util.UserRoleIsValid(validRoles, roles)
+		if valid {
+			return c.Next()
+		}
+		err = errForbidden
+		return
+	}
+}
+
+func newCheckGroupsMiddleware(validGroups []string) elton.Handler {
+	return func(c *elton.Context) (err error) {
+		if !isLogin(c) {
+			err = errShouldLogin
+			return
+		}
+		us := service.NewUserSession(c)
+		groups := us.GetGroups()
+		valid := util.UserGroupIsValid(validGroups, groups)
 		if valid {
 			return c.Next()
 		}

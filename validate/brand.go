@@ -1,4 +1,4 @@
-// Copyright 2019 tree xie
+// Copyright 2020 tree xie
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,24 +15,26 @@
 package validate
 
 import (
-	"regexp"
+	"strconv"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/vicanso/origin/cs"
 )
 
 func init() {
-	AddAlias("xLimit", "number,min=1,max=100")
-	AddAlias("xOffset", "number,min=0,max=10000")
-	AddAlias("xOrder", "ascii,min=0,max=100")
-	AddAlias("xFields", "ascii,min=0,max=100")
-	AddAlias("xKeyword", "ascii,min=1,max=10")
+	AddAlias("xBrandName", "min=1,max=20")
+	AddAlias("xBrandLogo", "min=1,max=100")
+	AddAlias("xBrandCatalog", "min=1,max=1000")
 
-	durationRegexp := regexp.MustCompile("^[1-9][0-9]*(ms|[smh])$")
-	Add("xDuration", func(fl validator.FieldLevel) bool {
-		value, ok := toString(fl)
-		if !ok {
-			return false
+	brandStatusesStr := make([]string, 0)
+	for _, item := range cs.BrandStatuses {
+		brandStatusesStr = append(brandStatusesStr, strconv.Itoa(item))
+	}
+
+	Add("xBrandStatus", func(fl validator.FieldLevel) bool {
+		if isInt(fl) {
+			return isInInt(fl, cs.BrandStatuses)
 		}
-		return durationRegexp.MatchString(value)
+		return isInString(fl, brandStatusesStr)
 	})
 }

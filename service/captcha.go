@@ -26,8 +26,8 @@ import (
 
 	"github.com/fogleman/gg"
 	"github.com/golang/freetype/truetype"
-	"github.com/vicanso/origin/util"
 	"github.com/vicanso/hes"
+	"github.com/vicanso/origin/util"
 	"golang.org/x/image/font/gofont/goregular"
 )
 
@@ -77,7 +77,7 @@ func createCaptcha(fontColor, bgColor color.Color, width, height int, text strin
 	}
 	dc.SetStrokeStyle(gg.NewSolidPattern(fontColor))
 	dc.SetLineWidth(1.5)
-	for index := 0; index < 8; index++ {
+	for index := 0; index < 3; index++ {
 		x1 := float64(rand.Int31n(int32(width / 2)))
 		y1 := float64(rand.Int31n(int32(height)))
 

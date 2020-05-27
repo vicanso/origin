@@ -1,4 +1,4 @@
-// Copyright 2019 tree xie
+// Copyright 2020 tree xie
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,25 +14,13 @@
 
 package validate
 
-import (
-	"regexp"
-
-	"github.com/go-playground/validator/v10"
-)
+import "github.com/go-playground/validator/v10"
 
 func init() {
-	AddAlias("xLimit", "number,min=1,max=100")
-	AddAlias("xOffset", "number,min=0,max=10000")
-	AddAlias("xOrder", "ascii,min=0,max=100")
-	AddAlias("xFields", "ascii,min=0,max=100")
-	AddAlias("xKeyword", "ascii,min=1,max=10")
-
-	durationRegexp := regexp.MustCompile("^[1-9][0-9]*(ms|[smh])$")
-	Add("xDuration", func(fl validator.FieldLevel) bool {
-		value, ok := toString(fl)
-		if !ok {
-			return false
-		}
-		return durationRegexp.MatchString(value)
+	buckes := []string{
+		"origin-pics",
+	}
+	Add("xFileBucket", func(fl validator.FieldLevel) bool {
+		return isInString(fl, buckes)
 	})
 }

@@ -23,8 +23,10 @@ import (
 	"errors"
 	"io"
 	"math/rand"
+	"strings"
 	"time"
 
+	"github.com/mozillazg/go-pinyin"
 	"github.com/oklog/ulid/v2"
 )
 
@@ -96,16 +98,26 @@ func ContainsString(arr []string, str string) (found bool) {
 	return
 }
 
-// UserRoleIsValid check user rols is valid
-func UserRoleIsValid(validRoles []string, userRoles []string) bool {
+// ContainsAny check the targets contain any of check arr
+func ContainsAny(targets []string, checkArr []string) bool {
 	valid := false
-	for _, role := range validRoles {
-		if ContainsString(userRoles, role) {
+	for _, item := range targets {
+		if ContainsString(checkArr, item) {
 			valid = true
 			break
 		}
 	}
 	return valid
+}
+
+// UserRoleIsValid check user rols is valid
+func UserRoleIsValid(validRoles []string, userRoles []string) bool {
+	return ContainsAny(validRoles, userRoles)
+}
+
+// UserGroupIsValid check user group is valid
+func UserGroupIsValid(validGroups []string, userGroups []string) bool {
+	return ContainsAny(validGroups, userGroups)
 }
 
 // Encrypt encrypt
@@ -146,4 +158,13 @@ func Decrypt(key, text []byte) ([]byte, error) {
 		return nil, err
 	}
 	return data, nil
+}
+
+// GetFirstLetter get first letter
+func GetFirstLetter(str string) string {
+	arr := pinyin.LazyPinyin(str, pinyin.NewArgs())
+	if len(arr) == 0 {
+		return strings.ToUpper(str[0:1])
+	}
+	return strings.ToUpper(arr[0][0:1])
 }

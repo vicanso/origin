@@ -40,6 +40,10 @@ func toString(fl validator.FieldLevel) (string, bool) {
 	}
 	return value.String(), true
 }
+func isInt(fl validator.FieldLevel) bool {
+	value := fl.Field()
+	return value.Kind() == reflect.Int
+}
 func toInt(fl validator.FieldLevel) (int, bool) {
 	value := fl.Field()
 	if value.Kind() != reflect.Int {
