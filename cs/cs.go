@@ -116,10 +116,38 @@ var (
 	}
 )
 
+// 地区状态
+const (
+	RegionStatusEnabled = iota + 1
+	RegionStatusDisabled
+)
+
+var (
+	RegionStatuses = []int{
+		RegionStatusEnabled,
+		RegionStatusDisabled,
+	}
+	RegionStatusesString = []string{
+		strconv.Itoa(RegionStatusEnabled),
+		strconv.Itoa(RegionStatusDisabled),
+	}
+)
+
 // 地区分类
 const (
+	RegionCountry  = "country"
 	RegionProvince = "province"
 	RegionCity     = "city"
 	RegionArea     = "area"
 	RegionStreet   = "street"
+)
+
+var (
+	RegionCategories = []string{
+		RegionCountry,
+		RegionProvince,
+		RegionCity,
+		RegionArea,
+		RegionStreet,
+	}
 )

@@ -16,7 +16,6 @@ package controller
 
 import (
 	"strconv"
-	"strings"
 
 	"github.com/vicanso/elton"
 	"github.com/vicanso/origin/cs"
@@ -30,21 +29,22 @@ type (
 	brandCtrl struct{}
 
 	addBrandParams struct {
-		Name    string `json:"name" validate:"xBrandName"`
-		Status  int    `json:"status" validate:"xBrandStatus"`
-		Logo    string `json:"logo" validate:"xBrandLogo"`
-		Catalog string `json:"catalog" validate:"xBrandCatalog"`
+		Name    string `json:"name,omitempty" validate:"xBrandName"`
+		Status  int    `json:"status,omitempty" validate:"xBrandStatus"`
+		Logo    string `json:"logo,omitempty" validate:"xBrandLogo"`
+		Catalog string `json:"catalog,omitempty" validate:"xBrandCatalog"`
 	}
 	updateBrandParams struct {
-		Name    string `json:"name" validate:"omitempty,xBrandName"`
-		Status  int    `json:"status" validate:"omitempty,xBrandStatus"`
-		Logo    string `json:"logo" validate:"omitempty,xBrandLogo"`
-		Catalog string `json:"catalog" validate:"omitempty,xBrandCatalog"`
+		Name    string `json:"name,omitempty" validate:"omitempty,xBrandName"`
+		Status  int    `json:"status,omitempty" validate:"omitempty,xBrandStatus"`
+		Logo    string `json:"logo,omitempty" validate:"omitempty,xBrandLogo"`
+		Catalog string `json:"catalog,omitempty" validate:"omitempty,xBrandCatalog"`
 	}
 	listBrandParams struct {
-		Keyword string `json:"keyword" validate:"omitempty,xKeyword"`
-		Status  string `json:"status" validate:"omitempty,xBrandStatus"`
 		listParams
+
+		Keyword string `json:"keyword,omitempty" validate:"omitempty,xKeyword"`
+		Status  string `json:"status,omitempty" validate:"omitempty,xBrandStatus"`
 	}
 )
 
@@ -55,7 +55,7 @@ func init() {
 	g.GET(
 		"/v1/statuses",
 		noCacheIfSetNoCache,
-		ctrl.listStatuses,
+		ctrl.listStatus,
 	)
 
 	// 添加品牌
@@ -88,29 +88,22 @@ func init() {
 	)
 }
 
-func (params *listBrandParams) toConditions() (conditions []interface{}) {
-	queryList := make([]string, 0)
-	args := make([]interface{}, 0)
+func (params listBrandParams) toConditions() []interface{} {
+	conds := queryConditions{}
+
 	if params.Keyword != "" {
-		queryList = append(queryList, "name ILIKE ?")
-		args = append(args, "%"+params.Keyword+"%")
+		conds.add("name ILIKE ?", "%"+params.Keyword+"%")
 	}
 	if params.Status != "" {
-		queryList = append(queryList, "status = ?")
-		args = append(args, params.Status)
+		conds.add("status = ?", params.Status)
 	}
-	conditions = make([]interface{}, 0)
-	if len(queryList) != 0 {
-		conditions = append(conditions, strings.Join(queryList, " AND "))
-		conditions = append(conditions, args...)
-	}
-	return
+	return conds.toArray()
 }
 
-func (ctrl brandCtrl) listStatuses(c *elton.Context) (err error) {
+func (ctrl brandCtrl) listStatus(c *elton.Context) (err error) {
 	c.CacheMaxAge("5m")
 	c.Body = map[string][]*service.BrandStatus{
-		"statuses": brandSrv.ListStatuses(),
+		"statuses": brandSrv.ListStatus(),
 	}
 	return
 }

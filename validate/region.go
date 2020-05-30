@@ -20,11 +20,21 @@ import (
 )
 
 func init() {
-	Add("XRegionCategory", func(fl validator.FieldLevel) bool {
+	AddAlias("xRegionName", "min=1,max=10")
+	AddAlias("xRegionParent", "min=1,max=8")
+	Add("xRegionCategory", func(fl validator.FieldLevel) bool {
 		return isInString(fl, []string{
+			cs.RegionCountry,
 			cs.RegionProvince,
 			cs.RegionCity,
+			cs.RegionArea,
 			cs.RegionStreet,
 		})
+	})
+	Add("xRegionStatus", func(fl validator.FieldLevel) bool {
+		return isInInt(fl, cs.RegionStatuses)
+	})
+	Add("xRegionStatusString", func(fl validator.FieldLevel) bool {
+		return isInString(fl, cs.RegionStatusesString)
 	})
 }

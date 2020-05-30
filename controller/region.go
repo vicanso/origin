@@ -30,14 +30,35 @@ import (
 type (
 	regionCtrl struct{}
 
-	listProvince struct {
+	listRegionParams struct {
 		listParams
+
+		Category string `json:"category,omitempty" validate:"omitempty,xRegionCategory"`
+		Parent   string `json:"parent,omitempty" validate:"omitempty,xRegionParent"`
+		Keyword  string `json:"keyword,omitempty" validate:"omitempty,xKeyword"`
+		Status   string `json:"status,omitempty" validate:"omitempty,xRegionStatusString"`
+	}
+
+	updateRegionParams struct {
+		Name   string `json:"name,omitempty" validate:"omitempty,xRegionName"`
+		Status int    `json:"status,omitempty" validate:"omitempty,xRegionStatus"`
 	}
 )
 
 func init() {
 	ctrl := regionCtrl{}
 	g := router.NewGroup("/regions")
+
+	g.GET(
+		"/v1/statuses",
+		noCacheIfSetNoCache,
+		ctrl.listStatus,
+	)
+	g.GET(
+		"/v1/categories",
+		noCacheIfSetNoCache,
+		ctrl.listCategory,
+	)
 
 	g.POST(
 		"/v1/import/{category}",
@@ -47,16 +68,55 @@ func init() {
 	)
 
 	g.GET(
-		"/v1/provinces",
-		ctrl.listProvince,
+		"/v1",
+		ctrl.listRegion,
 	)
 	g.GET(
-		"/v1/cities/{province}",
-		ctrl.listCity,
+		"/v1/{id}",
+		ctrl.findByID,
+	)
+	g.PATCH(
+		"/v1/{id}",
+		loadUserSession,
+		checkMarketingGroup,
+		ctrl.updateByID,
 	)
 }
 
-func (ctrl *regionCtrl) importFromFile(c *elton.Context) (err error) {
+func (params listRegionParams) toConditions() []interface{} {
+	conds := queryConditions{}
+	if params.Keyword != "" {
+		conds.add("name ILIKE ?", "%"+params.Keyword+"%")
+	}
+	if params.Status != "" {
+		conds.add("status = ?", params.Status)
+	}
+	if params.Category != "" {
+		conds.add("category = ?", regionSrv.GetCategoryIndex(params.Category))
+	}
+	if params.Parent != "" {
+		conds.add("parent = ?", params.Parent)
+	}
+	return conds.toArray()
+}
+
+func (ctrl regionCtrl) listStatus(c *elton.Context) (err error) {
+	c.CacheMaxAge("5m")
+	c.Body = map[string][]*service.RegionStatus{
+		"statuses": regionSrv.ListStatus(),
+	}
+	return
+}
+
+func (ctrl regionCtrl) listCategory(c *elton.Context) (err error) {
+	c.CacheMaxAge("5m")
+	c.Body = map[string][]*service.RegionCategory{
+		"categories": regionSrv.ListCategory(),
+	}
+	return
+}
+
+func (ctrl regionCtrl) importFromFile(c *elton.Context) (err error) {
 	file, _, err := c.Request.FormFile("file")
 	if err != nil {
 		return
@@ -65,6 +125,31 @@ func (ctrl *regionCtrl) importFromFile(c *elton.Context) (err error) {
 	if err != nil {
 		return
 	}
+	category := c.Param("category")
+	categoryIndex := regionSrv.GetCategoryIndex(category)
+
+	if cs.RegionCountry == category {
+		m := make(map[string]string)
+		err = json.Unmarshal(buf, &m)
+		if err != nil {
+			return
+		}
+		for key, value := range m {
+			err = regionSrv.Add(&service.Region{
+				Category: categoryIndex,
+				Name:     value,
+				Code:     key,
+				Status:   cs.RegionStatusDisabled,
+			})
+
+			if err != nil {
+				return
+			}
+		}
+		c.NoContent()
+		return
+	}
+
 	arr := make([]map[string]string, 0)
 	err = json.Unmarshal(buf, &arr)
 	if err != nil {
@@ -72,109 +157,93 @@ func (ctrl *regionCtrl) importFromFile(c *elton.Context) (err error) {
 	}
 
 	for _, item := range arr {
-		code, e := strconv.Atoi(item["code"])
-		if e != nil {
-			err = e
-			return
+		region := service.Region{
+			Category: categoryIndex,
+			Name:     item["name"],
+			Code:     item["code"],
+			Status:   cs.RegionStatusEnabled,
 		}
-		name := item["name"]
-		switch c.Param("category") {
+		switch category {
 		case cs.RegionProvince:
-			err = regionSrv.AddProvince(&service.RegionProvince{
-				Name:    name,
-				Code:    code,
-				Country: service.China,
-			})
-			if err != nil {
-				return
-			}
+			region.Parent = "CN"
 		case cs.RegionCity:
-
-			province, e := strconv.Atoi(item["provinceCode"])
-			if e != nil {
-				err = e
-				return
-			}
-			err = regionSrv.AddCity(&service.RegionCity{
-				Name:     name,
-				Code:     code,
-				Province: province,
-			})
-			if err != nil {
-				return
-			}
-
+			region.Parent = item["provinceCode"]
 		case cs.RegionArea:
-			city, e := strconv.Atoi(item["cityCode"])
-			if e != nil {
-				err = e
-				return
-			}
-			err = regionSrv.AddArea(&service.RegionArea{
-				Name: name,
-				Code: code,
-				City: city,
-			})
-			if err != nil {
-				return
-			}
+			region.Parent = item["cityCode"]
 		case cs.RegionStreet:
-			area, e := strconv.Atoi(item["areaCode"])
-			if e != nil {
-				err = e
-				return
-			}
-			err = regionSrv.AddStreet(&service.RegionStreet{
-				Name: name,
-				Code: code,
-				Area: area,
-			})
-			if err != nil {
-				return
-			}
-
+			region.Parent = item["areaCode"]
 		default:
 			err = hes.New("category is invalid")
+			return
 		}
-	}
-	if err != nil {
-		return
+		err = regionSrv.Add(&region)
+		if err != nil {
+			return
+		}
 	}
 	c.NoContent()
 	return
 }
 
-func (ctrl *regionCtrl) listProvince(c *elton.Context) (err error) {
-	params := listProductParams{}
-	err = validate.Do(&params, c.Query())
+func (ctrl regionCtrl) listRegion(c *elton.Context) (err error) {
+	params := listRegionParams{}
+	query := c.Query()
+	err = validate.Do(&params, query)
 	if err != nil {
 		return
 	}
-	data, err := regionSrv.ListProvince(params.toPGQueryParams())
+	queryParmas := params.toPGQueryParams()
+	args := params.toConditions()
+	count := -1
+	if queryParmas.Offset == 0 {
+		count, err = regionSrv.Count(args...)
+		if err != nil {
+			return
+		}
+	}
+	result, err := regionSrv.List(queryParmas, args...)
 	if err != nil {
 		return
 	}
-	c.CacheMaxAge("5m")
-	c.Body = map[string][]*service.RegionProvince{
-		"provinces": data,
+	c.Body = map[string]interface{}{
+		"count":   count,
+		"regions": result,
 	}
 	return
 }
 
-func (ctrl *regionCtrl) listCity(c *elton.Context) (err error) {
-	params := listProductParams{}
-	err = validate.Do(&params, c.Query())
+func (ctrl regionCtrl) findByID(c *elton.Context) (err error) {
+	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		return
 	}
-	province := c.Param("province")
-	data, err := regionSrv.ListCity(params.toPGQueryParams(), "province = ?", province)
+	data, err := regionSrv.FindByID(uint(id))
 	if err != nil {
 		return
 	}
-	c.CacheMaxAge("5m")
-	c.Body = map[string][]*service.RegionCity{
-		"cities": data,
+	c.CacheMaxAge("1m")
+	c.Body = data
+	return
+}
+
+func (ctrl regionCtrl) updateByID(c *elton.Context) (err error) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return
 	}
+	params := updateRegionParams{}
+	err = validate.Do(&params, c.RequestBody)
+	if err != nil {
+		return
+	}
+	region := service.Region{
+		Name:   params.Name,
+		Status: params.Status,
+	}
+	err = regionSrv.UpdateByID(uint(id), region)
+	if err != nil {
+		return
+	}
+	c.NoContent()
 	return
 }

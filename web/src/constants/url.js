@@ -24,3 +24,8 @@ export const PRODUCTS = "/products/v1";
 export const PRODUCTS_ID = "/products/v1/:id";
 
 export const FILES = "/files/v1";
+
+export const REGIONS = "/regions/v1";
+export const REGIONS_ID = "/regions/v1/:id";
+export const REGIONS_LIST_STATUS = "/regions/v1/statuses";
+export const REGIONS_LIST_CATEGORIES = "/regions/v1/categories";

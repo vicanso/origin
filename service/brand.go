@@ -23,15 +23,15 @@ type (
 	Brand struct {
 		helper.Model
 
-		Name        string `json:"name" gorm:"type:varchar(100);not null;unique_index:idx_brand_name"`
-		Status      int    `json:"status"`
-		Logo        string `json:"logo"`
-		Catalog     string `json:"catalog"`
-		FirstLetter string `json:"firstLetter"`
+		Name        string `json:"name,omitempty" gorm:"type:varchar(100);not null;unique_index:idx_brand_name"`
+		Status      int    `json:"status,omitempty"`
+		Logo        string `json:"logo,omitempty"`
+		Catalog     string `json:"catalog,omitempty"`
+		FirstLetter string `json:"firstLetter,omitempty"`
 	}
 	BrandStatus struct {
-		Name  string `json:"name"`
-		Value int    `json:"value"`
+		Name  string `json:"name,omitempty"`
+		Value int    `json:"value,omitempty"`
 	}
 	BrandSrv struct{}
 )
@@ -46,14 +46,14 @@ func (srv *BrandSrv) createByID(id uint) *Brand {
 	return b
 }
 
-// ListStatuses list all brand status
-func (srv *BrandSrv) ListStatuses() []*BrandStatus {
+// ListStatus list all brand status
+func (srv *BrandSrv) ListStatus() []*BrandStatus {
 	return []*BrandStatus{
-		&BrandStatus{
+		{
 			Name:  "启用",
 			Value: cs.BrandStatusEnabled,
 		},
-		&BrandStatus{
+		{
 			Name:  "禁用",
 			Value: cs.BrandStatusDisabled,
 		},

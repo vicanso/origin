@@ -26,23 +26,23 @@ type (
 	Product struct {
 		helper.Model
 
-		Name    string         `json:"name" gorm:"type:varchar(30);not null;unique"`
-		Price   float64        `json:"price"`
-		Unit    string         `json:"unit"`
-		Catalog string         `json:"catalog"`
-		Pics    pq.StringArray `json:"pics" gorm:"type:text[]"`
+		Name    string         `json:"name,omitempty" gorm:"type:varchar(30);not null;unique"`
+		Price   float64        `json:"price,omitempty"`
+		Unit    string         `json:"unit,omitempty"`
+		Catalog string         `json:"catalog,omitempty"`
+		Pics    pq.StringArray `json:"pics,omitempty" gorm:"type:text[]"`
 		// 主图，从1开始
-		MainPic    int            `json:"mainPic"`
-		SN         string         `json:"sn"`
-		Status     int            `json:"status"`
-		Keywords   string         `json:"keywords"`
-		Categories pq.StringArray `json:"categories" gorm:"type:text[]"`
-		StartedAt  *time.Time     `json:"startedAt"`
-		EndedAt    *time.Time     `json:"endedAt"`
+		MainPic    int            `json:"mainPic,omitempty"`
+		SN         string         `json:"sn,omitempty"`
+		Status     int            `json:"status,omitempty"`
+		Keywords   string         `json:"keywords,omitempty"`
+		Categories pq.StringArray `json:"categories,omitempty" gorm:"type:text[]"`
+		StartedAt  *time.Time     `json:"startedAt,omitempty"`
+		EndedAt    *time.Time     `json:"endedAt,omitempty"`
 		// 产地
-		Origin string `json:"origin"`
+		Origin string `json:"origin,omitempty"`
 		// 产品品牌
-		Brand uint `json:"brand"`
+		Brand uint `json:"brand,omitempty"`
 	}
 	ProductStatus struct {
 		Name  string `json:"name"`
@@ -61,14 +61,14 @@ func (srv *ProductSrv) createByID(id uint) *Product {
 	return p
 }
 
-// ListStatuses list all product status
-func (srv *ProductSrv) ListStatuses() []*ProductStatus {
+// ListStatus list all product status
+func (srv *ProductSrv) ListStatus() []*ProductStatus {
 	return []*ProductStatus{
-		&ProductStatus{
+		{
 			Name:  "启用",
 			Value: cs.ProductStatusEnabled,
 		},
-		&ProductStatus{
+		{
 			Name:  "禁用",
 			Value: cs.ProductStatusDisabled,
 		},

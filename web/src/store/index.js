@@ -6,6 +6,7 @@ import configStore from "@/store/modules/config";
 import commonStore from "@/store/modules/common";
 import brandStore from "@/store/modules/brand";
 import productStore from "@/store/modules/product";
+import regionStore from "@/store/modules/region";
 
 Vue.use(Vuex);
 
@@ -18,6 +19,7 @@ export default new Vuex.Store({
     config: configStore,
     common: commonStore,
     brand: brandStore,
-    product: productStore
+    product: productStore,
+    region: regionStore
   }
 });

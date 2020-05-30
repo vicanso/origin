@@ -354,7 +354,7 @@ export default {
         }
       });
       if (!updateInfo || updateInfo.modifiedCount === 0) {
-        this.$message.warning("请选择要更新的信息");
+        this.$message.warning("请修改要更新的信息");
         return;
       }
       try {

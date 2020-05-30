@@ -18,3 +18,5 @@ export const LOGINS = "Logins";
 export const BRANDS = "Brands";
 
 export const PRODUCTS = "Products";
+
+export const REGIONS = "Regions";

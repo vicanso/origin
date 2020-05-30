@@ -21,11 +21,12 @@ import (
 )
 
 func init() {
-	AddAlias("xLimit", "number,min=1,max=100")
-	AddAlias("xOffset", "number,min=0,max=10000")
+	// 字符串，max表示字符串长度
+	AddAlias("xLimit", "number,min=1,max=3")
+	AddAlias("xOffset", "number,min=0,max=5")
 	AddAlias("xOrder", "ascii,min=0,max=100")
 	AddAlias("xFields", "ascii,min=0,max=100")
-	AddAlias("xKeyword", "ascii,min=1,max=10")
+	AddAlias("xKeyword", "min=1,max=10")
 
 	durationRegexp := regexp.MustCompile("^[1-9][0-9]*(ms|[smh])$")
 	Add("xDuration", func(fl validator.FieldLevel) bool {

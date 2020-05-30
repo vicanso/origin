@@ -14,15 +14,26 @@
         v-if="!processing"
       />
     </div>
-    <el-form label-width="80px" class="form" v-loading="processing">
+    <el-form
+      :model="form"
+      ref="brandForm"
+      label-width="80px"
+      class="form"
+      v-loading="processing"
+      :rules="rules"
+    >
       <el-row :gutter="15">
         <el-col :span="12">
-          <el-form-item label="名称：">
-            <el-input v-model="form.name" placeholder="请输入产品名称" />
+          <el-form-item label="名称：" prop="name">
+            <el-input
+              v-model="form.name"
+              placeholder="请输入品牌名称"
+              clearable
+            />
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="状态：">
+          <el-form-item label="状态：" prop="status">
             <el-select
               class="selector"
               v-model="form.status"
@@ -38,7 +49,7 @@
           </el-form-item>
         </el-col>
         <el-col :span="24">
-          <el-form-item label="简介：">
+          <el-form-item label="简介：" prop="catalog">
             <el-input
               v-model="form.catalog"
               type="textarea"
@@ -66,7 +77,7 @@
 <script>
 import { mapActions, mapState } from "vuex";
 import Upload from "@/components/Upload.vue";
-import { diff } from "@/helpers/util";
+import { diff, validateForm } from "@/helpers/util";
 
 export default {
   name: "Brand",
@@ -91,6 +102,26 @@ export default {
         status: null,
         logo: "",
         catalog: ""
+      },
+      rules: {
+        name: [
+          {
+            required: true,
+            message: "品牌名称不能为空"
+          }
+        ],
+        status: [
+          {
+            required: true,
+            message: "品牌状态不能为空"
+          }
+        ],
+        catalog: [
+          {
+            required: true,
+            message: "品牌简介不能为空"
+          }
+        ]
       }
     };
   },
@@ -117,11 +148,15 @@ export default {
     async submit() {
       const { originalData } = this;
       const { name, status, logo, catalog } = this.form;
-      if (!name || !status || !logo || !catalog) {
-        this.$message.warning("名称、状态、LOGO与简介均不能为空");
-        return;
-      }
+      // if (!name || !status || !logo || !catalog) {
+      //   this.$message.warning("名称、状态、LOGO与简介均不能为空");
+      //   return;
+      // }
       try {
+        if (!logo) {
+          throw new Error("品牌LOGO不能为空");
+        }
+        await validateForm(this.$refs.brandForm);
         const data = {
           name,
           status,

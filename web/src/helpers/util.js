@@ -114,3 +114,22 @@ export function addNoCacheQueryParam(params = {}) {
   params["cacheControl"] = "no-cache";
   return params;
 }
+
+// validateForm validate form
+export function validateForm(form) {
+  return new Promise((resolve, reject) => {
+    form.validate((valid, rules) => {
+      if (valid) {
+        return resolve();
+      }
+      const messagesArr = [];
+      Object.keys(rules).forEach(key => {
+        const arr = rules[key];
+        arr.forEach(item => {
+          messagesArr.push(item.message);
+        });
+      });
+      return reject(new Error(messagesArr.join("，")));
+    });
+  });
+}

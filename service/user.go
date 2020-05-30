@@ -53,60 +53,59 @@ type (
 	User struct {
 		helper.Model
 
-		Account  string         `json:"account" gorm:"type:varchar(20);not null;unique_index:idx_users_account"`
+		Account  string         `json:"account,omitempty" gorm:"type:varchar(20);not null;unique_index:idx_users_account"`
 		Password string         `json:"-" gorm:"type:varchar(128);not null"`
-		Roles    pq.StringArray `json:"roles" gorm:"type:text[]"`
-		Groups   pq.StringArray `json:"groups" gorm:"type:text[]"`
+		Roles    pq.StringArray `json:"roles,omitempty" gorm:"type:text[]"`
+		Groups   pq.StringArray `json:"groups,omitempty" gorm:"type:text[]"`
 		// 用户状态
-		Status int    `json:"status"`
-		Email  string `json:"email"`
-		Mobile string `json:"mobile"`
+		Status int    `json:"status,omitempty"`
+		Email  string `json:"email,omitempty"`
+		Mobile string `json:"mobile,omitempty"`
 	}
 	// UserRole user role
 	UserRole struct {
-		Name  string `json:"name"`
-		Value string `json:"value"`
+		Name  string `json:"name,omitempty"`
+		Value string `json:"value,omitempty"`
 	}
 	// UserStatus user status
 	UserStatus struct {
-		Name  string `json:"name"`
-		Value int    `json:"value"`
+		Name  string `json:"name,omitempty"`
+		Value int    `json:"value,omitempty"`
 	}
 	// UserGroup user group
 	UserGroup struct {
-		Name  string `json:"name"`
-		Value string `json:"value"`
+		Name  string `json:"name,omitempty"`
+		Value string `json:"value,omitempty"`
 	}
 	// UserLoginRecord user login
 	UserLoginRecord struct {
 		helper.Model
 
-		Account       string `json:"account" gorm:"type:varchar(20);not null;index:idx_user_logins_account"`
-		UserAgent     string `json:"userAgent"`
-		IP            string `json:"ip" gorm:"type:varchar(64);not null"`
-		TrackID       string `json:"trackId" gorm:"type:varchar(64);not null"`
-		SessionID     string `json:"sessionId" gorm:"type:varchar(64);not null"`
-		XForwardedFor string `json:"xForwardedFor" gorm:"type:varchar(128)"`
-		Country       string `json:"country" gorm:"type:varchar(64)"`
-		Province      string `json:"province" gorm:"type:varchar(64)"`
-		City          string `json:"city" gorm:"type:varchar(64)"`
-		ISP           string `json:"isp" gorm:"type:varchar(64)"`
+		Account       string `json:"account,omitempty" gorm:"type:varchar(20);not null;index:idx_user_logins_account"`
+		UserAgent     string `json:"userAgent,omitempty"`
+		IP            string `json:"ip,omitempty" gorm:"type:varchar(64);not null"`
+		TrackID       string `json:"trackId,omitempty" gorm:"type:varchar(64);not null"`
+		SessionID     string `json:"sessionId,omitempty" gorm:"type:varchar(64);not null"`
+		XForwardedFor string `json:"xForwardedFor,omitempty" gorm:"type:varchar(128)"`
+		Country       string `json:"country,omitempty" gorm:"type:varchar(64)"`
+		Province      string `json:"province,omitempty" gorm:"type:varchar(64)"`
+		City          string `json:"city,omitempty" gorm:"type:varchar(64)"`
+		ISP           string `json:"isp,omitempty" gorm:"type:varchar(64)"`
 	}
 	// UserTrackRecord user track record
 	UserTrackRecord struct {
 		helper.Model
 
-		TrackID   string `json:"trackId" gorm:"type:varchar(64);not null;index:idx_user_track_id"`
-		UserAgent string `json:"userAgent"`
-		IP        string `json:"ip" gorm:"type:varchar(64);not null"`
-		Country   string `json:"country" gorm:"type:varchar(64)"`
-		Province  string `json:"province" gorm:"type:varchar(64)"`
-		City      string `json:"city" gorm:"type:varchar(64)"`
-		ISP       string `json:"isp" gorm:"type:varchar(64)"`
+		TrackID   string `json:"trackId,omitempty" gorm:"type:varchar(64);not null;index:idx_user_track_id"`
+		UserAgent string `json:"userAgent,omitempty"`
+		IP        string `json:"ip,omitempty" gorm:"type:varchar(64);not null"`
+		Country   string `json:"country,omitempty" gorm:"type:varchar(64)"`
+		Province  string `json:"province,omitempty" gorm:"type:varchar(64)"`
+		City      string `json:"city,omitempty" gorm:"type:varchar(64)"`
+		ISP       string `json:"isp,omitempty" gorm:"type:varchar(64)"`
 	}
 	// UserSrv user service
-	UserSrv struct {
-	}
+	UserSrv struct{}
 )
 
 func init() {
@@ -115,32 +114,45 @@ func init() {
 		AutoMigrate(&UserTrackRecord{})
 }
 
+// AfterCreate after create hook
+func (u *User) AfterCreate(scope *gorm.Scope) (err error) {
+	// 首次创建账号，设置su权限
+	if u.ID == 1 {
+		scope.DB().Model(u).Update(User{
+			Roles: []string{
+				cs.UserRoleSu,
+			},
+		})
+	}
+	return
+}
+
 // ListRoles list all user roles
 func (srv *UserSrv) ListRoles() []*UserRole {
 	return []*UserRole{
-		&UserRole{
+		{
 			Name:  "普通用户",
 			Value: cs.UserRoleNormal,
 		},
-		&UserRole{
+		{
 			Name:  "管理员",
 			Value: cs.UserRoleAdmin,
 		},
-		&UserRole{
+		{
 			Name:  "超级用户",
 			Value: cs.UserRoleSu,
 		},
 	}
 }
 
-// ListStatuses list all user status
-func (srv *UserSrv) ListStatuses() []*UserStatus {
+// ListStatus list all user status
+func (srv *UserSrv) ListStatus() []*UserStatus {
 	return []*UserStatus{
-		&UserStatus{
+		{
 			Name:  "正常",
 			Value: cs.AccountStatusEnabled,
 		},
-		&UserStatus{
+		{
 			Name:  "禁用",
 			Value: cs.AccountStatusForbidden,
 		},
@@ -150,15 +162,15 @@ func (srv *UserSrv) ListStatuses() []*UserStatus {
 // ListGroups list all user group
 func (srv *UserSrv) ListGroups() []*UserGroup {
 	return []*UserGroup{
-		&UserGroup{
+		{
 			Name:  "研发部",
 			Value: cs.UserGroupIT,
 		},
-		&UserGroup{
+		{
 			Name:  "市场部",
 			Value: cs.UserGroupMarketing,
 		},
-		&UserGroup{
+		{
 			Name:  "财务部",
 			Value: cs.UserGroupFinance,
 		},
@@ -190,14 +202,6 @@ func (srv *UserSrv) Add(u *User) (err error) {
 		})
 	}
 	err = pgCreate(u)
-	// 首次创建账号，设置su权限
-	if u.ID == 1 {
-		_ = srv.UpdateByID(u.ID, User{
-			Roles: []string{
-				cs.UserRoleSu,
-			},
-		})
-	}
 	return
 }
 

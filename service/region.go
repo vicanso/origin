@@ -14,91 +14,120 @@
 
 package service
 
-import "github.com/vicanso/origin/helper"
-
-const (
-	China = iota + 1
+import (
+	"github.com/vicanso/origin/cs"
+	"github.com/vicanso/origin/helper"
 )
 
 type (
-	// RegionProvince province
-	RegionProvince struct {
+	Region struct {
 		helper.Model
 
-		Name    string `json:"name" gorm:"not null;unique_index:idx_province_name"`
-		Code    int    `json:"code" gorm:"not null;unique_index:idx_province_code"`
-		Country int    `json:"country" gorm:"not null"`
+		Category int    `json:"category,omitempty" gorm:"not null;index:idx_region_category_name"`
+		Name     string `json:"name,omitempty" gorm:"not null;index:idx_region_category_name"`
+		Code     string `json:"code,omitempty" gorm:"not null;unique_index:idx_region_code"`
+		Parent   string `json:"parent,omitempty" gorm:"not null;index:idx_region_parent"`
+		Status   int    `json:"status,omitempty"`
 	}
-	// RegionCity city
-	RegionCity struct {
-		helper.Model
-
-		Name     string `json:"name" gorm:"not null"`
-		Code     int    `json:"code" gorm:"not null;unique_index:idx_city_code"`
-		Province int    `json:"province" gorm:"not null;index:idx_city_province"`
+	RegionStatus struct {
+		Name  string `json:"name,omitempty"`
+		Value int    `json:"value,omitempty"`
 	}
-	// RegionArea area
-	RegionArea struct {
-		helper.Model
-
-		Name string `json:"name" gorm:"not null"`
-		Code int    `json:"code" gorm:"not null;unique_index:idx_area_code"`
-		City int    `json:"city" gorm:"not null;index:idx_area_city"`
-	}
-
-	// RegionStreet street
-	RegionStreet struct {
-		helper.Model
-
-		Name string `json:"name" gorm:"not null"`
-		Code int    `json:"code" gorm:"not null;unique_index:idx_street_code"`
-		Area int    `json:"Area" gorm:"not null;index:idx_street_area"`
+	RegionCategory struct {
+		Name  string `json:"name,omitempty"`
+		Value string `json:"value,omitempty"`
 	}
 
 	RegionSrv struct{}
 )
 
 func init() {
-	pgGetClient().AutoMigrate(&RegionProvince{}).
-		AutoMigrate(&RegionCity{}).
-		AutoMigrate(&RegionArea{}).
-		AutoMigrate(&RegionStreet{})
+	pgGetClient().AutoMigrate(&Region{})
 }
 
-// AddProvince add province
-func (srv *RegionSrv) AddProvince(province *RegionProvince) (err error) {
-	err = pgCreate(province)
+// GetCategoryIndex get index of category
+func (srv *RegionSrv) GetCategoryIndex(category string) (index int) {
+	for i, item := range cs.RegionCategories {
+		if item == category {
+			index = i + 1
+		}
+	}
 	return
 }
 
-// ListProvince list province
-func (srv *RegionSrv) ListProvince(params helper.PGQueryParams, args ...interface{}) (result []*RegionProvince, err error) {
-	result = make([]*RegionProvince, 0)
+// ListStatus list status
+func (srv *RegionSrv) ListStatus() []*RegionStatus {
+	return []*RegionStatus{
+		{
+			Name:  "启用",
+			Value: cs.RegionStatusEnabled,
+		},
+		{
+			Name:  "禁用",
+			Value: cs.RegionStatusDisabled,
+		},
+	}
+}
+
+// ListCategory list category
+func (srv *RegionSrv) ListCategory() []*RegionCategory {
+	return []*RegionCategory{
+		{
+			Name:  "国",
+			Value: cs.RegionCountry,
+		},
+		{
+			Name:  "省",
+			Value: cs.RegionProvince,
+		},
+		{
+			Name:  "市",
+			Value: cs.RegionCity,
+		},
+		{
+			Name:  "区",
+			Value: cs.RegionArea,
+		},
+		{
+			Name:  "街",
+			Value: cs.RegionStreet,
+		},
+	}
+}
+
+func (srv *RegionSrv) createByID(id uint) *Region {
+	r := &Region{}
+	r.Model.ID = id
+	return r
+}
+
+// Add add region
+func (srv *RegionSrv) Add(region *Region) (err error) {
+	err = pgCreate(region)
+	return
+}
+
+// List list region
+func (srv *RegionSrv) List(params helper.PGQueryParams, args ...interface{}) (result []*Region, err error) {
+	result = make([]*Region, 0)
 	err = pgQuery(params, args...).Find(&result).Error
 	return
 }
 
-// AddCity add city
-func (srv *RegionSrv) AddCity(city *RegionCity) (err error) {
-	err = pgCreate(city)
+// Count count region
+func (srv *RegionSrv) Count(args ...interface{}) (count int, err error) {
+	return pgCount(&Region{}, args...)
+}
+
+// FindByID find by id
+func (srv *RegionSrv) FindByID(id uint) (region *Region, err error) {
+	region = new(Region)
+	err = pgGetClient().First(region, "id = ?", id).Error
 	return
 }
 
-// ListCity list city
-func (srv *RegionSrv) ListCity(params helper.PGQueryParams, args ...interface{}) (result []*RegionCity, err error) {
-	result = make([]*RegionCity, 0)
-	err = pgQuery(params, args...).Find(&result).Error
-	return
-}
-
-// AddArea add area
-func (srv *RegionSrv) AddArea(area *RegionArea) (err error) {
-	err = pgCreate(area)
-	return
-}
-
-// AddStreet add street
-func (srv *RegionSrv) AddStreet(street *RegionStreet) (err error) {
-	err = pgCreate(street)
+// UpdateByID update region by id
+func (srv *RegionSrv) UpdateByID(id uint, attrs ...interface{}) (err error) {
+	err = pgGetClient().Model(srv.createByID(id)).Update(attrs...).Error
 	return
 }

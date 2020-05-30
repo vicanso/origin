@@ -36,7 +36,7 @@ type (
 
 type (
 	fileUploadParams struct {
-		Bucket string `json:"bucket" validate:"xFileBucket"`
+		Bucket string `json:"bucket,omitempty" validate:"xFileBucket"`
 	}
 )
 
@@ -47,6 +47,7 @@ const (
 
 var validContentTypes = []string{
 	"image/jpeg",
+	"image/png",
 }
 
 var invalidContentType = &hes.Error{
