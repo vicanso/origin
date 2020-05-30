@@ -14,27 +14,20 @@
 
 package validate
 
-import (
-	"strconv"
-
-	"github.com/go-playground/validator/v10"
-	"github.com/vicanso/origin/cs"
-)
-
 func init() {
 	AddAlias("xBrandName", "min=1,max=20")
 	AddAlias("xBrandLogo", "min=1,max=100")
 	AddAlias("xBrandCatalog", "min=1,max=1000")
 
-	brandStatusesStr := make([]string, 0)
-	for _, item := range cs.BrandStatuses {
-		brandStatusesStr = append(brandStatusesStr, strconv.Itoa(item))
-	}
+	// brandStatusesStr := make([]string, 0)
+	// for _, item := range cs.BrandStatuses {
+	// 	brandStatusesStr = append(brandStatusesStr, strconv.Itoa(item))
+	// }
 
-	Add("xBrandStatus", func(fl validator.FieldLevel) bool {
-		if isInt(fl) {
-			return isInInt(fl, cs.BrandStatuses)
-		}
-		return isInString(fl, brandStatusesStr)
-	})
+	// Add("xStatus", func(fl validator.FieldLevel) bool {
+	// 	if isInt(fl) {
+	// 		return isInInt(fl, cs.BrandStatuses)
+	// 	}
+	// 	return isInString(fl, brandStatusesStr)
+	// })
 }

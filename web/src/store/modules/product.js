@@ -1,6 +1,6 @@
 import request from "@/helpers/request";
 
-import { PRODUCTS_LIST_STATUS, PRODUCTS } from "@/constants/url";
+import { COMMONS_STATUSES, PRODUCTS } from "@/constants/url";
 import { formatDate, addNoCacheQueryParam } from "@/helpers/util";
 
 const prefix = "product";
@@ -26,7 +26,7 @@ async function listProductStatus({ commit }) {
   }
   commit(mutationProductListStatusProcessing, true);
   try {
-    const { data } = await request.get(PRODUCTS_LIST_STATUS);
+    const { data } = await request.get(COMMONS_STATUSES);
     commit(mutationProductListStatus, data);
   } finally {
     commit(mutationProductListStatusProcessing, false);

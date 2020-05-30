@@ -1,7 +1,11 @@
 import request from "@/helpers/request";
 
-import { BRANDS_LIST_STATUS, BRANDS, BRANDS_ID } from "@/constants/url";
-import { formatDate, addNoCacheQueryParam } from "@/helpers/util";
+import { COMMONS_STATUSES, BRANDS, BRANDS_ID } from "@/constants/url";
+import {
+  formatDate,
+  addNoCacheQueryParam,
+  toUploadFiles
+} from "@/helpers/util";
 
 const mutationBrandListStatus = "brand.list.status";
 const mutationBrandListStatusProcessing = `${mutationBrandListStatus}.processing`;
@@ -22,23 +26,28 @@ const state = {
 // listBrandStatus 获取品牌状态列表
 async function listBrandStatus({ commit }) {
   if (state.statuses) {
-    return;
+    return {
+      statuses: state.statuses
+    };
   }
   commit(mutationBrandListStatusProcessing, true);
   try {
-    const { data } = await request.get(BRANDS_LIST_STATUS);
+    const { data } = await request.get(COMMONS_STATUSES);
     commit(mutationBrandListStatus, data);
+    return data;
   } finally {
     commit(mutationBrandListStatusProcessing, false);
   }
 }
 
-function updateStatusDesc(item) {
+function enhanceBrandInfo(item) {
   state.statuses.forEach(status => {
     if (item.status === status.value) {
       item.statusDesc = status.name;
     }
   });
+  item.updatedAtDesc = formatDate(item.updatedAt);
+  item.files = toUploadFiles(item.logo);
 }
 
 export default {
@@ -57,10 +66,7 @@ export default {
       if (count >= 0) {
         state.list.count = count;
       }
-      brands.forEach(item => {
-        item.updatedAtDesc = formatDate(item.updatedAt);
-        updateStatusDesc(item);
-      });
+      brands.forEach(enhanceBrandInfo);
       state.list.data = brands;
     },
     [mutationBrandUpdate](state, { id, data }) {
@@ -70,7 +76,7 @@ export default {
       state.list.data.forEach(item => {
         if (item.id === id) {
           Object.assign(item, data);
-          updateStatusDesc(item);
+          enhanceBrandInfo(item);
         }
       });
     }
@@ -96,6 +102,7 @@ export default {
           params: addNoCacheQueryParam(params)
         });
         commit(mutationBrandList, data);
+        return data;
       } finally {
         commit(mutationBrandProcessing, false);
       }
@@ -119,6 +126,7 @@ export default {
         const { data } = await request.get(url, {
           params: addNoCacheQueryParam()
         });
+        enhanceBrandInfo(data);
         return data;
       } finally {
         commit(mutationBrandProcessing, false);
@@ -126,6 +134,10 @@ export default {
     },
     // updateBrandByID 通过id更新brand信息
     async updateBrandByID({ commit }, { id, data }) {
+      if (data.files) {
+        data.logo = data.files[0].url;
+        delete data.files;
+      }
       if (!data || Object.keys(data).length === 0) {
         return;
       }

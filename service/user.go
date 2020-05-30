@@ -67,11 +67,6 @@ type (
 		Name  string `json:"name,omitempty"`
 		Value string `json:"value,omitempty"`
 	}
-	// UserStatus user status
-	UserStatus struct {
-		Name  string `json:"name,omitempty"`
-		Value int    `json:"value,omitempty"`
-	}
 	// UserGroup user group
 	UserGroup struct {
 		Name  string `json:"name,omitempty"`
@@ -145,20 +140,6 @@ func (srv *UserSrv) ListRoles() []*UserRole {
 	}
 }
 
-// ListStatus list all user status
-func (srv *UserSrv) ListStatus() []*UserStatus {
-	return []*UserStatus{
-		{
-			Name:  "正常",
-			Value: cs.AccountStatusEnabled,
-		},
-		{
-			Name:  "禁用",
-			Value: cs.AccountStatusForbidden,
-		},
-	}
-}
-
 // ListGroups list all user group
 func (srv *UserSrv) ListGroups() []*UserGroup {
 	return []*UserGroup{
@@ -194,7 +175,7 @@ func (srv *UserSrv) createLoginRecordByID(id uint) *UserLoginRecord {
 // Add add user
 func (srv *UserSrv) Add(u *User) (err error) {
 	if u.Status == 0 {
-		u.Status = cs.AccountStatusEnabled
+		u.Status = cs.StatusEnabled
 	}
 	if len(u.Roles) == 0 {
 		u.Roles = pq.StringArray([]string{

@@ -18,6 +18,7 @@ import (
 	"regexp"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/vicanso/origin/cs"
 )
 
 func init() {
@@ -35,5 +36,12 @@ func init() {
 			return false
 		}
 		return durationRegexp.MatchString(value)
+	})
+
+	Add("xStatus", func(fl validator.FieldLevel) bool {
+		if isInt(fl) {
+			return isInInt(fl, cs.Statuses)
+		}
+		return isInString(fl, cs.StatusesString)
 	})
 }

@@ -34,6 +34,16 @@
             @click="filter"
             >筛选</el-button
           >
+          <el-date-picker
+            v-else-if="field.type === 'dateRange'"
+            class="dateRange"
+            v-model="current[field.key]"
+            type="daterange"
+            range-separator="至"
+            start-placeholder="开始日期"
+            end-placeholder="结束日期"
+          >
+          </el-date-picker>
           <el-input
             v-else
             @keyup.enter.native="filter"
@@ -49,7 +59,7 @@
 </template>
 <script>
 export default {
-  name: "Filter",
+  name: "BaseFilter",
   props: {
     labelWidth: {
       type: String,
@@ -83,6 +93,6 @@ export default {
 </script>
 <style lang="sass" scoped>
 .baseFilter
-  .select, .btn
+  .select, .btn, .dateRange
     width: 100%
 </style>

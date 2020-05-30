@@ -4,7 +4,13 @@
       <i v-if="$props.icon" :class="$props.icon"></i>
       <span>{{ $props.title }}</span>
     </div>
-    <el-form :label-width="$props.labelWidth">
+    <el-form
+      v-if="!processing"
+      :label-width="$props.labelWidth"
+      ref="baseEditorForm"
+      :rules="$props.rules"
+      :model="current"
+    >
       <el-row :gutter="15">
         <el-col
           v-for="field in $props.fields"
@@ -15,6 +21,7 @@
             :label="field.label"
             :label-width="field.labelWidth"
             :class="field.itemClass"
+            :prop="field.key"
           >
             <el-select
               class="select"
@@ -30,6 +37,20 @@
                 :value="item.value"
               />
             </el-select>
+            <el-input
+              type="textarea"
+              v-else-if="field.type === 'textare'"
+              v-model="current[field.key]"
+              :placeholder="field.placeholder"
+              :autosize="field.autosize"
+            />
+            <Upload
+              v-else-if="field.type === 'upload'"
+              :files="current[field.key]"
+              :bucket="field.bucket"
+              :limit="field.limit"
+              @change="handleUpload"
+            />
             <el-input
               v-else
               v-model="current[field.key]"
@@ -56,10 +77,14 @@
   </el-card>
 </template>
 <script>
-import { diff } from "@/helpers/util";
+import { diff, validateForm, omitNil } from "@/helpers/util";
+import Upload from "@/components/Upload.vue";
 
 export default {
   name: "BaseEditor",
+  components: {
+    Upload
+  },
   props: {
     icon: String,
     title: {
@@ -76,30 +101,43 @@ export default {
     },
     id: Number,
     findByID: Function,
-    updateByID: Function
+    updateByID: Function,
+    rules: Object
   },
   data() {
-    const { id } = this.$props;
+    const { id, fields } = this.$props;
     const submitText = id ? "更新" : "添加";
+    const current = {};
+    fields.forEach(item => {
+      current[item.key] = null;
+    });
+
     return {
       originData: null,
       processing: false,
       submitText,
-      current: {}
+      current
     };
   },
   methods: {
+    handleUpload(files) {
+      this.current.files = files;
+    },
     add() {},
     async update() {
-      const { id, updateByID } = this.$props;
+      const { id, updateByID, rules } = this.$props;
       const { current, originData } = this;
-      const updateInfo = diff(current, originData);
+      const updateInfo = diff(omitNil(current), originData);
       if (updateInfo.modifiedCount === 0) {
         this.$message.warning("请先修改要更新的信息");
         return;
       }
+
       this.processing = true;
       try {
+        if (rules) {
+          await validateForm(this.$refs.baseEditorForm);
+        }
         await updateByID({
           id,
           data: updateInfo.data

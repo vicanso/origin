@@ -14,21 +14,9 @@
 
 package validate
 
-import (
-	"github.com/go-playground/validator/v10"
-	"github.com/vicanso/origin/cs"
-)
-
 func init() {
 	// 应用配置名称
 	AddAlias("xConfigName", "min=2,max=20")
 	AddAlias("xConfigCategory", "alphanum,min=2,max=20")
 	AddAlias("xConfigData", "min=0,max=500")
-
-	Add("xConfigStatus", func(fl validator.FieldLevel) bool {
-		return isInInt(fl, []int{
-			cs.ConfigEnabled,
-			cs.ConfigDiabled,
-		})
-	})
 }

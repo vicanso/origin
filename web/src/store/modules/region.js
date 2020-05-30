@@ -1,7 +1,7 @@
 import request from "@/helpers/request";
 import {
   REGIONS,
-  REGIONS_LIST_STATUS,
+  COMMONS_STATUSES,
   REGIONS_LIST_CATEGORIES,
   REGIONS_ID
 } from "@/constants/url";
@@ -56,12 +56,15 @@ const mutationRegionUpdateProcessing = `${mutationRegionUpdate}.processing`;
 // listRegionStatus 获取地区状态
 async function listRegionStatus({ commit }) {
   if (state.statuses) {
-    return;
+    return {
+      statuses: state.statuses
+    };
   }
   commit(mutationRegionListStatusProcessing, true);
   try {
-    const { data } = await request.get(REGIONS_LIST_STATUS);
+    const { data } = await request.get(COMMONS_STATUSES);
     commit(mutationRegionListStatus, data);
+    return data;
   } finally {
     commit(mutationRegionListStatusProcessing, false);
   }
@@ -70,12 +73,15 @@ async function listRegionStatus({ commit }) {
 // listRegionCategory 获取地区分类
 async function listRegionCategory({ commit }) {
   if (state.categoies) {
-    return;
+    return {
+      categoies: state.categories
+    };
   }
   commit(mutationRegionListCategoryProcessing, true);
   try {
     const { data } = await request.get(REGIONS_LIST_CATEGORIES);
     commit(mutationRegionListCategory, data);
+    return data;
   } finally {
     commit(mutationRegionListCategoryProcessing, false);
   }
@@ -145,14 +151,14 @@ export default {
         });
         data.categoy = categoy;
         commit(mutationRegionList, data);
+        return data;
       } finally {
         commit(mutationRegionListProcessing, false);
       }
     },
     listRegionStatus,
     listRegionCategory,
-    async updateRegion({ commit }, { id, data }) {
-      // REGIONS_ID
+    async updateRegionByID({ commit }, { id, data }) {
       commit(mutationRegionUpdateProcessing, true);
       try {
         const url = REGIONS_ID.replace(":id", id);
@@ -163,6 +169,27 @@ export default {
         });
       } finally {
         commit(mutationRegionUpdateProcessing, false);
+      }
+    },
+    async getRegionByID({ commit }, id) {
+      if (state.list.data) {
+        let found = null;
+        state.list.data.forEach(item => {
+          if (item.id === id) {
+            found = item;
+          }
+        });
+        if (found) {
+          return found;
+        }
+      }
+      commit(mutationRegionListProcessing, true);
+      try {
+        const url = REGIONS_ID.replace(":id", id);
+        const { data } = await request.get(url);
+        return data;
+      } finally {
+        commit(mutationRegionListProcessing, false);
       }
     }
   }

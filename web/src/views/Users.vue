@@ -1,5 +1,5 @@
 <template>
-  <div class="user">
+  <div class="user" v-loading="!inited">
     <!-- 用户列表 -->
     <el-card v-if="!editMode">
       <div slot="header">
@@ -7,7 +7,7 @@
         <span>用户列表</span>
       </div>
       <!-- 搜索条件 -->
-      <BaseFilter :fields="filterFields" v-if="filterFields" @filter="filter" />
+      <BaseFilter :fields="filterFields" v-if="inited" @filter="filter" />
       <div v-loading="processing">
         <el-table
           :data="users"
@@ -81,7 +81,7 @@
 </template>
 <script>
 import { mapActions, mapState } from "vuex";
-import BaseTable from "@/components/BaseTable.vue";
+import BaseTable from "@/components/base/Table.vue";
 import User from "@/components/User.vue";
 import BaseFilter from "@/components/base/Filter.vue";
 
@@ -135,6 +135,7 @@ export default {
   data() {
     const pageSizes = [10, 20, 30, 50];
     return {
+      inited: false,
       filterFields: null,
       pageSizes,
       query: {
@@ -172,29 +173,6 @@ export default {
       } catch (err) {
         this.$message.error(err.message);
       }
-    },
-    filter(params) {
-      Object.assign(this.query, params);
-      this.query.offset = 0;
-      this.fetch();
-    },
-    handleCurrentChange(page) {
-      this.query.offset = (page - 1) * this.query.limit;
-      this.fetch();
-    },
-    handleSizeChange(pageSize) {
-      this.query.limit = pageSize;
-      this.query.offset = 0;
-      this.fetch();
-    },
-    handleSortChange({ prop, order }) {
-      let key = prop.replace("Desc", "");
-      if (order === "descending") {
-        key = `-${key}`;
-      }
-      this.query.order = key;
-      this.query.offset = 0;
-      this.fetch();
     }
   },
   async beforeMount() {
@@ -225,6 +203,8 @@ export default {
       this.filterFields = filterFields;
     } catch (err) {
       this.$message.error(err.message);
+    } finally {
+      this.inited = true;
     }
   }
 };

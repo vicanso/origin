@@ -1,49 +1,67 @@
 <template>
-  <!-- 地区信息修改 -->
-  <el-card>
-    <div slot="header">
-      <i class="el-icon-position" />
-      更新地区信息
-    </div>
-    <!-- <el-form :model="currentRegion" label-width="80px" v-if="currentRegion">
-      <el-row :gutter="15">
-        <el-col :span="8">
-          <el-form-item label="名称：">
-            <el-input v-model="currentRegion.name" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="8">
-          <el-form-item label="代码：">
-            <el-input v-model="currentRegion.code" disabled />
-          </el-form-item>
-        </el-col>
-        <el-col :span="8">
-          <el-select
-            class="selector"
-            v-model="currentRegion.status"
-            placeholder="请选择状态"
-          >
-            <el-option
-              v-for="item in statuses"
-              :key="item.value"
-              :label="item.name"
-              :value="item.value"
-            />
-          </el-select>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item>
-            <el-button class="submit" type="primary" @click="update"
-              >更新</el-button
-            >
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item>
-            <el-button class="submit" @click="goBack">返回</el-button>
-          </el-form-item>
-        </el-col>
-      </el-row>
-    </el-form> -->
-  </el-card>
+  <div class="brand">
+    <BaseEditor
+      v-if="!processing && fields"
+      title="更新地区信息"
+      icon="el-icon-position"
+      :id="regionID"
+      :findByID="getRegionByID"
+      :updateByID="updateRegionByID"
+      :fields="fields"
+    />
+  </div>
 </template>
+<script>
+import BaseEditor from "@/components/base/Editor.vue";
+import { mapActions } from "vuex";
+const brandStatuses = [];
+const fields = [
+  {
+    label: "名称：",
+    key: "name"
+  },
+  {
+    label: "代码：",
+    key: "code",
+    disabled: true
+  },
+  {
+    label: "状态：",
+    key: "status",
+    type: "select",
+    options: brandStatuses
+  }
+];
+
+export default {
+  name: "Brand",
+  components: {
+    BaseEditor
+  },
+  data() {
+    return {
+      fields: null,
+      processing: false,
+      regionID: 0
+    };
+  },
+  methods: mapActions(["listBrandStatus", "updateRegionByID", "getRegionByID"]),
+  async beforeMount() {
+    this.processing = true;
+    const { id } = this.$route.query;
+    if (id) {
+      this.regionID = Number(id);
+    }
+    try {
+      const { statuses } = await this.listBrandStatus();
+      brandStatuses.length = 0;
+      brandStatuses.push(...statuses);
+      this.fields = fields;
+    } catch (err) {
+      this.$message.error(err.message);
+    } finally {
+      this.processing = false;
+    }
+  }
+};
+</script>

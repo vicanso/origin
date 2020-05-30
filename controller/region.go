@@ -36,12 +36,12 @@ type (
 		Category string `json:"category,omitempty" validate:"omitempty,xRegionCategory"`
 		Parent   string `json:"parent,omitempty" validate:"omitempty,xRegionParent"`
 		Keyword  string `json:"keyword,omitempty" validate:"omitempty,xKeyword"`
-		Status   string `json:"status,omitempty" validate:"omitempty,xRegionStatusString"`
+		Status   string `json:"status,omitempty" validate:"omitempty,xStatus"`
 	}
 
 	updateRegionParams struct {
 		Name   string `json:"name,omitempty" validate:"omitempty,xRegionName"`
-		Status int    `json:"status,omitempty" validate:"omitempty,xRegionStatus"`
+		Status int    `json:"status,omitempty" validate:"omitempty,xStatus"`
 	}
 )
 
@@ -49,11 +49,6 @@ func init() {
 	ctrl := regionCtrl{}
 	g := router.NewGroup("/regions")
 
-	g.GET(
-		"/v1/statuses",
-		noCacheIfSetNoCache,
-		ctrl.listStatus,
-	)
 	g.GET(
 		"/v1/categories",
 		noCacheIfSetNoCache,
@@ -100,14 +95,6 @@ func (params listRegionParams) toConditions() []interface{} {
 	return conds.toArray()
 }
 
-func (ctrl regionCtrl) listStatus(c *elton.Context) (err error) {
-	c.CacheMaxAge("5m")
-	c.Body = map[string][]*service.RegionStatus{
-		"statuses": regionSrv.ListStatus(),
-	}
-	return
-}
-
 func (ctrl regionCtrl) listCategory(c *elton.Context) (err error) {
 	c.CacheMaxAge("5m")
 	c.Body = map[string][]*service.RegionCategory{
@@ -139,7 +126,7 @@ func (ctrl regionCtrl) importFromFile(c *elton.Context) (err error) {
 				Category: categoryIndex,
 				Name:     value,
 				Code:     key,
-				Status:   cs.RegionStatusDisabled,
+				Status:   cs.StatusDisabled,
 			})
 
 			if err != nil {
@@ -161,7 +148,7 @@ func (ctrl regionCtrl) importFromFile(c *elton.Context) (err error) {
 			Category: categoryIndex,
 			Name:     item["name"],
 			Code:     item["code"],
-			Status:   cs.RegionStatusEnabled,
+			Status:   cs.StatusEnabled,
 		}
 		switch category {
 		case cs.RegionProvince:

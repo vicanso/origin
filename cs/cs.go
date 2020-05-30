@@ -24,33 +24,27 @@ const (
 )
 
 const (
-	// ConfigEnabled config enabled
-	ConfigEnabled = iota + 1
-	// ConfigDiabled config disabled
-	ConfigDiabled
-)
-
-const (
 	// MagicalCaptcha magical captcha(for test only)
 	MagicalCaptcha = "0145"
 )
 
-// 用户状态
 const (
-	// AccountStatusEnabled account enabled
-	AccountStatusEnabled = iota + 1
-	// AccountStatusForbidden account forbidden
-	AccountStatusForbidden
+	// 状态启用
+	StatusEnabled = iota + 1
+	// 状态禁用
+	StatusDisabled
 )
 
 var (
-	AccountStatuses = []int{
-		AccountStatusEnabled,
-		AccountStatusForbidden,
+	// 状态列表
+	Statuses = []int{
+		StatusEnabled,
+		StatusDisabled,
 	}
-	AccountStatusesString = []string{
-		strconv.Itoa(AccountStatusEnabled),
-		strconv.Itoa(AccountStatusForbidden),
+	// 状态列表（字符串）
+	StatusesString = []string{
+		strconv.Itoa(StatusEnabled),
+		strconv.Itoa(StatusDisabled),
 	}
 )
 
@@ -85,51 +79,6 @@ var (
 		UserGroupIT,
 		UserGroupFinance,
 		UserGroupMarketing,
-	}
-)
-
-// 品牌状态
-const (
-	BrandStatusEnabled = iota + 1
-	BrandStatusDisabled
-)
-
-// 品牌状态列表
-var (
-	BrandStatuses = []int{
-		BrandStatusEnabled,
-		BrandStatusDisabled,
-	}
-)
-
-// 产品状态
-const (
-	ProductStatusEnabled = iota + 1
-	ProductStatusDisabled
-)
-
-// 产品状态列表
-var (
-	ProductStatuses = []int{
-		ProductStatusEnabled,
-		ProductStatusDisabled,
-	}
-)
-
-// 地区状态
-const (
-	RegionStatusEnabled = iota + 1
-	RegionStatusDisabled
-)
-
-var (
-	RegionStatuses = []int{
-		RegionStatusEnabled,
-		RegionStatusDisabled,
-	}
-	RegionStatusesString = []string{
-		strconv.Itoa(RegionStatusEnabled),
-		strconv.Itoa(RegionStatusDisabled),
 	}
 )
 

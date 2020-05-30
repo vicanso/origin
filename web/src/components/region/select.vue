@@ -1,6 +1,7 @@
 <template>
   <div class="region">
     <el-cascader
+      v-if="inited"
       clearable
       :props="props"
       @change="handleChange"
@@ -10,7 +11,10 @@
   </div>
 </template>
 <script>
-import { mapActions } from "vuex";
+import { mapActions, mapState } from "vuex";
+
+const countryLevel = 0;
+const chinaCode = "CN";
 
 export default {
   name: "Region",
@@ -30,9 +34,11 @@ export default {
   },
   data() {
     return {
+      inited: false,
       region: "",
       query: {
-        limit: 500,
+        limit: 100,
+        status: 1,
         fields: "code,name"
       },
       props: {
@@ -41,87 +47,53 @@ export default {
       }
     };
   },
+  computed: mapState({
+    categories: state => state.region.categories || []
+  }),
   methods: {
-    ...mapActions([
-      // "listRegionCountry",
-      // "listRegionProvince",
-      // "listRegionCity",
-      // "listRegionArea",
-      // "listRegionStreet"
-    ]),
+    ...mapActions(["listRegion", "listRegionCategory"]),
     handleChange(value) {
-      console.dir(value);
+      this.$emit("change", value[value.length - 1]);
     },
     async lazyLoad(node, resolve) {
-      console.dir(node);
-      console.dir(resolve);
-      //   const { maxLevel, startLevel } = this.$props;
-      //   const { query } = this;
-      //   let level = node.level + startLevel;
-      //   let data = null;
-      //   const leaf = level === maxLevel - 1;
-      //   try {
-      //     switch (level) {
-      //       case countryLevel: {
-      //         const { countries } = await this.listRegionCountry({
-      //           params: query
-      //         });
-      //         data = countries;
-      //         break;
-      //       }
-      //       case provinceLevel: {
-      //         const { provinces } = await this.listRegionProvince({
-      //           country: node.value || chinaCode,
-      //           params: query
-      //         });
-      //         data = provinces;
-      //         break;
-      //       }
-      //       case cityLevel: {
-      //         const { cities } = await this.listRegionCity({
-      //           province: node.value,
-      //           params: query
-      //         });
-      //         data = cities;
-      //         break;
-      //       }
-      //       case areaLevel: {
-      //         const { areas } = await this.listRegionArea({
-      //           city: node.value,
-      //           params: query
-      //         });
-      //         data = areas;
-      //         break;
-      //       }
-      //       case streetLevel: {
-      //         const { streets } = await this.listRegionStreet({
-      //           area: node.value,
-      //           params: query
-      //         });
-      //         data = streets;
-      //         break;
-      //       }
-      //       default:
-      //         break;
-      //     }
-      //     if (!data) {
-      //       throw new Error("获取数据失败");
-      //     }
-      //     const nodes = data.map(item => {
-      //       let isLeaf = leaf;
-      //       if (level === countryLevel && item.code !== chinaCode) {
-      //         isLeaf = true;
-      //       }
-      //       return {
-      //         value: item.code,
-      //         label: item.name,
-      //         leaf: isLeaf
-      //       };
-      //     });
-      //     resolve(nodes);
-      //   } catch (err) {
-      //     this.$message.error(err.message);
-      //   }
+      const { maxLevel, startLevel } = this.$props;
+      let level = node.level + startLevel;
+      let category = this.categories[level].value;
+      const leaf = level === maxLevel - 1;
+      try {
+        const { regions } = await this.listRegion({
+          params: Object.assign(
+            {
+              category
+            },
+            this.query
+          ),
+          category
+        });
+        const nodes = regions.map(item => {
+          let isLeaf = leaf;
+          if (level === countryLevel && item.code !== chinaCode) {
+            isLeaf = true;
+          }
+          return {
+            value: item.code,
+            label: item.name,
+            leaf: isLeaf
+          };
+        });
+        resolve(nodes);
+      } catch (err) {
+        this.$message.error(err.message);
+      }
+    }
+  },
+  async beforeMount() {
+    try {
+      await this.listRegionCategory();
+    } catch (err) {
+      this.$message.error(err.message);
+    } finally {
+      this.inited = true;
     }
   }
 };

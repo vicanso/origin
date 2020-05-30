@@ -18,7 +18,6 @@ import (
 	"time"
 
 	"github.com/lib/pq"
-	"github.com/vicanso/origin/cs"
 	"github.com/vicanso/origin/helper"
 )
 
@@ -44,10 +43,6 @@ type (
 		// 产品品牌
 		Brand uint `json:"brand,omitempty"`
 	}
-	ProductStatus struct {
-		Name  string `json:"name"`
-		Value int    `json:"value"`
-	}
 	ProductSrv struct{}
 )
 
@@ -59,20 +54,6 @@ func (srv *ProductSrv) createByID(id uint) *Product {
 	p := &Product{}
 	p.Model.ID = id
 	return p
-}
-
-// ListStatus list all product status
-func (srv *ProductSrv) ListStatus() []*ProductStatus {
-	return []*ProductStatus{
-		{
-			Name:  "启用",
-			Value: cs.ProductStatusEnabled,
-		},
-		{
-			Name:  "禁用",
-			Value: cs.ProductStatusDisabled,
-		},
-	}
 }
 
 // Add add product

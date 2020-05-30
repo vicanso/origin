@@ -36,7 +36,7 @@ type (
 		Pics       []string   `json:"pics,omitempty"`
 		MainPic    int        `json:"mainPic,omitempty" validate:"omitempty,xProductMainPic"`
 		SN         string     `json:"sn,omitempty" validate:"omitempty,xProductSN"`
-		Status     int        `json:"status,omitempty" validate:"xProductStatus"`
+		Status     int        `json:"status,omitempty" validate:"xStatus"`
 		Keywords   string     `json:"keywords,omitempty"`
 		Categories []string   `json:"categories,omitempty"`
 		StartedAt  *time.Time `json:"startedAt,omitempty" validate:"required"`
@@ -54,7 +54,7 @@ type (
 		Pics       []string   `json:"pics,omitempty"`
 		MainPic    int        `json:"mainPic,omitempty" validate:"omitempty,xProductMainPic"`
 		SN         string     `json:"sn,omitempty" validate:"omitempty,xProductSN"`
-		Status     int        `json:"status,omitempty" validate:"omitempty,xProductStatus"`
+		Status     int        `json:"status,omitempty" validate:"omitempty,xStatus"`
 		Keywords   string     `json:"keywords,omitempty"`
 		Categories []string   `json:"categories,omitempty"`
 		StartedAt  *time.Time `json:"startedAt,omitempty"`
@@ -94,11 +94,6 @@ func init() {
 		ctrl.list,
 	)
 
-	// 获取产品状态
-	g.GET(
-		"/v1/statuses",
-		ctrl.listStatus,
-	)
 	// 获取产品分类
 	g.GET(
 		"/v1/categories",
@@ -129,15 +124,6 @@ func init() {
 }
 
 func (params listProductParams) toConditions() (conditions []interface{}) {
-	return
-}
-
-// listStatus list product status
-func (ctrl productCtrl) listStatus(c *elton.Context) (err error) {
-	c.CacheMaxAge("5m")
-	c.Body = map[string][]*service.ProductStatus{
-		"statuses": productSrv.ListStatus(),
-	}
 	return
 }
 

@@ -89,13 +89,13 @@ type (
 		Keyword string `json:"keyword,omitempty" validate:"omitempty,xKeyword"`
 		Role    string `json:"role,omitempty" validate:"omitempty,xUserRole"`
 		Group   string `json:"group,omitempty" validate:"omitempty,xUserGroup"`
-		Status  string `json:"status,omitempty" validate:"omitempty,xUserStatusString"`
+		Status  string `json:"status,omitempty" validate:"omitempty,xStatus"`
 	}
 
 	updateUserParams struct {
 		Roles  []string `json:"roles,omitempty" validate:"omitempty,xUserRoles"`
 		Groups []string `json:"groups,omitempty" validate:"omitempty,xUserGroups"`
-		Status int      `json:"status,omitempty" validate:"omitempty,xUserStatus"`
+		Status int      `json:"status,omitempty" validate:"omitempty,xStatus"`
 	}
 	updateMeParams struct {
 		Email       string `json:"email,omitempty" validate:"omitempty,xUserEmail"`
@@ -209,10 +209,6 @@ func init() {
 	gNoneSession.GET(
 		"/v1/roles",
 		ctrl.listRoles,
-	)
-	gNoneSession.GET(
-		"/v1/statuses",
-		ctrl.listStatus,
 	)
 	gNoneSession.GET(
 		"/v1/groups",
@@ -657,15 +653,6 @@ func (ctrl userCtrl) listRoles(c *elton.Context) (err error) {
 	c.CacheMaxAge("5m")
 	c.Body = map[string][]*service.UserRole{
 		"roles": userSrv.ListRoles(),
-	}
-	return
-}
-
-// listStatus list user status
-func (ctrl userCtrl) listStatus(c *elton.Context) (err error) {
-	c.CacheMaxAge("5m")
-	c.Body = map[string][]*service.UserStatus{
-		"statuses": userSrv.ListStatus(),
 	}
 	return
 }

@@ -29,10 +29,6 @@ type (
 		Parent   string `json:"parent,omitempty" gorm:"not null;index:idx_region_parent"`
 		Status   int    `json:"status,omitempty"`
 	}
-	RegionStatus struct {
-		Name  string `json:"name,omitempty"`
-		Value int    `json:"value,omitempty"`
-	}
 	RegionCategory struct {
 		Name  string `json:"name,omitempty"`
 		Value string `json:"value,omitempty"`
@@ -53,20 +49,6 @@ func (srv *RegionSrv) GetCategoryIndex(category string) (index int) {
 		}
 	}
 	return
-}
-
-// ListStatus list status
-func (srv *RegionSrv) ListStatus() []*RegionStatus {
-	return []*RegionStatus{
-		{
-			Name:  "启用",
-			Value: cs.RegionStatusEnabled,
-		},
-		{
-			Name:  "禁用",
-			Value: cs.RegionStatusDisabled,
-		},
-	}
 }
 
 // ListCategory list category

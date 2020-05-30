@@ -31,10 +31,4 @@ func init() {
 			cs.RegionStreet,
 		})
 	})
-	Add("xRegionStatus", func(fl validator.FieldLevel) bool {
-		return isInInt(fl, cs.RegionStatuses)
-	})
-	Add("xRegionStatusString", func(fl validator.FieldLevel) bool {
-		return isInString(fl, cs.RegionStatusesString)
-	})
 }

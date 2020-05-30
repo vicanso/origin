@@ -30,13 +30,13 @@ type (
 
 	addBrandParams struct {
 		Name    string `json:"name,omitempty" validate:"xBrandName"`
-		Status  int    `json:"status,omitempty" validate:"xBrandStatus"`
+		Status  int    `json:"status,omitempty" validate:"xStatus"`
 		Logo    string `json:"logo,omitempty" validate:"xBrandLogo"`
 		Catalog string `json:"catalog,omitempty" validate:"xBrandCatalog"`
 	}
 	updateBrandParams struct {
 		Name    string `json:"name,omitempty" validate:"omitempty,xBrandName"`
-		Status  int    `json:"status,omitempty" validate:"omitempty,xBrandStatus"`
+		Status  int    `json:"status,omitempty" validate:"omitempty,xStatus"`
 		Logo    string `json:"logo,omitempty" validate:"omitempty,xBrandLogo"`
 		Catalog string `json:"catalog,omitempty" validate:"omitempty,xBrandCatalog"`
 	}
@@ -44,20 +44,13 @@ type (
 		listParams
 
 		Keyword string `json:"keyword,omitempty" validate:"omitempty,xKeyword"`
-		Status  string `json:"status,omitempty" validate:"omitempty,xBrandStatus"`
+		Status  string `json:"status,omitempty" validate:"omitempty,xStatus"`
 	}
 )
 
 func init() {
 	ctrl := brandCtrl{}
 	g := router.NewGroup("/brands")
-	// 获取品牌状态
-	g.GET(
-		"/v1/statuses",
-		noCacheIfSetNoCache,
-		ctrl.listStatus,
-	)
-
 	// 添加品牌
 	g.POST(
 		"/v1",
@@ -98,14 +91,6 @@ func (params listBrandParams) toConditions() []interface{} {
 		conds.add("status = ?", params.Status)
 	}
 	return conds.toArray()
-}
-
-func (ctrl brandCtrl) listStatus(c *elton.Context) (err error) {
-	c.CacheMaxAge("5m")
-	c.Body = map[string][]*service.BrandStatus{
-		"statuses": brandSrv.ListStatus(),
-	}
-	return
 }
 
 // add add brand

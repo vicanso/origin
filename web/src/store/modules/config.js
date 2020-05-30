@@ -79,6 +79,9 @@ export default {
       if (!params.offset) {
         commit(mutationConfigListReset);
       }
+      if (!params.limit) {
+        params.limit = 50;
+      }
       try {
         const { data } = await request.get(CONFIGS, {
           params

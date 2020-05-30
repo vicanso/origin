@@ -8,6 +8,7 @@
       :on-error="handleError"
       :on-remove="handleRemove"
       :before-upload="handleBeforeUpload"
+      :on-exceed="handleExceed"
       :limit="$props.limit"
       :file-list="fileList"
     >
@@ -72,6 +73,10 @@ export default {
         return false;
       }
       return true;
+    },
+    handleExceed() {
+      const { limit } = this.$props;
+      this.$message.warning(`图片限制上传${limit}张，请先删除图片再上传`);
     }
   }
 };

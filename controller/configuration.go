@@ -31,13 +31,13 @@ type (
 	addConfigurationParams struct {
 		Name      string     `json:"name,omitempty" validate:"xConfigName"`
 		Category  string     `json:"category,omitempty" validate:"xConfigCategory"`
-		Status    int        `json:"status,omitempty" validate:"xConfigStatus"`
+		Status    int        `json:"status,omitempty" validate:"xStatus"`
 		Data      string     `json:"data,omitempty" validate:"xConfigData"`
 		BeginDate *time.Time `json:"beginDate,omitempty"`
 		EndDate   *time.Time `json:"endDate,omitempty"`
 	}
 	updateConfigurationParams struct {
-		Status    int        `json:"status,omitempty" validate:"omitempty,xConfigStatus"`
+		Status    int        `json:"status,omitempty" validate:"omitempty,xStatus"`
 		Category  string     `json:"category,omitempty" validate:"omitempty,xConfigCategory"`
 		Data      string     `json:"data,omitempty" validate:"omitempty,xConfigData"`
 		BeginDate *time.Time `json:"beginDate,omitempty"`

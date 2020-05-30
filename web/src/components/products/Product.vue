@@ -72,7 +72,7 @@
         </el-col>
         <el-col :span="8">
           <el-form-item label="产地：">
-            <Region :maxLevel="2" :showAllLevels="true" />
+            <RegionSelect :maxLevel="2" :showAllLevels="true" />
           </el-form-item>
         </el-col>
         <el-col :span="8">
@@ -134,12 +134,12 @@
 import { mapState, mapActions } from "vuex";
 import BrandSelect from "@/components/products/BrandSelect.vue";
 import Upload from "@/components/Upload.vue";
-import Region from "@/components/Region.vue";
+import RegionSelect from "@/components/region/Select.vue";
 
 export default {
   name: "Product",
   components: {
-    Region,
+    RegionSelect,
     BrandSelect,
     Upload
   },

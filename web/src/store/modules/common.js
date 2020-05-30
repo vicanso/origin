@@ -1,12 +1,19 @@
 import request from "@/helpers/request";
-import { COMMONS_CAPTCHA, COMMONS_ROUTERS } from "@/constants/url";
+import {
+  COMMONS_CAPTCHA,
+  COMMONS_ROUTERS,
+  COMMONS_STATUSES
+} from "@/constants/url";
 
-const mutationCommonProcessing = "common.processing";
-const mutationCommonRouterList = "common.router.list";
+const prefix = "common";
+const mutationCommonProcessing = `${prefix}.processing`;
+const mutationCommonRouterList = `${prefix}.router.list`;
+const mutationCommonStatusList = `${prefix}.status.list`;
 
 const state = {
   processing: false,
-  routers: null
+  routers: null,
+  statuses: null
 };
 
 export default {
@@ -15,13 +22,16 @@ export default {
     [mutationCommonProcessing](state, processing) {
       state.processing = processing;
     },
-    [mutationCommonRouterList](state, routers) {
+    [mutationCommonRouterList](state, { routers }) {
       if (routers) {
         routers.forEach(item => {
           item.key = `${item.method} ${item.path}`;
         });
       }
       state.routers = routers;
+    },
+    [mutationCommonStatusList](state, { statuses }) {
+      state.statuses = statuses;
     }
   },
   actions: {
@@ -33,12 +43,31 @@ export default {
     // listRouter 获取路由列表
     async listRouter({ commit }) {
       if (state.routers) {
-        return;
+        return {
+          routers: state.routers
+        };
       }
       commit(mutationCommonProcessing, true);
       try {
         const { data } = await request.get(COMMONS_ROUTERS);
-        commit(mutationCommonRouterList, data.routers);
+        commit(mutationCommonRouterList, data);
+        return data;
+      } finally {
+        commit(mutationCommonProcessing, false);
+      }
+    },
+    // listStatus 获取状态列表
+    async listStatus({ commit }) {
+      if (state.statuses) {
+        return {
+          statuses: state.statuses
+        };
+      }
+      commit(mutationCommonProcessing, true);
+      try {
+        const { data } = await request.get(COMMONS_STATUSES);
+        commit(mutationCommonStatusList, data);
+        return data;
       } finally {
         commit(mutationCommonProcessing, false);
       }

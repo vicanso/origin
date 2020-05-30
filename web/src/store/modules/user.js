@@ -6,7 +6,7 @@ import {
   USERS_ID,
   USERS_ME_PROFILE,
   USERS_ROLE,
-  USERS_STATUS,
+  COMMONS_STATUSES,
   USERS_GROUPS,
   USERS_LOGINS
 } from "@/constants/url";
@@ -142,9 +142,7 @@ async function listUserStatus({ commit }) {
   }
   commit(mutationUserListStatusProcessing, true);
   try {
-    const { data } = await request.get(USERS_STATUS, {
-      params: addNoCacheQueryParam()
-    });
+    const { data } = await request.get(COMMONS_STATUSES);
     commit(mutationuserListStatus, data);
     return data;
   } finally {

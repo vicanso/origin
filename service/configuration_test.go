@@ -30,7 +30,7 @@ func TestConfigurationService(t *testing.T) {
 		}
 		assert.False(conf.IsValid())
 
-		conf.Status = cs.ConfigEnabled
+		conf.Status = cs.StatusEnabled
 		d := time.Now()
 		d = d.AddDate(0, 1, 0)
 		oneMonthLater := d

@@ -70,7 +70,7 @@ func init() {
 
 // IsValid check the config is valid
 func (conf *Configuration) IsValid() bool {
-	if conf.Status != cs.ConfigEnabled {
+	if conf.Status != cs.StatusEnabled {
 		return false
 	}
 	now := util.Now().Unix()
@@ -115,7 +115,7 @@ func (srv *ConfigurationSrv) FindByID(id uint) (config *Configuration, err error
 func (srv *ConfigurationSrv) Available() (configs []*Configuration, err error) {
 	configs = make([]*Configuration, 0)
 	now := time.Now()
-	err = pgGetClient().Where("status = ? and begin_date < ? and end_date > ?", cs.ConfigEnabled, now, now).Find(&configs).Error
+	err = pgGetClient().Where("status = ? and begin_date < ? and end_date > ?", cs.StatusEnabled, now, now).Find(&configs).Error
 	if err != nil {
 		return
 	}

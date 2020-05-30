@@ -5,43 +5,7 @@
       <span>用户登录查询</span>
     </div>
     <div v-loading="processing">
-      <el-form label-width="80px">
-        <el-row :gutter="15">
-          <el-col :span="6">
-            <el-form-item label="账号：">
-              <el-input
-                v-model="query.account"
-                placeholder="请输入要查询的账号"
-                @keyup.enter.native="handleSearch"
-              />
-            </el-form-item>
-          </el-col>
-
-          <el-col :span="12">
-            <el-form-item label="时间：">
-              <el-date-picker
-                class="dateRange"
-                v-model="dateRange"
-                type="daterange"
-                range-separator="至"
-                start-placeholder="开始日期"
-                end-placeholder="结束日期"
-              >
-              </el-date-picker>
-            </el-form-item>
-          </el-col>
-          <el-col :span="6">
-            <el-button
-              :loading="processing"
-              icon="el-icon-search"
-              class="submit"
-              type="primary"
-              @click="handleSearch"
-              >查询</el-button
-            >
-          </el-col>
-        </el-row>
-      </el-form>
+      <BaseFilter :fields="filterFields" @filter="filter" />
       <el-table :data="logins" row-key="id" stripe>
         <el-table-column
           prop="account"
@@ -104,6 +68,8 @@
 <script>
 import { mapActions, mapState } from "vuex";
 import { today, yesterday } from "@/helpers/util";
+import BaseTable from "@/components/base/Table.vue";
+import BaseFilter from "@/components/base/Filter.vue";
 
 function formatBegin(begin) {
   return begin.toISOString();
@@ -112,16 +78,42 @@ function formatEnd(end) {
   return new Date(end.getTime() + 24 * 3600 * 1000 - 1).toISOString();
 }
 
+const filterFields = [
+  {
+    label: "账号：",
+    key: "account",
+    placeholder: "请输入要查询的账号",
+    clearable: true,
+    span: 6
+  },
+  {
+    label: "时间：",
+    key: "dateRange",
+    type: "dateRange",
+    placeholder: ["开始日期", "结束日期"],
+    span: 12
+  },
+  {
+    label: "",
+    type: "filter",
+    labelWidth: "0px",
+    span: 6
+  }
+];
+
 export default {
   name: "Logins",
+  extends: BaseTable,
+  components: {
+    BaseFilter
+  },
   data() {
     const pageSizes = [10, 20, 30, 50];
     const defaultDateRange = [yesterday(), today()];
     return {
-      dateRange: defaultDateRange,
+      filterFields,
       query: {
-        begin: formatBegin(defaultDateRange[0]),
-        end: formatEnd(defaultDateRange[1]),
+        dateRange: defaultDateRange,
         offset: 0,
         limit: pageSizes[0],
         account: "",
@@ -130,56 +122,33 @@ export default {
     };
   },
   computed: {
-    currentPage() {
-      const { offset, limit } = this.query;
-      return Math.floor(offset / limit) + 1;
-    },
     ...mapState({
       loginCount: state => state.user.loginList.count,
       processing: state => state.user.loginListProcessing,
       logins: state => state.user.loginList.data || []
     })
   },
-  watch: {
-    dateRange(value) {
-      if (!value) {
-        this.query.begin = "";
-        this.query.end = "";
-        return;
-      }
-      this.query.begin = formatBegin(value[0]);
-      this.query.end = formatEnd(value[1]);
-    }
-  },
   methods: {
     ...mapActions(["listUserLogins"]),
-    handleCurrentChange(page) {
-      this.query.offset = (page - 1) * this.query.limit;
-      this.fetch();
-    },
-    handleSizeChange(pageSize) {
-      this.query.limit = pageSize;
-      this.query.offset = 0;
-      this.fetch();
-    },
     async fetch() {
       const { query, processing } = this;
       if (processing) {
         return;
+      }
+      const value = query.dateRange;
+      if (value) {
+        query.begin = formatBegin(value[0]);
+        query.end = formatEnd(value[1]);
+      } else {
+        query.begin = "";
+        query.end = "";
       }
       try {
         await this.listUserLogins(query);
       } catch (err) {
         this.$message.error(err.message);
       }
-    },
-    handleSearch() {
-      this.query.offset = 0;
-      this.fetch();
     }
-  },
-  beforeMount() {
-    this.fetch();
   }
 };
 </script>
@@ -189,8 +158,7 @@ export default {
   margin: $mainMargin
   i
     margin-right: 5px
-  .dateRange, .submit
-    width: 100%
 .pagination
   text-align: right
+  margin-top: 15px
 </style>

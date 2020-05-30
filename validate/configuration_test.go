@@ -65,18 +65,18 @@ func TestConfigurationValidate(t *testing.T) {
 		assert.Nil(err)
 	})
 
-	t.Run("xConfigStatus", func(t *testing.T) {
-		type xConfigStatus struct {
-			Value int `json:"value" validate:"xConfigStatus"`
+	t.Run("xStatus", func(t *testing.T) {
+		type xStatus struct {
+			Value int `json:"value" validate:"xStatus"`
 		}
-		x := xConfigStatus{}
+		x := xStatus{}
 		err := doValidate(&x, []byte(`{"value": 0}`))
-		assert.Equal(`Key: 'xConfigStatus.Value' Error:Field validation for 'Value' failed on the 'xConfigStatus' tag`, err.Error())
+		assert.Equal(`Key: 'xStatus.Value' Error:Field validation for 'Value' failed on the 'xStatus' tag`, err.Error())
 
 		err = doValidate(&x, []byte(`{"value": 1}`))
 		assert.Nil(err)
 
 		err = doValidate(&x, []byte(`{"value": 3}`))
-		assert.Equal(`Key: 'xConfigStatus.Value' Error:Field validation for 'Value' failed on the 'xConfigStatus' tag`, err.Error())
+		assert.Equal(`Key: 'xStatus.Value' Error:Field validation for 'Value' failed on the 'xStatus' tag`, err.Error())
 	})
 }

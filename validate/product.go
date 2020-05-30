@@ -14,11 +14,6 @@
 
 package validate
 
-import (
-	"github.com/go-playground/validator/v10"
-	"github.com/vicanso/origin/cs"
-)
-
 func init() {
 	AddAlias("xProductName", "min=1,max=50")
 	AddAlias("xProductPrice", "min=0.01,max=1000")
@@ -29,8 +24,4 @@ func init() {
 	AddAlias("xProductKeyword", "min=1,max=100")
 	AddAlias("xProductOrigin", "min=1,max=100")
 	AddAlias("xProductBrand", "min=1")
-
-	Add("xProductStatus", func(fl validator.FieldLevel) bool {
-		return isInInt(fl, cs.ProductStatuses)
-	})
 }

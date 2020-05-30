@@ -15,7 +15,6 @@
 package service
 
 import (
-	"github.com/vicanso/origin/cs"
 	"github.com/vicanso/origin/helper"
 )
 
@@ -29,10 +28,6 @@ type (
 		Catalog     string `json:"catalog,omitempty"`
 		FirstLetter string `json:"firstLetter,omitempty"`
 	}
-	BrandStatus struct {
-		Name  string `json:"name,omitempty"`
-		Value int    `json:"value,omitempty"`
-	}
 	BrandSrv struct{}
 )
 
@@ -44,20 +39,6 @@ func (srv *BrandSrv) createByID(id uint) *Brand {
 	b := &Brand{}
 	b.Model.ID = id
 	return b
-}
-
-// ListStatus list all brand status
-func (srv *BrandSrv) ListStatus() []*BrandStatus {
-	return []*BrandStatus{
-		{
-			Name:  "启用",
-			Value: cs.BrandStatusEnabled,
-		},
-		{
-			Name:  "禁用",
-			Value: cs.BrandStatusDisabled,
-		},
-	}
 }
 
 // Add add brand

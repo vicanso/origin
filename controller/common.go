@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"strconv"
 
+	"github.com/vicanso/origin/cs"
 	"github.com/vicanso/origin/service"
 	"github.com/vicanso/origin/util"
 
@@ -27,6 +28,11 @@ import (
 
 type (
 	commonCtrl struct{}
+
+	StatusInfo struct {
+		Name  string `json:"name,omitempty"`
+		Value int    `json:"value,omitempty"`
+	}
 )
 
 func init() {
@@ -45,6 +51,7 @@ func init() {
 
 	g.GET("/commons/performance", ctrl.getPerformance)
 
+	g.GET("/commons/statuses", ctrl.listStatus)
 }
 
 // 服务检测ping的响应
@@ -139,7 +146,27 @@ func (ctrl commonCtrl) captcha(c *elton.Context) (err error) {
 	return
 }
 
+// getPerformance get performance
 func (ctrl commonCtrl) getPerformance(c *elton.Context) (err error) {
 	c.Body = service.GetPerformance()
+	return
+}
+
+// listStatus list status
+func (ctrl commonCtrl) listStatus(c *elton.Context) (err error) {
+	c.CacheMaxAge("5m")
+	arr := []*StatusInfo{
+		{
+			Name:  "启用",
+			Value: cs.StatusEnabled,
+		},
+		{
+			Name:  "禁用",
+			Value: cs.StatusDisabled,
+		},
+	}
+	c.Body = map[string][]*StatusInfo{
+		"statuses": arr,
+	}
 	return
 }

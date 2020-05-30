@@ -83,6 +83,18 @@ export function queryOmitEmpty(query) {
   return params;
 }
 
+// omitNil omit nil(undefined null)
+export function omitNil(data) {
+  const params = {};
+  Object.keys(data).forEach(key => {
+    const value = data[key];
+    if (value !== undefined && value !== null) {
+      params[key] = value;
+    }
+  });
+  return params;
+}
+
 // today 获取当天0点时间
 export function today() {
   return new Date(new Date(new Date().toLocaleDateString()).getTime());
@@ -132,4 +144,19 @@ export function validateForm(form) {
       return reject(new Error(messagesArr.join("，")));
     });
   });
+}
+
+// toUploadFiles to upload files
+export function toUploadFiles(files) {
+  if (!files) {
+    return [];
+  }
+  if (Array.isArray(files)) {
+    return files;
+  }
+  return [
+    {
+      url: files
+    }
+  ];
 }
