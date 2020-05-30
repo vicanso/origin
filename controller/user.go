@@ -129,6 +129,12 @@ func init() {
 		ctrl.list,
 	)
 
+	// 获取用户信息
+	g.GET(
+		"/v1/{id}",
+		shouldBeAdmin,
+		ctrl.findByID,
+	)
 	// 更新用户信息
 	g.PATCH(
 		"/v1/{id}",
@@ -561,6 +567,20 @@ func (ctrl userCtrl) list(c *elton.Context) (err error) {
 		count,
 		users,
 	}
+	return
+}
+
+// findByID get user byd id
+func (ctrl userCtrl) findByID(c *elton.Context) (err error) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return
+	}
+	data, err := userSrv.FindByID(uint(id))
+	if err != nil {
+		return
+	}
+	c.Body = data
 	return
 }
 

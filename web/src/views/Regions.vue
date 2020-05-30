@@ -154,7 +154,7 @@ export default {
       } catch (err) {
         this.$message.error(err.message);
       }
-    },
+    }
     // async modify(data) {
     //   // 使用简单的方式，不修改路由参数
     //   this.mode = modifyMode;

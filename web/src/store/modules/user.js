@@ -136,7 +136,9 @@ function updateUserDesc(user) {
 // listUserStatus 获取用户状态列表
 async function listUserStatus({ commit }) {
   if (state.statuses) {
-    return;
+    return {
+      statuses: state.statuses
+    };
   }
   commit(mutationUserListStatusProcessing, true);
   try {
@@ -144,6 +146,7 @@ async function listUserStatus({ commit }) {
       params: addNoCacheQueryParam()
     });
     commit(mutationuserListStatus, data);
+    return data;
   } finally {
     commit(mutationUserListStatusProcessing, false);
   }
@@ -152,7 +155,9 @@ async function listUserStatus({ commit }) {
 // listUserRole 获取用户角色列表
 async function listUserRole({ commit }) {
   if (state.roles) {
-    return;
+    return {
+      roles: state.roles
+    };
   }
   commit(mutationUserListRoleProcessing, true);
   try {
@@ -160,6 +165,7 @@ async function listUserRole({ commit }) {
       params: addNoCacheQueryParam()
     });
     commit(mutationUserListRole, data);
+    return data;
   } finally {
     commit(mutationUserListRoleProcessing, false);
   }
@@ -168,7 +174,9 @@ async function listUserRole({ commit }) {
 // listUserGroup 获取用户分组列表
 async function listUserGroup({ commit }) {
   if (state.groups) {
-    return;
+    return {
+      groups: state.groups
+    };
   }
   commit(mutationUserListGroupProcessing, true);
   try {
@@ -176,6 +184,7 @@ async function listUserGroup({ commit }) {
       params: addNoCacheQueryParam()
     });
     commit(mutationuserListGroup, data);
+    return data;
   } finally {
     commit(mutationUserListGroupProcessing, false);
   }
@@ -379,6 +388,11 @@ export default {
       } finally {
         commit(mutationUserUpdateProcessing, false);
       }
+    },
+    // getUserByID get user by id
+    async getUserByID(_, id) {
+      const { data } = await request.get(USERS_ID.replace(":id", id));
+      return data;
     },
     // getUserProfile 获取用户详细信息
     async getUserProfile({ commit }) {

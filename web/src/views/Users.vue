@@ -1,181 +1,13 @@
 <template>
   <div class="user">
-    <!-- 用户信息修改 -->
-    <el-card v-if="mode === modifyMode">
-      <div slot="header">
-        <i class="el-icon-user" />
-        <span>更新用户信息</span>
-      </div>
-      <el-form
-        :model="currentUser"
-        label-width="120px"
-        v-loading="updateProcessing"
-      >
-        <el-row :gutter="15">
-          <el-col :span="8">
-            <el-form-item label="账号：">
-              <el-input v-model="currentUser.account" disabled />
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item label="用户角色：">
-              <el-select
-                class="selector"
-                v-model="currentUser.roles"
-                placeholder="请选择用户角色"
-                multiple
-              >
-                <el-option
-                  v-for="item in userRoles"
-                  :key="item.value"
-                  :label="item.name"
-                  :value="item.value"
-                />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item label="用户组：">
-              <el-select
-                class="selector"
-                v-model="currentUser.groups"
-                placeholder="请选择用户组"
-                multiple
-              >
-                <el-option
-                  v-for="item in userGroups"
-                  :key="item.value"
-                  :label="item.name"
-                  :value="item.value"
-                />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item label="用户状态：">
-              <el-select
-                class="selector"
-                v-model="currentUser.status"
-                placeholder="请选择用户状态"
-              >
-                <el-option
-                  v-for="item in userStatuses"
-                  :key="item.value"
-                  :label="item.name"
-                  :value="item.value"
-                >
-                </el-option>
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="16">
-            <el-form-item class="hidden">
-              <el-input class="hidden" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item>
-              <el-button class="submit" type="primary" @click="update"
-                >更新</el-button
-              >
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item>
-              <el-button class="submit" @click="goBack">返回</el-button>
-            </el-form-item>
-          </el-col>
-        </el-row>
-      </el-form>
-    </el-card>
-
     <!-- 用户列表 -->
-    <el-card v-else>
+    <el-card v-if="!editMode">
       <div slot="header">
         <i class="el-icon-user-solid" />
         <span>用户列表</span>
       </div>
       <!-- 搜索条件 -->
-      <el-form label-width="90px">
-        <el-row :gutter="15">
-          <el-col :span="5">
-            <el-form-item label="用户角色：">
-              <el-select
-                class="selector"
-                v-model="query.role"
-                key="filterUserRoleSelector"
-              >
-                <el-option key="all" label="所有" value=""></el-option>
-                <el-option
-                  v-for="role in userRoles"
-                  :key="role.value"
-                  :label="role.name"
-                  :value="role.value"
-                >
-                </el-option>
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="5">
-            <el-form-item label="用户状态：">
-              <el-select
-                class="selector"
-                v-model="query.status"
-                key="filterUserStatusSelector"
-              >
-                <el-option key="all" label="所有" value=""></el-option>
-                <el-option
-                  v-for="status in userStatuses"
-                  :key="status.value"
-                  :label="status.name"
-                  :value="status.value"
-                >
-                </el-option>
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="5">
-            <el-form-item label="用户组：">
-              <el-select
-                class="selector"
-                v-model="query.group"
-                key="filterUserGroupSelector"
-              >
-                <el-option key="all" label="所有" value=""></el-option>
-                <el-option
-                  v-for="group in userGroups"
-                  :key="group.value"
-                  :label="group.name"
-                  :value="group.value"
-                >
-                </el-option>
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="6">
-            <el-form-item label="关键字：">
-              <el-input
-                placeholder="请输入关键字"
-                v-model="query.keyword"
-                clearable
-                @keyup.enter.native="handleSearch"
-              />
-            </el-form-item>
-          </el-col>
-          <el-col :span="3">
-            <el-form-item label-width="0px">
-              <el-button
-                :loading="processing"
-                icon="el-icon-search"
-                class="submit"
-                type="primary"
-                @click="handleSearch"
-                >查询</el-button
-              >
-            </el-form-item>
-          </el-col>
-        </el-row>
-      </el-form>
+      <BaseFilter :fields="filterFields" v-if="filterFields" @filter="filter" />
       <div v-loading="processing">
         <el-table
           :data="users"
@@ -244,40 +76,75 @@
         />
       </div>
     </el-card>
+    <User v-else />
   </div>
 </template>
 <script>
 import { mapActions, mapState } from "vuex";
-import { diff } from "@/helpers/util";
+import BaseTable from "@/components/BaseTable.vue";
+import User from "@/components/User.vue";
+import BaseFilter from "@/components/base/Filter.vue";
 
-const modifyMode = "modify";
+const userRoles = [];
+const userGroups = [];
+const userStatuses = [];
+const filterFields = [
+  {
+    label: "用户角色：",
+    key: "role",
+    type: "select",
+    options: userRoles,
+    span: 5
+  },
+  {
+    label: "用户状态：",
+    key: "status",
+    type: "select",
+    options: userStatuses,
+    span: 5
+  },
+  {
+    label: "用户组：",
+    key: "group",
+    type: "select",
+    options: userGroups,
+    span: 5
+  },
+  {
+    label: "关键字：",
+    key: "keyword",
+    placeholder: "请输入关键字",
+    clearable: true,
+    span: 6
+  },
+  {
+    label: "",
+    type: "filter",
+    span: 3,
+    labelWidth: "0px"
+  }
+];
 
 export default {
   name: "Users",
+  extends: BaseTable,
+  components: {
+    User,
+    BaseFilter
+  },
   data() {
     const pageSizes = [10, 20, 30, 50];
     return {
-      mode: "",
-      modifyMode,
-      currentUser: null,
-      count: 0,
+      filterFields: null,
       pageSizes,
       query: {
         offset: 0,
         limit: pageSizes[0],
-        order: "-updatedAt",
-        role: "",
-        keyword: "",
-        status: "",
-        group: ""
+        order: "-updatedAt"
       }
     };
   },
   computed: {
-    currentPage() {
-      const { offset, limit } = this.query;
-      return Math.floor(offset / limit) + 1;
-    },
     ...mapState({
       userCount: state => state.user.list.count,
       users: state => state.user.list.data || [],
@@ -292,9 +159,8 @@ export default {
     ...mapActions([
       "listUser",
       "listUserRole",
-      "listUserStatus",
       "listUserGroup",
-      "updateUserByID"
+      "listUserStatus"
     ]),
     async fetch() {
       const { query, processing } = this;
@@ -307,7 +173,8 @@ export default {
         this.$message.error(err.message);
       }
     },
-    handleSearch() {
+    filter(params) {
+      Object.assign(this.query, params);
       this.query.offset = 0;
       this.fetch();
     },
@@ -328,51 +195,37 @@ export default {
       this.query.order = key;
       this.query.offset = 0;
       this.fetch();
-    },
-    async modify(data) {
-      // 使用简单的方式，不修改路由参数
-      this.mode = modifyMode;
-      this.currentUser = Object.assign({}, data);
-      try {
-        await this.listUserRole();
-        await this.listUserStatus();
-        await this.listUserGroup();
-      } catch (err) {
-        this.$message.error(err.message);
-      }
-    },
-    async update() {
-      const { users, currentUser } = this;
-      let updateInfo = null;
-      if (currentUser.roles.length === 0) {
-        this.$message.warning("用户角色不能为空");
-        return;
-      }
-      users.forEach(item => {
-        if (item.id === currentUser.id) {
-          updateInfo = diff(currentUser, item);
-        }
-      });
-      if (!updateInfo || updateInfo.modifiedCount === 0) {
-        this.$message.warning("请修改要更新的信息");
-        return;
-      }
-      try {
-        await this.updateUserByID({
-          id: currentUser.id,
-          data: updateInfo.data
-        });
-        this.goBack();
-      } catch (err) {
-        this.$message.error(err.message);
-      }
-    },
-    goBack() {
-      this.mode = "";
     }
   },
-  beforeMount() {
-    this.fetch();
+  async beforeMount() {
+    try {
+      const { roles } = await this.listUserRole();
+      const { groups } = await this.listUserGroup();
+      const { statuses } = await this.listUserStatus();
+      userRoles.length = 0;
+      userRoles.push({
+        name: "所有",
+        value: ""
+      });
+      userRoles.push(...roles);
+
+      userGroups.length = 0;
+      userGroups.push({
+        name: "所有",
+        value: ""
+      });
+      userGroups.push(...groups);
+
+      userStatuses.length = 0;
+      userStatuses.push({
+        name: "所有",
+        value: ""
+      });
+      userStatuses.push(...statuses);
+      this.filterFields = filterFields;
+    } catch (err) {
+      this.$message.error(err.message);
+    }
   }
 };
 </script>

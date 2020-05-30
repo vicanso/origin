@@ -239,10 +239,17 @@ func (srv *UserSrv) UpdateByAccount(account string, value interface{}) (err erro
 	return
 }
 
+// FindByID find user by id
+func (srv *UserSrv) FindByID(id uint) (user *User, err error) {
+	user = &User{}
+	err = pgGetClient().First(user, "id = ?", id).Error
+	return
+}
+
 // FindOneByAccount find one by account
 func (srv *UserSrv) FindOneByAccount(account string) (user *User, err error) {
 	user = &User{}
-	err = pgGetClient().Where("account = ?", account).First(user).Error
+	err = pgGetClient().First(user, "account = ?", account).Error
 	return
 }
 

@@ -66,18 +66,20 @@
         <el-table-column prop="trackId" key="trackId" label="Track ID" />
         <el-table-column label="Forwarded For" width="120">
           <template slot-scope="scope">
-            <el-tooltip>
-              <span slot="content">{{ scope.row.xForwardedFor || "" }}</span>
+            <el-tooltip v-if="scope.row.xForwardedFor">
+              <span slot="content">{{ scope.row.xForwardedFor }}</span>
               <i class="el-icon-info" />
             </el-tooltip>
+            <span v-else>--</span>
           </template>
         </el-table-column>
         <el-table-column label="User Agent" width="120">
           <template slot-scope="scope">
-            <el-tooltip>
-              <span slot="content">{{ scope.row.userAgent || "" }}</span>
+            <el-tooltip v-if="scope.row.userAgent">
+              <span slot="content">{{ scope.row.userAgent }}</span>
               <i class="el-icon-mobile-phone" />
             </el-tooltip>
+            <span v-else>--</span>
           </template>
         </el-table-column>
         <el-table-column

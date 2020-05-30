@@ -18,6 +18,7 @@ require (
 	github.com/oklog/ulid/v2 v2.0.2
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/spf13/viper v1.7.0
+	github.com/stretchr/testify v1.5.1
 	github.com/tidwall/gjson v1.6.0
 	github.com/vicanso/count-warner v1.0.0
 	github.com/vicanso/elton v1.0.2
