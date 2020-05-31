@@ -1,1 +1,1 @@
-export const BRAND_ENABLE = 1;
+export const STATUS_ENABLED = 1;

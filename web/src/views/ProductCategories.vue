@@ -70,6 +70,30 @@ const filterFiedls = [
     span: 6
   },
   {
+    label: "级别：",
+    key: "level",
+    type: "select",
+    options: [
+      {
+        name: "所有",
+        value: null
+      },
+      {
+        name: "一级",
+        value: 1
+      },
+      {
+        name: "二级",
+        value: 2
+      },
+      {
+        name: "三级",
+        value: 3
+      }
+    ],
+    span: 6
+  },
+  {
     label: "关键字：",
     key: "keyword",
     placeholder: "请输入关键字",

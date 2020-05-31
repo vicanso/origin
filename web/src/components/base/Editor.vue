@@ -62,6 +62,11 @@
               :showAllLevels="field.showAllLevels"
               :startLevel="field.startLevel"
             />
+            <CategorySelect
+              v-else-if="field.type === 'productCategory'"
+              v-model="current[field.key]"
+              :level="current.level"
+            />
             <el-date-picker
               v-else-if="field.type === 'datePicker'"
               v-model="current[field.key]"
@@ -98,12 +103,14 @@ import { diff, validateForm, omitNil } from "@/helpers/util";
 import Upload from "@/components/Upload.vue";
 import BrandSelect from "@/components/products/BrandSelect.vue";
 import RegionSelect from "@/components/region/Select.vue";
+import CategorySelect from "@/components/products/CategorySelect.vue";
 
 export default {
   name: "BaseEditor",
   components: {
     BrandSelect,
     RegionSelect,
+    CategorySelect,
     Upload
   },
   props: {

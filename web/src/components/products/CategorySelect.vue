@@ -1,52 +1,53 @@
 <template>
   <el-select
-    class="selector"
+    class="select"
     @change="handleChange"
     filterable
     remote
     reserve-keyword
-    v-model="brand"
+    v-model="categories"
+    multiple
     placeholder="请输入关键词"
     :remote-method="fetch"
     :loading="processing"
   >
     <el-option
-      v-for="item in brands"
-      :key="item.name"
-      :label="item.name"
+      v-for="item in productCategories"
+      :key="item.id"
+      :label="`${item.name}(${item.level})`"
       :value="item.id"
-    >
-    </el-option>
+    />
   </el-select>
 </template>
 <script>
 import { mapState, mapActions } from "vuex";
 import { STATUS_ENABLED } from "@/constants/common";
-
 export default {
-  name: "BrandSelect",
+  name: "ProductCategorySelect",
   props: {
-    value: Number
+    value: Array,
+    level: Number
   },
   data() {
+    console.dir(this.$props.level);
     return {
-      brand: this.$props.value || null
+      categories: this.$props.value || []
     };
   },
   computed: {
     ...mapState({
-      brands: state => state.brand.list.data || [],
-      processing: state => state.brand.processing
+      productCategories: state => state.productCategory.list.data || [],
+      processing: state => state.productCategory.processing
     })
   },
   methods: {
-    ...mapActions(["listBrand"]),
+    ...mapActions(["listProductCategory"]),
     handleChange(value) {
       this.$emit("input", value);
     },
     async fetch(query) {
-      await this.listBrand({
-        limit: 20,
+      await this.listProductCategory({
+        limit: 100,
         status: STATUS_ENABLED,
         keyword: query
       });
@@ -57,7 +58,3 @@ export default {
   }
 };
 </script>
-<style lang="sass" scoped>
-.selector
-  width: 100%
-</style>

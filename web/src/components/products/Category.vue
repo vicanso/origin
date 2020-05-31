@@ -20,12 +20,14 @@ const fields = [
     label: "名称：",
     key: "name",
     clearable: true,
+    span: 6,
     placeholder: "请输入分类名称"
   },
   {
     label: "级别：",
     key: "level",
     type: "select",
+    span: 6,
     placeholder: "请选择分类级别",
     options: [
       {
@@ -46,7 +48,15 @@ const fields = [
     label: "状态：",
     key: "status",
     type: "select",
+    span: 6,
     options: categoryStatuses
+  },
+  {
+    label: "上级分类：",
+    labelWidth: "90px",
+    key: "belongs",
+    span: 6,
+    type: "productCategory"
   }
 ];
 
