@@ -30,12 +30,13 @@ export default {
     showAllLevels: {
       type: Boolean,
       default: false
-    }
+    },
+    value: String
   },
   data() {
     return {
       inited: false,
-      region: "",
+      region: this.$props.value || "",
       query: {
         limit: 100,
         status: 1,
@@ -53,7 +54,8 @@ export default {
   methods: {
     ...mapActions(["listRegion", "listRegionCategory"]),
     handleChange(value) {
-      this.$emit("change", value[value.length - 1]);
+      const v = value[value.length - 1];
+      this.$emit("input", v);
     },
     async lazyLoad(node, resolve) {
       const { maxLevel, startLevel } = this.$props;

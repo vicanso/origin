@@ -122,7 +122,7 @@ export default {
     try {
       const { categories } = await this.listRegionCategory();
       regionCategories.length = 0;
-      categories.push({
+      regionCategories.push({
         name: "所有",
         value: null
       });
@@ -130,7 +130,7 @@ export default {
 
       const { statuses } = await this.listRegionStatus();
       regionStatuses.length = 0;
-      statuses.push({
+      regionStatuses.push({
         name: "所有",
         value: null
       });
@@ -151,9 +151,8 @@ export default {
   margin: $mainMargin
   i
     margin-right: 5px
-.submit, .selector, .addBtn
-  width: 100%
 .addBtn
+  width: 100%
   margin-top: 15px
 .pagination
   text-align: right

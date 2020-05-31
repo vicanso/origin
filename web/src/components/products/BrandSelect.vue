@@ -2,10 +2,10 @@
   <el-select
     class="selector"
     @change="handleChange"
-    v-model="brand"
     filterable
     remote
     reserve-keyword
+    v-model="brand"
     placeholder="请输入关键词"
     :remote-method="fetch"
     :loading="processing"
@@ -25,9 +25,12 @@ import { BRAND_ENABLE } from "@/constants/common";
 
 export default {
   name: "BrandSelect",
+  props: {
+    value: Number
+  },
   data() {
     return {
-      brand: null
+      brand: this.$props.value || null
     };
   },
   computed: {
@@ -39,7 +42,7 @@ export default {
   methods: {
     ...mapActions(["listBrand"]),
     handleChange(value) {
-      this.$emit("change", value);
+      this.$emit("input", value);
     },
     async fetch(query) {
       await this.listBrand({

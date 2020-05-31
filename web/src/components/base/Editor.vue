@@ -39,7 +39,7 @@
             </el-select>
             <el-input
               type="textarea"
-              v-else-if="field.type === 'textare'"
+              v-else-if="field.type === 'textarea'"
               v-model="current[field.key]"
               :placeholder="field.placeholder"
               :autosize="field.autosize"
@@ -50,6 +50,23 @@
               :bucket="field.bucket"
               :limit="field.limit"
               @change="handleUpload"
+            />
+            <BrandSelect
+              v-else-if="field.type === 'brand'"
+              v-model="current[field.key]"
+            />
+            <RegionSelect
+              v-else-if="field.type === 'region'"
+              v-model="current[field.key]"
+              :maxLevel="field.maxLevel"
+              :showAllLevels="field.showAllLevels"
+              :startLevel="field.startLevel"
+            />
+            <el-date-picker
+              v-else-if="field.type === 'datePicker'"
+              v-model="current[field.key]"
+              :type="field.pickerType || 'date'"
+              :placeholder="field.placeholder"
             />
             <el-input
               v-else
@@ -79,10 +96,14 @@
 <script>
 import { diff, validateForm, omitNil } from "@/helpers/util";
 import Upload from "@/components/Upload.vue";
+import BrandSelect from "@/components/products/BrandSelect.vue";
+import RegionSelect from "@/components/region/Select.vue";
 
 export default {
   name: "BaseEditor",
   components: {
+    BrandSelect,
+    RegionSelect,
     Upload
   },
   props: {
@@ -123,7 +144,9 @@ export default {
     handleUpload(files) {
       this.current.files = files;
     },
-    add() {},
+    add() {
+      console.dir(this.current);
+    },
     async update() {
       const { id, updateByID, rules } = this.$props;
       const { current, originData } = this;

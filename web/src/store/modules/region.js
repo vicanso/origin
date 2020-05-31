@@ -5,7 +5,7 @@ import {
   REGIONS_LIST_CATEGORIES,
   REGIONS_ID
 } from "@/constants/url";
-import { formatDate } from "@/helpers/util";
+import { formatDate, findByID } from "@/helpers/util";
 
 const state = {
   statusesListProcessing: false,
@@ -134,11 +134,10 @@ export default {
       if (!state.list.data) {
         return;
       }
-      state.list.data.forEach(item => {
-        if (item.id === id) {
-          Object.assign(item, data);
-        }
-      });
+      const found = findByID(state.list.data, id);
+      if (found) {
+        Object.assign(found, data);
+      }
     }
   },
   actions: {
@@ -172,16 +171,9 @@ export default {
       }
     },
     async getRegionByID({ commit }, id) {
-      if (state.list.data) {
-        let found = null;
-        state.list.data.forEach(item => {
-          if (item.id === id) {
-            found = item;
-          }
-        });
-        if (found) {
-          return found;
-        }
+      const found = findByID(state.list.data, id);
+      if (found) {
+        return found;
       }
       commit(mutationRegionListProcessing, true);
       try {

@@ -160,3 +160,17 @@ export function toUploadFiles(files) {
     }
   ];
 }
+
+// findByID find from array by id
+export function findByID(arr, id) {
+  let found = null;
+  if (!arr || !arr.length) {
+    return found;
+  }
+  arr.forEach(item => {
+    if (item.id === id) {
+      found = item;
+    }
+  });
+  return found;
+}

@@ -1,14 +1,14 @@
 import request from "@/helpers/request";
 
-import { COMMONS_STATUSES, PRODUCTS } from "@/constants/url";
-import { formatDate, addNoCacheQueryParam } from "@/helpers/util";
+import { COMMONS_STATUSES, PRODUCTS, PRODUCTS_ID } from "@/constants/url";
+import { formatDate, addNoCacheQueryParam, findByID } from "@/helpers/util";
 
 const prefix = "product";
 const mutationProductListStatus = `${prefix}.list.status`;
 const mutationProductListStatusProcessing = `${mutationProductListStatus}.processing`;
 const mutationProductProcessing = `${prefix}.processing`;
 const mutationProductList = `${prefix}.list`;
-// const mutationProductUpdate = `${prefix}.update`;
+const mutationProductUpdate = `${prefix}.update`;
 
 const state = {
   statusesListProcessing: false,
@@ -22,12 +22,15 @@ const state = {
 
 async function listProductStatus({ commit }) {
   if (state.statuses) {
-    return;
+    return {
+      statuses: state.statuses
+    };
   }
   commit(mutationProductListStatusProcessing, true);
   try {
     const { data } = await request.get(COMMONS_STATUSES);
     commit(mutationProductListStatus, data);
+    return data;
   } finally {
     commit(mutationProductListStatusProcessing, false);
   }
@@ -65,6 +68,16 @@ export default {
       }
       products.forEach(fillAndUpdate);
       state.list.data = products;
+    },
+    [mutationProductUpdate](state, { id, data }) {
+      if (!state.list.data) {
+        return;
+      }
+      const found = findByID(state.list.data, id);
+      if (found) {
+        Object.assign(found, data);
+        fillAndUpdate(found);
+      }
     }
   },
   actions: {
@@ -88,6 +101,40 @@ export default {
           params: addNoCacheQueryParam(params)
         });
         commit(mutationProductList, data);
+      } finally {
+        commit(mutationProductProcessing, false);
+      }
+    },
+    // getProductByID get product by id
+    async getProductByID({ commit }, id) {
+      const found = findByID(state.list.data, id);
+      if (found) {
+        return found;
+      }
+      commit(mutationProductProcessing, true);
+      try {
+        const url = PRODUCTS_ID.replace(":id", id);
+        const { data } = await request.get(url, {
+          params: addNoCacheQueryParam()
+        });
+        return data;
+      } finally {
+        commit(mutationProductProcessing, false);
+      }
+    },
+    // updateProductByID update product by id
+    async updateProductByID({ commit }, { id, data }) {
+      if (!data || Object.keys(data).length === 0) {
+        return;
+      }
+      commit(mutationProductProcessing, true);
+      try {
+        const url = PRODUCTS_ID.replace(":id", id);
+        await request.patch(url, data);
+        commit(mutationProductUpdate, {
+          id,
+          data
+        });
       } finally {
         commit(mutationProductProcessing, false);
       }

@@ -4,7 +4,8 @@ import { COMMONS_STATUSES, BRANDS, BRANDS_ID } from "@/constants/url";
 import {
   formatDate,
   addNoCacheQueryParam,
-  toUploadFiles
+  toUploadFiles,
+  findByID
 } from "@/helpers/util";
 
 const mutationBrandListStatus = "brand.list.status";
@@ -73,12 +74,11 @@ export default {
       if (!state.list.data) {
         return;
       }
-      state.list.data.forEach(item => {
-        if (item.id === id) {
-          Object.assign(item, data);
-          enhanceBrandInfo(item);
-        }
-      });
+      const found = findByID(state.list.data, id);
+      if (found) {
+        Object.assign(found, data);
+        enhanceBrandInfo(found);
+      }
     }
   },
   actions: {
@@ -109,16 +109,9 @@ export default {
     },
     // getBrandByID 通过id获取brand信息
     async getBrandByID({ commit }, id) {
-      if (state.list.data) {
-        let found = null;
-        state.list.data.forEach(item => {
-          if (item.id === id) {
-            found = item;
-          }
-        });
-        if (found) {
-          return found;
-        }
+      const found = findByID(state.list.data);
+      if (found) {
+        return found;
       }
       commit(mutationBrandProcessing, true);
       try {

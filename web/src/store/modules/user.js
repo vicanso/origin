@@ -395,7 +395,7 @@ export default {
     // getUserProfile 获取用户详细信息
     async getUserProfile({ commit }) {
       if (state.profile) {
-        return;
+        return state.profile;
       }
       commit(mutationUserProfileProcessing, true);
       try {
@@ -404,6 +404,7 @@ export default {
         await listUserGroup({ commit });
         const { data } = await request.get(USERS_ME_PROFILE);
         commit(mutationUserProfile, data);
+        return data;
       } finally {
         commit(mutationUserProfileProcessing, false);
       }
