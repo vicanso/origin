@@ -20,6 +20,8 @@ export const BRANDS_ID = "/brands/v1/:id";
 
 export const PRODUCTS = "/products/v1";
 export const PRODUCTS_ID = "/products/v1/:id";
+export const PRODUCT_CATEGORIES = "/products/v1/categories";
+export const PRODUCT_CATEGORIES_ID = "/products/v1/categories/:id";
 
 export const FILES = "/files/v1";
 

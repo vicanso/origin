@@ -4,6 +4,7 @@ import {
   COMMONS_ROUTERS,
   COMMONS_STATUSES
 } from "@/constants/url";
+import { formatDate } from "@/helpers/util";
 
 const prefix = "common";
 const mutationCommonProcessing = `${prefix}.processing`;
@@ -15,6 +16,37 @@ const state = {
   routers: null,
   statuses: null
 };
+
+// listStatus 获取状态列表
+export async function listStatus({ commit }) {
+  if (state.statuses) {
+    return {
+      statuses: state.statuses
+    };
+  }
+  commit(mutationCommonProcessing, true);
+  try {
+    const { data } = await request.get(COMMONS_STATUSES);
+    commit(mutationCommonStatusList, data);
+    return data;
+  } finally {
+    commit(mutationCommonProcessing, false);
+  }
+}
+
+export function attachStatusDesc(item) {
+  if (!state.statuses) {
+    return;
+  }
+  state.statuses.forEach(status => {
+    if (item.status === status.value) {
+      item.statusDesc = status.name;
+    }
+  });
+}
+export function attachUpdatedAtDesc(item) {
+  item.updatedAtDesc = formatDate(item.updatedAt);
+}
 
 export default {
   state,
@@ -57,20 +89,6 @@ export default {
       }
     },
     // listStatus 获取状态列表
-    async listStatus({ commit }) {
-      if (state.statuses) {
-        return {
-          statuses: state.statuses
-        };
-      }
-      commit(mutationCommonProcessing, true);
-      try {
-        const { data } = await request.get(COMMONS_STATUSES);
-        commit(mutationCommonStatusList, data);
-        return data;
-      } finally {
-        commit(mutationCommonProcessing, false);
-      }
-    }
+    listStatus
   }
 };

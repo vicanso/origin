@@ -1,15 +1,13 @@
 import request from "@/helpers/request";
+import { REGIONS, REGIONS_LIST_CATEGORIES, REGIONS_ID } from "@/constants/url";
 import {
-  REGIONS,
-  COMMONS_STATUSES,
-  REGIONS_LIST_CATEGORIES,
-  REGIONS_ID
-} from "@/constants/url";
-import { formatDate, findByID } from "@/helpers/util";
+  listStatus,
+  attachStatusDesc,
+  attachUpdatedAtDesc
+} from "@/store/modules/common";
+import { findByID } from "@/helpers/util";
 
 const state = {
-  statusesListProcessing: false,
-  statuses: null,
   categoriesListProcessing: false,
   categories: null,
   processing: false,
@@ -44,31 +42,11 @@ const prefix = "region";
 const mutationRegionList = `${prefix}.list`;
 const mutationRegionListProcessing = `${mutationRegionList}.processing`;
 
-const mutationRegionListStatus = `${prefix}.list.status`;
-const mutationRegionListStatusProcessing = `${mutationRegionListStatus}.processing`;
-
 const mutationRegionListCategory = `${prefix}.list.category`;
 const mutationRegionListCategoryProcessing = `${mutationRegionListCategory}.processing`;
 
 const mutationRegionUpdate = `${prefix}.update`;
 const mutationRegionUpdateProcessing = `${mutationRegionUpdate}.processing`;
-
-// listRegionStatus 获取地区状态
-async function listRegionStatus({ commit }) {
-  if (state.statuses) {
-    return {
-      statuses: state.statuses
-    };
-  }
-  commit(mutationRegionListStatusProcessing, true);
-  try {
-    const { data } = await request.get(COMMONS_STATUSES);
-    commit(mutationRegionListStatus, data);
-    return data;
-  } finally {
-    commit(mutationRegionListStatusProcessing, false);
-  }
-}
 
 // listRegionCategory 获取地区分类
 async function listRegionCategory({ commit }) {
@@ -87,14 +65,6 @@ async function listRegionCategory({ commit }) {
   }
 }
 
-function updateStatusDesc(item) {
-  state.statuses.forEach(status => {
-    if (item.status === status.value) {
-      item.statusDesc = status.name;
-    }
-  });
-}
-
 export default {
   state,
   mutations: {
@@ -110,16 +80,10 @@ export default {
         data.count = count;
       }
       regions.forEach(item => {
-        item.updatedAtDesc = formatDate(item.updatedAt);
-        updateStatusDesc(item);
+        attachUpdatedAtDesc(item);
+        attachStatusDesc(item);
       });
       data.data = regions;
-    },
-    [mutationRegionListStatusProcessing](state, processing) {
-      state.statusesListProcessing = processing;
-    },
-    [mutationRegionListStatus](state, { statuses }) {
-      state.statuses = statuses;
     },
     [mutationRegionListCategoryProcessing](state, processing) {
       state.categoriesListProcessing = processing;
@@ -144,7 +108,7 @@ export default {
     async listRegion({ commit }, { params, categoy }) {
       commit(mutationRegionListProcessing, true);
       try {
-        await listRegionStatus({ commit });
+        await listStatus({ commit });
         const { data } = await request.get(REGIONS, {
           params
         });
@@ -155,7 +119,7 @@ export default {
         commit(mutationRegionListProcessing, false);
       }
     },
-    listRegionStatus,
+    listRegionStatus: listStatus,
     listRegionCategory,
     async updateRegionByID({ commit }, { id, data }) {
       commit(mutationRegionUpdateProcessing, true);

@@ -1,25 +1,25 @@
 <template>
-  <div class="brands" v-loading="!inited">
+  <div class="productCategories">
     <el-card v-if="!editMode">
       <div slot="header">
-        <i class="el-icon-goods" />
-        产品品牌
+        <i class="el-icon-set-up" />
+        产品分类
       </div>
       <BaseFilter :fields="filterFields" v-if="inited" @filter="filter" />
-      <el-table v-loading="processing" :data="brands" row-key="id" stripe>
-        <el-table-column prop="name" key="name" label="名称" width="120" />
+      <el-table
+        v-loading="processing"
+        :data="productCategories"
+        row-key="id"
+        stripe
+      >
+        <el-table-column prop="name" key="name" label="名称" />
         <el-table-column
           prop="statusDesc"
           key="statusDesc"
           label="状态"
           width="80"
         />
-        <el-table-column prop="catalog" key="catalog" label="简介" />
-        <el-table-column label="LOGO">
-          <template slot-scope="scope">
-            <img class="logo" :src="scope.row.logo" />
-          </template>
-        </el-table-column>
+        <el-table-column prop="level" key="level" label="级别" width="80" />
         <el-table-column
           prop="updatedAtDesc"
           key="updatedAtDesc"
@@ -43,7 +43,7 @@
         layout="prev, pager, next, sizes"
         :current-page="currentPage"
         :page-size="query.limit"
-        :total="brandCount"
+        :total="productCategoryCount"
         @size-change="handleSizeChange"
         @current-change="handleCurrentChange"
       />
@@ -51,46 +51,44 @@
         <el-button class="addBtn" type="primary" @click="add">添加</el-button>
       </div>
     </el-card>
-
-    <Brand v-else />
+    <ProductCategory v-else />
   </div>
 </template>
 <script>
 import { mapActions, mapState } from "vuex";
-import Brand from "@/components/products/Brand.vue";
 import BaseTable from "@/components/base/Table.vue";
+import ProductCategory from "@/components/products/Category.vue";
 import BaseFilter from "@/components/base/Filter.vue";
 
-const brandStatuses = [];
-
-const filterFields = [
+const categoryStatuses = [];
+const filterFiedls = [
   {
     label: "状态：",
     key: "status",
     type: "select",
-    options: brandStatuses,
-    span: 8
+    options: categoryStatuses,
+    span: 6
   },
   {
     label: "关键字：",
     key: "keyword",
     placeholder: "请输入关键字",
     clearable: true,
-    span: 8
+    span: 6
   },
   {
     label: "",
     type: "filter",
-    span: 8,
+    span: 6,
     labelWidth: "0px"
   }
 ];
 
 export default {
-  name: "Brands",
+  name: "ProductCategories",
   extends: BaseTable,
   components: {
-    Brand,
+    ProductCategory,
     BaseFilter
   },
   data() {
@@ -108,17 +106,17 @@ export default {
   },
   computed: {
     ...mapState({
-      processing: state => state.brand.processing,
-      brandCount: state => state.brand.list.count,
-      brands: state => state.brand.list.data || []
+      processing: state => state.productCategory.processing,
+      productCategoryCount: state => state.productCategory.list.count,
+      productCategories: state => state.productCategory.list.data || []
     })
   },
   methods: {
-    ...mapActions(["listBrand", "listBrandStatus"]),
+    ...mapActions(["listProductCategory", "listProductCategoryStatus"]),
     async fetch() {
       const { query } = this;
       try {
-        await this.listBrand(query);
+        await this.listProductCategory(query);
       } catch (err) {
         this.$message.error(err.message);
       }
@@ -126,14 +124,14 @@ export default {
   },
   async beforeMount() {
     try {
-      const { statuses } = await this.listBrandStatus();
-      brandStatuses.length = 0;
-      brandStatuses.push({
+      const { statuses } = await this.listProductCategoryStatus();
+      categoryStatuses.length = 0;
+      categoryStatuses.push({
         name: "所有",
         value: null
       });
-      brandStatuses.push(...statuses);
-      this.filterFields = filterFields;
+      categoryStatuses.push(...statuses);
+      this.filterFields = filterFiedls;
     } catch (err) {
       this.$message.error(err.message);
     } finally {
@@ -144,12 +142,8 @@ export default {
 </script>
 <style lang="sass" scoped>
 @import "@/common.sass"
-.brands
+.productCategories
   margin: $mainMargin
-  i
-    margin-right: 5px
-.logo
-  max-height: 60px
 .addBtn
   width: 100%
   margin-top: 15px

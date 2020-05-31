@@ -22,7 +22,7 @@ export default {
     userAccount: state => state.user.info.account
   }),
   methods: {
-    ...mapActions(["fetchUserInfo", "updateMe"]),
+    ...mapActions(["fetchUserInfo", "updateMe", "listStatus"]),
     refreshSessionTTL() {
       if (!this.userAccount) {
         return;
@@ -35,6 +35,7 @@ export default {
       this.refreshSessionTTL();
     }, 5 * 60 * 1000);
     try {
+      await this.listStatus();
       await this.fetchUserInfo();
     } catch (err) {
       this.$message.error(err.message);

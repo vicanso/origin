@@ -25,7 +25,7 @@ type (
 	Product struct {
 		helper.Model
 
-		Name    string         `json:"name,omitempty" gorm:"type:varchar(30);not null;unique"`
+		Name    string         `json:"name,omitempty" gorm:"type:varchar(30);not null;index:idx_product_name"`
 		Price   float64        `json:"price,omitempty"`
 		Unit    string         `json:"unit,omitempty"`
 		Catalog string         `json:"catalog,omitempty"`
@@ -33,7 +33,7 @@ type (
 		// 主图，从1开始
 		MainPic    int            `json:"mainPic,omitempty"`
 		SN         string         `json:"sn,omitempty"`
-		Status     int            `json:"status,omitempty"`
+		Status     int            `json:"status,omitempty" gorm:"index:idx_product_status"`
 		Keywords   string         `json:"keywords,omitempty"`
 		Categories pq.StringArray `json:"categories,omitempty" gorm:"type:text[]"`
 		StartedAt  *time.Time     `json:"startedAt,omitempty"`
@@ -43,11 +43,22 @@ type (
 		// 产品品牌
 		Brand uint `json:"brand,omitempty"`
 	}
+	// ProductCategory product category
+	ProductCategory struct {
+		helper.Model
+
+		Name   string `json:"name,omitempty" grom:"not null;unique_index:idx_product_category_name"`
+		Level  int    `json:"level,omitempty" grom:"not null;index:idx_product_category_level"`
+		Status int    `json:"status,omitempty" gorm:"not null;index:idx_product_category_status"`
+		// 所属分类
+		Belongs pq.Int64Array `json:"belongs,omitempty" gorm:"type:int[]"`
+	}
 	ProductSrv struct{}
 )
 
 func init() {
-	pgGetClient().AutoMigrate(&Product{})
+	pgGetClient().AutoMigrate(&Product{}).
+		AutoMigrate(&ProductCategory{})
 }
 
 func (srv *ProductSrv) createByID(id uint) *Product {
@@ -85,4 +96,41 @@ func (srv *ProductSrv) List(params helper.PGQueryParams, args ...interface{}) (r
 // Count count the product
 func (srv *ProductSrv) Count(args ...interface{}) (count int, err error) {
 	return pgCount(&Product{}, args...)
+}
+
+func (srv *ProductSrv) createCategoryByID(id uint) *ProductCategory {
+	c := &ProductCategory{}
+	c.Model.ID = id
+	return c
+}
+
+// AddCategory add category
+func (srv *ProductSrv) AddCategory(cat *ProductCategory) (err error) {
+	err = pgCreate(cat)
+	return
+}
+
+// UpdateCategoryByID update category by id
+func (srv *ProductSrv) UpdateCategoryByID(id uint, attrs ...interface{}) (err error) {
+	err = pgGetClient().Model(srv.createCategoryByID(id)).Update(attrs...).Error
+	return
+}
+
+// FindCategoryByID find category by id
+func (srv *ProductSrv) FindCategoryByID(id uint) (cat *ProductCategory, err error) {
+	cat = new(ProductCategory)
+	err = pgGetClient().First(cat, "id = ?", id).Error
+	return
+}
+
+// ListCategory list category
+func (srv *ProductSrv) ListCategory(params helper.PGQueryParams, args ...interface{}) (result []*ProductCategory, err error) {
+	result = make([]*ProductCategory, 0)
+	err = pgQuery(params, args...).Find(&result).Error
+	return
+}
+
+// CountCategory count category
+func (srv *ProductSrv) CountCategory(args ...interface{}) (count int, err error) {
+	return pgCount(&ProductCategory{}, args...)
 }

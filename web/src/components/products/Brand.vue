@@ -1,16 +1,14 @@
 <template>
-  <div class="brand">
-    <BaseEditor
-      v-if="!processing && fields"
-      title="添加/更新品牌信息"
-      icon="el-icon-good"
-      :id="brandID"
-      :findByID="getBrandByID"
-      :updateByID="updateBrandByID"
-      :fields="fields"
-      :rules="rules"
-    />
-  </div>
+  <BaseEditor
+    v-if="!processing && fields"
+    title="添加/更新品牌信息"
+    icon="el-icon-good"
+    :id="brandID"
+    :findByID="getBrandByID"
+    :updateByID="updateBrandByID"
+    :fields="fields"
+    :rules="rules"
+  />
 </template>
 <script>
 import { mapActions } from "vuex";
@@ -44,14 +42,14 @@ const fields = [
     label: "简介：",
     placeholder: "请输入品牌简介",
     key: "catalog",
-    type: "textare",
+    type: "textarea",
     span: 24,
     autosize: { minRows: 5, maxRows: 10 }
   }
 ];
 
 export default {
-  name: "Brand",
+  name: "ProductBrand",
   components: {
     BaseEditor
   },

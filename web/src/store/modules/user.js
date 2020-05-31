@@ -6,7 +6,6 @@ import {
   USERS_ID,
   USERS_ME_PROFILE,
   USERS_ROLE,
-  COMMONS_STATUSES,
   USERS_GROUPS,
   USERS_LOGINS
 } from "@/constants/url";
@@ -17,39 +16,39 @@ import {
   addNoCacheQueryParam
 } from "@/helpers/util";
 import { sha256 } from "@/helpers/crypto";
+import {
+  listStatus,
+  attachStatusDesc,
+  attachUpdatedAtDesc
+} from "@/store/modules/common";
 
-const mutationUserProcessing = "user.processing";
-const mutationUserInfo = "user.info";
+const prefix = "user";
+const mutationUserProcessing = `${prefix}.processing`;
+const mutationUserInfo = `${prefix}.info`;
 
-const mutationUserListProcessing = "user.list.processing";
-const mutationUserList = "user.list";
+const mutationUserList = `${prefix}.list`;
+const mutationUserListProcessing = `${mutationUserList}.processing`;
 
-const mutationUserListRoleProcessing = "user.list.role.processing";
-const mutationUserListRole = "user.list.role";
+const mutationUserListRole = `${mutationUserList}.role`;
+const mutationUserListRoleProcessing = `${mutationUserListRole}.processing`;
 
-const mutationUserListStatusProcessing = "user.list.status.processing";
-const mutationuserListStatus = "user.list.status";
+const mutationuserListGroup = `${mutationUserList}.group`;
+const mutationUserListGroupProcessing = `${mutationuserListGroup}.processing`;
 
-const mutationUserListGroupProcessing = "user.list.group.processing";
-const mutationuserListGroup = "user.list.group";
+const mutationUserUpdate = `${prefix}.update`;
+const mutationUserUpdateProcessing = `${mutationUserUpdate}.processing`;
 
-const mutationUserUpdateProcessing = "user.update.processing";
-const mutationUserUpdate = "user.update";
+const mutationUserProfile = `${prefix}.profile`;
+const mutationUserProfileProcessing = `${mutationUserProfile}.processing`;
+const mutationUserProfileUpdate = `${mutationUserProfile}.update`;
 
-const mutationUserProfileProcessing = "user.profile.processing";
-const mutationUserProfile = "user.profile";
-const mutationUserProfileUpdate = "user.profile.update";
-
-const mutationUserListLoginProcessing = "user.list.login.processing";
-const mutationUserListLogin = "user.list.loign";
+const mutationUserListLogin = `${mutationUserList}.loign`;
+const mutationUserListLoginProcessing = `${mutationUserListLogin}.processing`;
 
 const state = {
   // 用户角色
   roleListProcessing: false,
   roles: null,
-  // 用户状态
-  statusListProcessing: false,
-  statuses: null,
   // 用户分组
   groupListProcessing: false,
   groups: null,
@@ -115,39 +114,12 @@ function updateUserGroupDesc(user) {
   updateDescList(user, "groups");
 }
 
-function updateStatusDesc(user) {
-  state.statuses.forEach(status => {
-    if (status.value === user.status) {
-      user.statusDesc = status.name;
-    }
-  });
-  if (!user.statusDesc) {
-    user.statusDesc = "未知";
-  }
-}
-
 function updateUserDesc(user) {
   user.updatedAtDesc = formatDate(user.updatedAt);
-  updateStatusDesc(user);
+  attachUpdatedAtDesc(user);
+  attachStatusDesc(user);
   updateUserRoleDesc(user);
   updateUserGroupDesc(user);
-}
-
-// listUserStatus 获取用户状态列表
-async function listUserStatus({ commit }) {
-  if (state.statuses) {
-    return {
-      statuses: state.statuses
-    };
-  }
-  commit(mutationUserListStatusProcessing, true);
-  try {
-    const { data } = await request.get(COMMONS_STATUSES);
-    commit(mutationuserListStatus, data);
-    return data;
-  } finally {
-    commit(mutationUserListStatusProcessing, false);
-  }
 }
 
 // listUserRole 获取用户角色列表
@@ -204,9 +176,7 @@ export default {
       if (count >= 0) {
         state.list.count = count;
       }
-      users.forEach(item => {
-        updateUserDesc(item);
-      });
+      users.forEach(attachStatusDesc);
       state.list.data = users;
     },
     [mutationUserListRoleProcessing](state, processing) {
@@ -214,12 +184,6 @@ export default {
     },
     [mutationUserListRole](state, { roles }) {
       state.roles = roles;
-    },
-    [mutationUserListStatusProcessing](state, processing) {
-      state.statusListProcessing = processing;
-    },
-    [mutationuserListStatus](state, { statuses }) {
-      state.statuses = statuses;
     },
     [mutationUserListGroupProcessing](state, processing) {
       state.groupListProcessing = processing;
@@ -361,7 +325,7 @@ export default {
       commit(mutationUserListProcessing, true);
       try {
         await listUserRole({ commit });
-        await listUserStatus({ commit });
+        await listStatus({ commit });
         await listUserGroup({ commit });
         const { data } = await request.get(USERS, {
           params
@@ -372,7 +336,7 @@ export default {
       }
     },
     listUserRole,
-    listUserStatus,
+    listUserStatus: listStatus,
     listUserGroup,
     // updateUserByID 更新用户信息
     async updateUserByID({ commit }, { id, data }) {
@@ -400,7 +364,7 @@ export default {
       commit(mutationUserProfileProcessing, true);
       try {
         await listUserRole({ commit });
-        await listUserStatus({ commit });
+        await listStatus({ commit });
         await listUserGroup({ commit });
         const { data } = await request.get(USERS_ME_PROFILE);
         commit(mutationUserProfile, data);

@@ -18,6 +18,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/lib/pq"
 	"github.com/vicanso/elton"
 	"github.com/vicanso/origin/cs"
 	"github.com/vicanso/origin/router"
@@ -67,20 +68,24 @@ type (
 	listProductParams struct {
 		listParams
 	}
-)
+	addProductCategoryParams struct {
+		Name    string `json:"name,omitempty" validate:"xProductCategoryName"`
+		Level   int    `json:"level,omitempty" validate:"xProductCategoryLevel"`
+		Status  int    `json:"status,omitempty" validate:"xStatus"`
+		Belongs []int  `json:"belongs,omitempty"`
+	}
+	updateProductCategoryParams struct {
+		Name    string `json:"name,omitempty" validate:"omitempty,xProductCategoryName"`
+		Level   int    `json:"level,omitempty" validate:"omitempty,xProductCategoryLevel"`
+		Status  int    `json:"status,omitempty" validate:"omitempty,xStatus"`
+		Belongs []int  `json:"belongs,omitempty"`
+	}
+	listProductCategoryParams struct {
+		listParams
 
-var (
-	productCategories = map[string][]string{
-		"肉禽蛋品": []string{
-			"猪肉",
-			"牛肉",
-			"鸡",
-			"鸭",
-		},
-		"时令水果": []string{
-			"提子",
-			"苹果",
-		},
+		Keyword string `json:"keyword,omitempty" validate:"omitempty,xKeyword"`
+		Status  string `json:"status,omitempty" validate:"omitempty,xStatus"`
+		Level   string `json:"level,omitempty" validate:"omitempty,xProductCategoryLevel"`
 	}
 )
 
@@ -97,7 +102,30 @@ func init() {
 	// 获取产品分类
 	g.GET(
 		"/v1/categories",
+		noCacheIfSetNoCache,
 		ctrl.listCategory,
+	)
+	// 添加产品分类
+	g.POST(
+		"/v1/categories",
+		loadUserSession,
+		checkMarketingGroup,
+		newTracker(cs.ActionProductCategoryAdd),
+		ctrl.addCategory,
+	)
+	// 更新产品分类
+	g.PATCH(
+		"/v1/categories/{id}",
+		loadUserSession,
+		checkMarketingGroup,
+		newTracker(cs.ActionProductCategoryUpdate),
+		ctrl.updateCategoryByID,
+	)
+	// 获取产品分类详情
+	g.GET(
+		"/v1/categories/{id}",
+		noCacheIfSetNoCache,
+		ctrl.findCategoryByID,
 	)
 
 	// 添加产品
@@ -111,6 +139,7 @@ func init() {
 	// 查询产品详情
 	g.GET(
 		"/v1/{id}",
+		noCacheIfSetNoCache,
 		ctrl.findByID,
 	)
 	// 更新产品
@@ -125,6 +154,20 @@ func init() {
 
 func (params listProductParams) toConditions() (conditions []interface{}) {
 	return
+}
+
+func (params listProductCategoryParams) toConditions() (conditions []interface{}) {
+	conds := queryConditions{}
+	if params.Keyword != "" {
+		conds.add("name ILIKE ?", "%"+params.Keyword+"%")
+	}
+	if params.Status != "" {
+		conds.add("status = ?", params.Status)
+	}
+	if params.Level != "" {
+		conds.add("level = ?", params.Level)
+	}
+	return conds.toArray()
 }
 
 // add add product
@@ -240,9 +283,103 @@ func (ctrl productCtrl) updateByID(c *elton.Context) (err error) {
 	return
 }
 
+func (ctrl productCtrl) addCategory(c *elton.Context) (err error) {
+	params := addProductCategoryParams{}
+	err = validate.Do(&params, c.RequestBody)
+	if err != nil {
+		return
+	}
+	belongs := make(pq.Int64Array, 0)
+	for _, value := range params.Belongs {
+		belongs = append(belongs, int64(value))
+	}
+	cat := &service.ProductCategory{
+		Name:    params.Name,
+		Level:   params.Level,
+		Status:  params.Status,
+		Belongs: belongs,
+	}
+
+	err = productSrv.AddCategory(cat)
+	if err != nil {
+		return
+	}
+	c.Created(cat)
+	return
+}
+
 // listCategory list all category
 func (ctrl productCtrl) listCategory(c *elton.Context) (err error) {
+	params := listProductCategoryParams{}
+	err = validate.Do(&params, c.Query())
+	if err != nil {
+		return
+	}
+	count := -1
+	args := params.toConditions()
+	queryParams := params.toPGQueryParams()
+	if queryParams.Offset == 0 {
+		count, err = productSrv.CountCategory(args...)
+		if err != nil {
+			return
+		}
+	}
+	result, err := productSrv.ListCategory(queryParams, args...)
+	if err != nil {
+		return
+	}
+
 	c.CacheMaxAge("1m")
-	c.Body = productCategories
+	c.Body = &struct {
+		ProductCategories []*service.ProductCategory `json:"productCategories,omitempty"`
+		Count             int                        `json:"count,omitempty"`
+	}{
+		result,
+		count,
+	}
+	return
+}
+
+// updateCategoryByID update category by id
+func (ctrl productCtrl) updateCategoryByID(c *elton.Context) (err error) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return
+	}
+	params := updateProductCategoryParams{}
+	err = validate.Do(&params, c.RequestBody)
+	if err != nil {
+		return
+	}
+	belongs := make(pq.Int64Array, 0)
+	for _, value := range params.Belongs {
+		belongs = append(belongs, int64(value))
+	}
+	cat := &service.ProductCategory{
+		Name:    params.Name,
+		Level:   params.Level,
+		Status:  params.Status,
+		Belongs: belongs,
+	}
+	err = productSrv.UpdateCategoryByID(uint(id), cat)
+	if err != nil {
+		return
+	}
+	c.NoContent()
+	return
+}
+
+// findCategoryByID find category by id
+func (ctrl productCtrl) findCategoryByID(c *elton.Context) (err error) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return
+	}
+	data, err := productSrv.FindCategoryByID(uint(id))
+	if err != nil {
+		return
+	}
+	c.CacheMaxAge("1m")
+	c.Body = data
 	return
 }

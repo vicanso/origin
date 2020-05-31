@@ -1,18 +1,19 @@
 import request from "@/helpers/request";
 
-import { COMMONS_STATUSES, PRODUCTS, PRODUCTS_ID } from "@/constants/url";
+import { PRODUCTS, PRODUCTS_ID } from "@/constants/url";
 import { formatDate, addNoCacheQueryParam, findByID } from "@/helpers/util";
+import {
+  listStatus,
+  attachStatusDesc,
+  attachUpdatedAtDesc
+} from "@/store/modules/common";
 
 const prefix = "product";
-const mutationProductListStatus = `${prefix}.list.status`;
-const mutationProductListStatusProcessing = `${mutationProductListStatus}.processing`;
 const mutationProductProcessing = `${prefix}.processing`;
 const mutationProductList = `${prefix}.list`;
 const mutationProductUpdate = `${prefix}.update`;
 
 const state = {
-  statusesListProcessing: false,
-  statuses: null,
   processing: false,
   list: {
     data: null,
@@ -20,45 +21,19 @@ const state = {
   }
 };
 
-async function listProductStatus({ commit }) {
-  if (state.statuses) {
-    return {
-      statuses: state.statuses
-    };
-  }
-  commit(mutationProductListStatusProcessing, true);
-  try {
-    const { data } = await request.get(COMMONS_STATUSES);
-    commit(mutationProductListStatus, data);
-    return data;
-  } finally {
-    commit(mutationProductListStatusProcessing, false);
-  }
-}
-
 function fillAndUpdate(item) {
   if (!item.categories) {
     item.categories = [];
   }
-  item.updatedAtDesc = formatDate(item.updatedAt);
   item.startedAtDesc = formatDate(item.startedAtDesc);
   item.endedAtDesc = formatDate(item.endedAt);
-  state.statuses.forEach(status => {
-    if (status.value === item.status) {
-      item.statusDesc = status.name;
-    }
-  });
+  attachUpdatedAtDesc(item);
+  attachStatusDesc(item);
 }
 
 export default {
   state,
   mutations: {
-    [mutationProductListStatusProcessing](state, processing) {
-      state.statusesListProcessing = processing;
-    },
-    [mutationProductListStatus](state, { statuses }) {
-      state.statuses = statuses;
-    },
     [mutationProductProcessing](state, processing) {
       state.processing = processing;
     },
@@ -91,12 +66,12 @@ export default {
         commit(mutationProductProcessing, false);
       }
     },
-    listProductStatus,
+    listProductStatus: listStatus,
     // listProduct 获取产品
     async listProduct({ commit }, params) {
       commit(mutationProductProcessing, true);
       try {
-        await listProductStatus({ commit });
+        await listStatus({ commit });
         const { data } = await request.get(PRODUCTS, {
           params: addNoCacheQueryParam(params)
         });

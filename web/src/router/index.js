@@ -15,7 +15,8 @@ import {
   LOGINS,
   BRANDS,
   PRODUCTS,
-  REGIONS
+  REGIONS,
+  PRODUCT_CATEGORIES
 } from "@/constants/route";
 import Home from "@/views/Home.vue";
 import Login from "@/views/Login.vue";
@@ -30,6 +31,7 @@ import Logins from "@/views/Logins.vue";
 import Brands from "@/views/Brands.vue";
 import Products from "@/views/Products.vue";
 import Regions from "@/views/Regions.vue";
+import ProductCategories from "@/views/ProductCategories.vue";
 
 Vue.use(VueRouter);
 
@@ -125,6 +127,14 @@ const routes = [
     path: "/products",
     name: PRODUCTS,
     component: Products,
+    meta: {
+      requiresAuth: true
+    }
+  },
+  {
+    path: "/product/categories",
+    name: PRODUCT_CATEGORIES,
+    component: ProductCategories,
     meta: {
       requiresAuth: true
     }

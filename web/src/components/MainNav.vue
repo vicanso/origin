@@ -50,6 +50,7 @@ import {
   LOGINS,
   BRANDS,
   PRODUCTS,
+  PRODUCT_CATEGORIES,
   REGIONS
 } from "@/constants/route";
 import { USER_ADMIN, USER_SU, GROUP_MARKETING } from "@/constants/user";
@@ -69,6 +70,10 @@ const navs = [
       {
         name: "产品",
         route: PRODUCTS
+      },
+      {
+        name: "产品分类",
+        route: PRODUCT_CATEGORIES
       },
       {
         name: "地区",

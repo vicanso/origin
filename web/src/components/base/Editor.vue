@@ -123,6 +123,7 @@ export default {
     id: Number,
     findByID: Function,
     updateByID: Function,
+    add: Function,
     rules: Object
   },
   data() {
@@ -144,10 +145,23 @@ export default {
     handleUpload(files) {
       this.current.files = files;
     },
-    add() {
-      console.dir(this.current);
+    async handleAdd() {
+      const { add, rules } = this.$props;
+      this.processing = true;
+      try {
+        if (rules) {
+          await validateForm(this.$refs.baseEditorForm);
+        }
+        await add(this.current);
+        this.$message.info("已成功添加");
+        this.goBack();
+      } catch (err) {
+        this.$message.error(err.message);
+      } finally {
+        this.processing = false;
+      }
     },
-    async update() {
+    async handleUpdate() {
       const { id, updateByID, rules } = this.$props;
       const { current, originData } = this;
       const updateInfo = diff(omitNil(current), originData);
@@ -176,10 +190,10 @@ export default {
     submit() {
       const { id } = this.$props;
       if (!id) {
-        this.add();
+        this.handleAdd();
         return;
       }
-      this.update();
+      this.handleUpdate();
     },
     goBack() {
       this.$router.back();

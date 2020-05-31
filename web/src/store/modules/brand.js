@@ -1,22 +1,19 @@
 import request from "@/helpers/request";
 
-import { COMMONS_STATUSES, BRANDS, BRANDS_ID } from "@/constants/url";
+import { BRANDS, BRANDS_ID } from "@/constants/url";
 import {
-  formatDate,
-  addNoCacheQueryParam,
-  toUploadFiles,
-  findByID
-} from "@/helpers/util";
+  listStatus,
+  attachStatusDesc,
+  attachUpdatedAtDesc
+} from "@/store/modules/common";
+import { addNoCacheQueryParam, toUploadFiles, findByID } from "@/helpers/util";
 
-const mutationBrandListStatus = "brand.list.status";
-const mutationBrandListStatusProcessing = `${mutationBrandListStatus}.processing`;
-const mutationBrandProcessing = "brand.processing";
-const mutationBrandList = "brand.list";
-const mutationBrandUpdate = "brand.update";
+const prefix = "brand";
+const mutationBrandProcessing = `${prefix}.processing`;
+const mutationBrandList = `${prefix}.list`;
+const mutationBrandUpdate = `${prefix}.update`;
 
 const state = {
-  statusesListProcessing: false,
-  statuses: null,
   processing: false,
   list: {
     data: null,
@@ -24,42 +21,15 @@ const state = {
   }
 };
 
-// listBrandStatus 获取品牌状态列表
-async function listBrandStatus({ commit }) {
-  if (state.statuses) {
-    return {
-      statuses: state.statuses
-    };
-  }
-  commit(mutationBrandListStatusProcessing, true);
-  try {
-    const { data } = await request.get(COMMONS_STATUSES);
-    commit(mutationBrandListStatus, data);
-    return data;
-  } finally {
-    commit(mutationBrandListStatusProcessing, false);
-  }
-}
-
 function enhanceBrandInfo(item) {
-  state.statuses.forEach(status => {
-    if (item.status === status.value) {
-      item.statusDesc = status.name;
-    }
-  });
-  item.updatedAtDesc = formatDate(item.updatedAt);
+  attachStatusDesc(item);
+  attachUpdatedAtDesc(item);
   item.files = toUploadFiles(item.logo);
 }
 
 export default {
   state,
   mutations: {
-    [mutationBrandListStatusProcessing](state, processing) {
-      state.statusesListProcessing = processing;
-    },
-    [mutationBrandListStatus](state, { statuses }) {
-      state.statuses = statuses;
-    },
     [mutationBrandProcessing](state, processing) {
       state.processing = processing;
     },
@@ -92,12 +62,12 @@ export default {
         commit(mutationBrandProcessing, false);
       }
     },
-    listBrandStatus,
+    listBrandStatus: listStatus,
     // listBrand 获取品牌
     async listBrand({ commit }, params) {
       commit(mutationBrandProcessing, true);
       try {
-        await listBrandStatus({ commit });
+        await listStatus({ commit });
         const { data } = await request.get(BRANDS, {
           params: addNoCacheQueryParam(params)
         });
@@ -109,7 +79,7 @@ export default {
     },
     // getBrandByID 通过id获取brand信息
     async getBrandByID({ commit }, id) {
-      const found = findByID(state.list.data);
+      const found = findByID(state.list.data, id);
       if (found) {
         return found;
       }

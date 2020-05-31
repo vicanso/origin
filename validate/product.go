@@ -24,4 +24,7 @@ func init() {
 	AddAlias("xProductKeyword", "min=1,max=100")
 	AddAlias("xProductOrigin", "min=1,max=100")
 	AddAlias("xProductBrand", "min=1")
+
+	AddAlias("xProductCategoryName", "min=1,max=10")
+	AddAlias("xProductCategoryLevel", "number,min=1,max=3")
 }
