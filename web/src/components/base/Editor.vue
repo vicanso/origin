@@ -5,7 +5,7 @@
       <span>{{ $props.title }}</span>
     </div>
     <el-form
-      v-if="!processing"
+      v-if="inited"
       :label-width="$props.labelWidth"
       ref="baseEditorForm"
       :rules="$props.rules"
@@ -142,6 +142,7 @@ export default {
     });
 
     return {
+      inited: false,
       originData: null,
       processing: false,
       submitText,
@@ -152,14 +153,14 @@ export default {
     handleUpload(files) {
       this.current.files = files;
     },
-    async handleAdd() {
+    async handleAdd(data) {
       const { add, rules } = this.$props;
       this.processing = true;
       try {
         if (rules) {
           await validateForm(this.$refs.baseEditorForm);
         }
-        await add(this.current);
+        await add(data);
         this.$message.info("已成功添加");
         this.goBack();
       } catch (err) {
@@ -168,10 +169,10 @@ export default {
         this.processing = false;
       }
     },
-    async handleUpdate() {
+    async handleUpdate(data) {
       const { id, updateByID, rules } = this.$props;
-      const { current, originData } = this;
-      const updateInfo = diff(omitNil(current), originData);
+      const { originData } = this;
+      const updateInfo = diff(omitNil(data), originData);
       if (updateInfo.modifiedCount === 0) {
         this.$message.warning("请先修改要更新的信息");
         return;
@@ -195,12 +196,19 @@ export default {
       }
     },
     submit() {
-      const { id } = this.$props;
+      const { current } = this;
+      const { id, fields } = this.$props;
+      const data = Object.assign({}, current);
+      fields.forEach(item => {
+        if (item.dataType === "number") {
+          data[item.key] = Number(data[item.key]);
+        }
+      });
       if (!id) {
-        this.handleAdd();
+        this.handleAdd(data);
         return;
       }
-      this.handleUpdate();
+      this.handleUpdate(data);
     },
     goBack() {
       this.$router.back();
@@ -209,9 +217,9 @@ export default {
   async beforeMount() {
     const { id, findByID } = this.$props;
     if (!id) {
+      this.inited = true;
       return;
     }
-    this.processing = true;
     try {
       const data = await findByID(id);
       this.originData = data;
@@ -219,7 +227,7 @@ export default {
     } catch (err) {
       this.$message.error(err.message);
     } finally {
-      this.processing = false;
+      this.inited = true;
     }
   }
 };

@@ -1,14 +1,13 @@
 <template>
-  <div class="region">
-    <el-cascader
-      v-if="inited"
-      clearable
-      :props="props"
-      @change="handleChange"
-      v-model="region"
-      :show-all-levels="$props.showAllLevels"
-    ></el-cascader>
-  </div>
+  <el-cascader
+    class="region"
+    v-if="inited"
+    clearable
+    :props="props"
+    @change="handleChange"
+    v-model="region"
+    :show-all-levels="$props.showAllLevels"
+  ></el-cascader>
 </template>
 <script>
 import { mapActions, mapState } from "vuex";

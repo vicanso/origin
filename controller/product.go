@@ -18,7 +18,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/lib/pq"
 	"github.com/vicanso/elton"
 	"github.com/vicanso/origin/cs"
 	"github.com/vicanso/origin/router"
@@ -39,13 +38,13 @@ type (
 		SN         string     `json:"sn,omitempty" validate:"omitempty,xProductSN"`
 		Status     int        `json:"status,omitempty" validate:"xStatus"`
 		Keywords   string     `json:"keywords,omitempty"`
-		Categories []string   `json:"categories,omitempty"`
+		Categories []int64    `json:"categories,omitempty"`
 		StartedAt  *time.Time `json:"startedAt,omitempty" validate:"required"`
 		EndedAt    *time.Time `json:"endedAt,omitempty" validate:"required"`
 		// 产地
 		Origin string `json:"origin,omitempty" validate:"omitempty,xProductOrigin"`
 		// 产品品牌
-		Brand uint `json:"brand,omitempty" validate:"xProductBrand"`
+		Brand uint `json:"brand,omitempty" validate:"omitempty,xProductBrand"`
 	}
 	updateProductParams struct {
 		Name       string     `json:"name,omitempty" validate:"omitempty,xProductName"`
@@ -57,7 +56,7 @@ type (
 		SN         string     `json:"sn,omitempty" validate:"omitempty,xProductSN"`
 		Status     int        `json:"status,omitempty" validate:"omitempty,xStatus"`
 		Keywords   string     `json:"keywords,omitempty"`
-		Categories []string   `json:"categories,omitempty"`
+		Categories []int64    `json:"categories,omitempty"`
 		StartedAt  *time.Time `json:"startedAt,omitempty"`
 		EndedAt    *time.Time `json:"endedAt,omitempty"`
 		// 产地
@@ -69,16 +68,16 @@ type (
 		listParams
 	}
 	addProductCategoryParams struct {
-		Name    string `json:"name,omitempty" validate:"xProductCategoryName"`
-		Level   int    `json:"level,omitempty" validate:"xProductCategoryLevel"`
-		Status  int    `json:"status,omitempty" validate:"xStatus"`
-		Belongs []int  `json:"belongs,omitempty"`
+		Name    string  `json:"name,omitempty" validate:"xProductCategoryName"`
+		Level   int     `json:"level,omitempty" validate:"xProductCategoryLevel"`
+		Status  int     `json:"status,omitempty" validate:"xStatus"`
+		Belongs []int64 `json:"belongs,omitempty"`
 	}
 	updateProductCategoryParams struct {
-		Name    string `json:"name,omitempty" validate:"omitempty,xProductCategoryName"`
-		Level   int    `json:"level,omitempty" validate:"omitempty,xProductCategoryLevel"`
-		Status  int    `json:"status,omitempty" validate:"omitempty,xStatus"`
-		Belongs []int  `json:"belongs,omitempty"`
+		Name    string  `json:"name,omitempty" validate:"omitempty,xProductCategoryName"`
+		Level   int     `json:"level,omitempty" validate:"omitempty,xProductCategoryLevel"`
+		Status  int     `json:"status,omitempty" validate:"omitempty,xStatus"`
+		Belongs []int64 `json:"belongs,omitempty"`
 	}
 	listProductCategoryParams struct {
 		listParams
@@ -289,15 +288,11 @@ func (ctrl productCtrl) addCategory(c *elton.Context) (err error) {
 	if err != nil {
 		return
 	}
-	belongs := make(pq.Int64Array, 0)
-	for _, value := range params.Belongs {
-		belongs = append(belongs, int64(value))
-	}
 	cat := &service.ProductCategory{
 		Name:    params.Name,
 		Level:   params.Level,
 		Status:  params.Status,
-		Belongs: belongs,
+		Belongs: params.Belongs,
 	}
 
 	err = productSrv.AddCategory(cat)
@@ -351,15 +346,11 @@ func (ctrl productCtrl) updateCategoryByID(c *elton.Context) (err error) {
 	if err != nil {
 		return
 	}
-	belongs := make(pq.Int64Array, 0)
-	for _, value := range params.Belongs {
-		belongs = append(belongs, int64(value))
-	}
 	cat := &service.ProductCategory{
 		Name:    params.Name,
 		Level:   params.Level,
 		Status:  params.Status,
-		Belongs: belongs,
+		Belongs: params.Belongs,
 	}
 	err = productSrv.UpdateCategoryByID(uint(id), cat)
 	if err != nil {

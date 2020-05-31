@@ -6,7 +6,7 @@
     remote
     reserve-keyword
     v-model="brand"
-    placeholder="请输入关键词"
+    placeholder="请选择产品品牌"
     :remote-method="fetch"
     :loading="processing"
   >

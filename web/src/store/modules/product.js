@@ -25,7 +25,7 @@ function fillAndUpdate(item) {
   if (!item.categories) {
     item.categories = [];
   }
-  item.startedAtDesc = formatDate(item.startedAtDesc);
+  item.startedAtDesc = formatDate(item.startedAt);
   item.endedAtDesc = formatDate(item.endedAt);
   attachUpdatedAtDesc(item);
   attachStatusDesc(item);

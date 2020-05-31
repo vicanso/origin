@@ -7,6 +7,7 @@
     :id="productID"
     :findByID="getProductByID"
     :updateByID="updateProductByID"
+    :add="addProduct"
   />
 </template>
 <script>
@@ -14,7 +15,6 @@ import { mapActions } from "vuex";
 import BaseEditor from "@/components/base/Editor.vue";
 
 const productStatuses = [];
-const productCategories = [];
 const fields = [
   {
     label: "名称：",
@@ -26,6 +26,7 @@ const fields = [
     label: "单价：",
     key: "price",
     clearable: true,
+    dataType: "number",
     placeholder: "请输入产品单价"
   },
   {
@@ -45,9 +46,7 @@ const fields = [
     label: "分类：",
     key: "categories",
     placeholder: "请选择产品分类",
-    type: "select",
-    multiple: true,
-    options: productCategories
+    type: "productCategory"
   },
   {
     label: "品牌：",
@@ -128,10 +127,15 @@ export default {
       "listProductStatus",
       "listBrand",
       "getProductByID",
-      "updateProductByID"
+      "updateProductByID",
+      "addProduct"
     ])
   },
   async beforeMount() {
+    const { id } = this.$route.query;
+    if (id) {
+      this.productID = Number(id);
+    }
     try {
       const { statuses } = await this.listProductStatus();
       productStatuses.length = 0;

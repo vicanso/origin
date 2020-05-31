@@ -7,7 +7,7 @@
       </div>
 
       <el-table v-loading="processing" :data="products" row-key="id" stripe>
-        <el-table-column prop="name" key="name" label="名称" width="120" />
+        <el-table-column prop="name" key="name" label="名称" width="180" />
         <el-table-column prop="price" key="price" label="单价" width="100" />
         <el-table-column prop="unit" key="unit" label="单位" width="100" />
         <el-table-column
@@ -38,7 +38,14 @@
             </ul>
           </template>
         </el-table-column>
-        <el-table-column prop="catalog" key="catalog" label="简介" />
+        <el-table-column key="catalog" label="简介">
+          <template slot-scope="scope">
+            <el-tooltip placement="bottom">
+              <pre slot="content">{{ scope.row.catalog }}</pre>
+              <i class="el-icon-info" />
+            </el-tooltip>
+          </template>
+        </el-table-column>
         <el-table-column prop="sn" key="sn" label="SN" />
         <el-table-column
           prop="updatedAtDesc"

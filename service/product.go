@@ -31,13 +31,13 @@ type (
 		Catalog string         `json:"catalog,omitempty"`
 		Pics    pq.StringArray `json:"pics,omitempty" gorm:"type:text[]"`
 		// 主图，从1开始
-		MainPic    int            `json:"mainPic,omitempty"`
-		SN         string         `json:"sn,omitempty"`
-		Status     int            `json:"status,omitempty" gorm:"index:idx_product_status"`
-		Keywords   string         `json:"keywords,omitempty"`
-		Categories pq.StringArray `json:"categories,omitempty" gorm:"type:text[]"`
-		StartedAt  *time.Time     `json:"startedAt,omitempty"`
-		EndedAt    *time.Time     `json:"endedAt,omitempty"`
+		MainPic    int           `json:"mainPic,omitempty"`
+		SN         string        `json:"sn,omitempty"`
+		Status     int           `json:"status,omitempty" gorm:"index:idx_product_status"`
+		Keywords   string        `json:"keywords,omitempty"`
+		Categories pq.Int64Array `json:"categories,omitempty" gorm:"type:int[]"`
+		StartedAt  *time.Time    `json:"startedAt,omitempty"`
+		EndedAt    *time.Time    `json:"endedAt,omitempty"`
 		// 产地
 		Origin string `json:"origin,omitempty"`
 		// 产品品牌

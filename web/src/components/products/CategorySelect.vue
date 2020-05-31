@@ -7,7 +7,7 @@
     reserve-keyword
     v-model="categories"
     multiple
-    placeholder="请输入关键词"
+    placeholder="请选择产品分类"
     :remote-method="fetch"
     :loading="processing"
   >
@@ -29,7 +29,6 @@ export default {
     level: Number
   },
   data() {
-    console.dir(this.$props.level);
     return {
       categories: this.$props.value || []
     };

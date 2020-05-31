@@ -1,21 +1,20 @@
 <template>
-  <div class="upload">
-    <el-upload
-      list-type="picture"
-      drag
-      :action="action"
-      :on-success="handleSuccess"
-      :on-error="handleError"
-      :on-remove="handleRemove"
-      :before-upload="handleBeforeUpload"
-      :on-exceed="handleExceed"
-      :limit="$props.limit"
-      :file-list="fileList"
-    >
-      <i class="el-icon-upload"></i>
-      <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
-    </el-upload>
-  </div>
+  <el-upload
+    class="upload"
+    list-type="picture"
+    drag
+    :action="action"
+    :on-success="handleSuccess"
+    :on-error="handleError"
+    :on-remove="handleRemove"
+    :before-upload="handleBeforeUpload"
+    :on-exceed="handleExceed"
+    :limit="$props.limit"
+    :file-list="fileList"
+  >
+    <i class="el-icon-upload"></i>
+    <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
+  </el-upload>
 </template>
 <script>
 import { contains } from "@/helpers/util";
