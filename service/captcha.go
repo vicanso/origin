@@ -62,10 +62,13 @@ func createCaptcha(fontColor, bgColor color.Color, width, height int, text strin
 	fontSize := float64(eachFontWidth) * 1.8
 	dc.SetColor(fontColor)
 	for index, ch := range text {
+		// 随机+ -字体大小
 		newFontSize := float64(rand.Int63n(40)+80) / 100 * fontSize
 		face := truetype.NewFace(font, &truetype.Options{Size: newFontSize})
 		dc.SetFontFace(face)
+		// 随机偏移角度
 		angle := float64(rand.Int63n(20))/100 - 0.1
+		// 随机偏移位置
 		offsetX := float64(eachFontWidth + index*eachFontWidth + int(rand.Int63n(10)) - 10)
 		offsetY := float64(height) + float64(rand.Int63n(10)) - float64(15)
 		if offsetY > float64(height) || offsetX < float64(height)-newFontSize {
@@ -73,7 +76,6 @@ func createCaptcha(fontColor, bgColor color.Color, width, height int, text strin
 		}
 		dc.Rotate(angle)
 		dc.DrawString(string(ch), offsetX, offsetY)
-
 	}
 	dc.SetStrokeStyle(gg.NewSolidPattern(fontColor))
 	dc.SetLineWidth(1.5)

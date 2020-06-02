@@ -8,6 +8,7 @@
       :findByID="getRegionByID"
       :updateByID="updateRegionByID"
       :fields="fields"
+      :rules="rules"
     />
   </div>
 </template>
@@ -18,7 +19,8 @@ const brandStatuses = [];
 const fields = [
   {
     label: "名称：",
-    key: "name"
+    key: "name",
+    clearable: true
   },
   {
     label: "代码：",
@@ -42,10 +44,18 @@ export default {
     return {
       fields: null,
       processing: false,
-      regionID: 0
+      regionID: 0,
+      rules: {
+        name: [
+          {
+            required: true,
+            message: "地区名称不能为空"
+          }
+        ]
+      }
     };
   },
-  methods: mapActions(["listBrandStatus", "updateRegionByID", "getRegionByID"]),
+  methods: mapActions(["listStatus", "updateRegionByID", "getRegionByID"]),
   async beforeMount() {
     this.processing = true;
     const { id } = this.$route.query;
@@ -53,7 +63,7 @@ export default {
       this.regionID = Number(id);
     }
     try {
-      const { statuses } = await this.listBrandStatus();
+      const { statuses } = await this.listStatus();
       brandStatuses.length = 0;
       brandStatuses.push(...statuses);
       this.fields = fields;

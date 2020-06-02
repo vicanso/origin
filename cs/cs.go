@@ -38,7 +38,9 @@ const (
 var (
 	// 状态列表
 	Statuses = []int{
+		// 启用
 		StatusEnabled,
+		// 禁用
 		StatusDisabled,
 	}
 	// 状态列表（字符串）

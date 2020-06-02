@@ -50,4 +50,7 @@ const (
 	ActionProductCategoryAdd = "add-product-category"
 	// ActionProductCategoryUpdate update product category
 	ActionProductCategoryUpdate = "update-product-category"
+
+	// ActionOrderAdd add order
+	ActionOrderAdd = "add-order"
 )

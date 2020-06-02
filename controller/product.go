@@ -31,6 +31,7 @@ type (
 	addProductParams struct {
 		Name       string     `json:"name,omitempty" validate:"xProductName"`
 		Price      float64    `json:"price,omitempty" validate:"xProductPrice"`
+		Specs      int        `json:"specs,omitempty" validate:"xProductSpecs"`
 		Unit       string     `json:"unit,omitempty" validate:"xProductUnit"`
 		Catalog    string     `json:"catalog,omitempty" validate:"xProductCatalog"`
 		Pics       []string   `json:"pics,omitempty"`
@@ -49,6 +50,7 @@ type (
 	updateProductParams struct {
 		Name       string     `json:"name,omitempty" validate:"omitempty,xProductName"`
 		Price      float64    `json:"price,omitempty" validate:"omitempty,xProductPrice"`
+		Specs      int        `json:"specs,omitempty" validate:"omitempty,xProductSpecs"`
 		Unit       string     `json:"unit,omitempty" validate:"omitempty,xProductUnit"`
 		Catalog    string     `json:"catalog,omitempty" validate:"omitempty,xProductCatalog"`
 		Pics       []string   `json:"pics,omitempty"`
@@ -176,9 +178,10 @@ func (ctrl productCtrl) add(c *elton.Context) (err error) {
 	if err != nil {
 		return
 	}
-	product := &service.Product{
+	product, err := productSrv.Add(service.Product{
 		Name:       params.Name,
 		Price:      params.Price,
+		Specs:      params.Specs,
 		Unit:       params.Unit,
 		Catalog:    params.Catalog,
 		Pics:       params.Pics,
@@ -191,8 +194,7 @@ func (ctrl productCtrl) add(c *elton.Context) (err error) {
 		EndedAt:    params.EndedAt,
 		Origin:     params.Origin,
 		Brand:      params.Brand,
-	}
-	err = productSrv.Add(product)
+	})
 	if err != nil {
 		return
 	}
@@ -261,6 +263,7 @@ func (ctrl productCtrl) updateByID(c *elton.Context) (err error) {
 	product := service.Product{
 		Name:       params.Name,
 		Price:      params.Price,
+		Specs:      params.Specs,
 		Unit:       params.Unit,
 		Catalog:    params.Catalog,
 		Pics:       params.Pics,
@@ -288,14 +291,13 @@ func (ctrl productCtrl) addCategory(c *elton.Context) (err error) {
 	if err != nil {
 		return
 	}
-	cat := &service.ProductCategory{
+
+	cat, err := productSrv.AddCategory(service.ProductCategory{
 		Name:    params.Name,
 		Level:   params.Level,
 		Status:  params.Status,
 		Belongs: params.Belongs,
-	}
-
-	err = productSrv.AddCategory(cat)
+	})
 	if err != nil {
 		return
 	}

@@ -7,6 +7,7 @@
     :findByID="getBrandByID"
     :updateByID="updateBrandByID"
     :fields="fields"
+    :add="addBrand"
     :rules="rules"
   />
 </template>
@@ -72,6 +73,12 @@ export default {
             message: "品牌状态不能为空"
           }
         ],
+        files: [
+          {
+            required: true,
+            message: "品牌图标不能为空"
+          }
+        ],
         catalog: [
           {
             required: true,
@@ -83,10 +90,11 @@ export default {
   },
   methods: {
     ...mapActions([
-      "listBrandStatus",
+      "listStatus",
       "addBrand",
       "getBrandByID",
-      "updateBrandByID"
+      "updateBrandByID",
+      "addBrand"
     ])
   },
   async beforeMount() {
@@ -96,7 +104,7 @@ export default {
       this.brandID = Number(id);
     }
     try {
-      const { statuses } = await this.listBrandStatus();
+      const { statuses } = await this.listStatus();
       brandStatuses.length = 0;
       brandStatuses.push(...statuses);
       this.fields = fields;

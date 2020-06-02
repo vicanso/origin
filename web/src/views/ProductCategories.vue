@@ -20,6 +20,16 @@
           width="80"
         />
         <el-table-column prop="level" key="level" label="级别" width="80" />
+        <el-table-column key="belongs" label="所属分类">
+          <template slot-scope="scope">
+            <ul v-if="scope.row.belongsDesc">
+              <li v-for="item in scope.row.belongsDesc" :key="item">
+                {{ item }}
+              </li>
+            </ul>
+            <span v-else>--</span>
+          </template>
+        </el-table-column>
         <el-table-column
           prop="updatedAtDesc"
           key="updatedAtDesc"
@@ -136,7 +146,7 @@ export default {
     })
   },
   methods: {
-    ...mapActions(["listProductCategory", "listProductCategoryStatus"]),
+    ...mapActions(["listProductCategory", "listStatus"]),
     async fetch() {
       const { query } = this;
       try {
@@ -148,7 +158,7 @@ export default {
   },
   async beforeMount() {
     try {
-      const { statuses } = await this.listProductCategoryStatus();
+      const { statuses } = await this.listStatus();
       categoryStatuses.length = 0;
       categoryStatuses.push({
         name: "所有",

@@ -15,18 +15,27 @@
 package service
 
 import (
+	"net/http"
 	"time"
 
 	"github.com/lib/pq"
+	"github.com/vicanso/hes"
+	lruTTL "github.com/vicanso/lru-ttl"
+	"github.com/vicanso/origin/cs"
 	"github.com/vicanso/origin/helper"
+	"github.com/vicanso/origin/util"
 )
 
 type (
 	Product struct {
 		helper.Model
 
-		Name    string         `json:"name,omitempty" gorm:"type:varchar(30);not null;index:idx_product_name"`
-		Price   float64        `json:"price,omitempty"`
+		Name string `json:"name,omitempty" gorm:"type:varchar(30);not null;index:idx_product_name"`
+		// 单价
+		Price float64 `json:"price,omitempty"`
+		// 规格，规格+单位表示完整的购买单位，如规则为250，单位为克
+		Specs int `json:"specs,omitempty"`
+		// 单位
 		Unit    string         `json:"unit,omitempty"`
 		Catalog string         `json:"catalog,omitempty"`
 		Pics    pq.StringArray `json:"pics,omitempty" gorm:"type:text[]"`
@@ -34,31 +43,103 @@ type (
 		MainPic    int           `json:"mainPic,omitempty"`
 		SN         string        `json:"sn,omitempty"`
 		Status     int           `json:"status,omitempty" gorm:"index:idx_product_status"`
+		StatusDesc string        `json:"statusDesc,omitempty" gorm:"-"`
 		Keywords   string        `json:"keywords,omitempty"`
 		Categories pq.Int64Array `json:"categories,omitempty" gorm:"type:int[]"`
-		StartedAt  *time.Time    `json:"startedAt,omitempty"`
-		EndedAt    *time.Time    `json:"endedAt,omitempty"`
+		// 产品分类说明（在获取数据后转换生成）
+		CategoriesDesc []string   `json:"categoriesDesc,omitempty" gorm:"-"`
+		StartedAt      *time.Time `json:"startedAt,omitempty"`
+		EndedAt        *time.Time `json:"endedAt,omitempty"`
 		// 产地
 		Origin string `json:"origin,omitempty"`
+		// 产地说明
+		OrginDesc string `json:"orginDesc,omitempty" gorm:"-"`
 		// 产品品牌
 		Brand uint `json:"brand,omitempty"`
+		// 产品品牌说明
+		BrandDesc string `json:"brandDesc,omitempty" gorm:"-"`
 	}
 	// ProductCategory product category
 	ProductCategory struct {
 		helper.Model
 
-		Name   string `json:"name,omitempty" grom:"not null;unique_index:idx_product_category_name"`
-		Level  int    `json:"level,omitempty" grom:"not null;index:idx_product_category_level"`
-		Status int    `json:"status,omitempty" gorm:"not null;index:idx_product_category_status"`
+		Name       string `json:"name,omitempty" grom:"not null;unique_index:idx_product_category_name"`
+		Level      int    `json:"level,omitempty" grom:"not null;index:idx_product_category_level"`
+		Status     int    `json:"status,omitempty" gorm:"not null;index:idx_product_category_status"`
+		StatusDesc string `json:"statusDesc,omitempty" gorm:"-"`
 		// 所属分类
 		Belongs pq.Int64Array `json:"belongs,omitempty" gorm:"type:int[]"`
+		// 所属分类描述
+		BelongsDesc []string `json:"belongsDesc,omitempty" gorm:"-"`
 	}
 	ProductSrv struct{}
+)
+
+const (
+	errProductCategory = "product"
+)
+
+var (
+	errProductUnavailable = &hes.Error{
+		Message:    "产品状态非可销售状态",
+		StatusCode: http.StatusBadRequest,
+		Category:   errProductCategory,
+	}
+	errProductOutOfDate = &hes.Error{
+		Message:    "非产品销售期",
+		StatusCode: http.StatusBadRequest,
+		Category:   errProductCategory,
+	}
+)
+
+var (
+	// productCategoryNameCache product category's name cache
+	productCategoryNameCache = lruTTL.New(100, 300*time.Second)
 )
 
 func init() {
 	pgGetClient().AutoMigrate(&Product{}).
 		AutoMigrate(&ProductCategory{})
+}
+
+func (p *Product) AfterFind() (err error) {
+	p.StatusDesc = getStatusDesc(p.Status)
+
+	// 根据产品分类转换对应分类名称
+	categoriesDesc := make([]string, 0)
+	for _, id := range p.Categories {
+		// 如果获取失败，忽略出错
+		name, _ := productSrv.GetCategoryNameFromCache(uint(id))
+		if name != "" {
+			categoriesDesc = append(categoriesDesc, name)
+		}
+	}
+	p.CategoriesDesc = categoriesDesc
+
+	// 如果获取失败，忽略出错
+	p.OrginDesc, _ = regionSrv.GetNameFromCache(p.Origin)
+
+	// 如果获取失败，忽略出错
+	p.BrandDesc, _ = brandSrv.GetNameFromCache(p.Brand)
+
+	return
+}
+
+func (pc *ProductCategory) AfterFind() (err error) {
+	pc.StatusDesc = getStatusDesc(pc.Status)
+
+	// 生成上级分类描述
+	belongsDesc := make([]string, 0)
+	for _, id := range pc.Belongs {
+		// 如果获取失败，忽略出错
+		name, _ := productSrv.GetCategoryNameFromCache(uint(id))
+		if name != "" {
+			belongsDesc = append(belongsDesc, name)
+		}
+	}
+	pc.BelongsDesc = belongsDesc
+
+	return
 }
 
 func (srv *ProductSrv) createByID(id uint) *Product {
@@ -67,8 +148,20 @@ func (srv *ProductSrv) createByID(id uint) *Product {
 	return p
 }
 
+// CheckAvailable check product is available
+func (product *Product) CheckAvailable() error {
+	if product.Status != cs.StatusEnabled {
+		return errProductUnavailable
+	}
+	if !util.IsBetween(product.StartedAt, product.EndedAt) {
+		return errProductOutOfDate
+	}
+	return nil
+}
+
 // Add add product
-func (srv *ProductSrv) Add(product *Product) (err error) {
+func (srv *ProductSrv) Add(data Product) (product *Product, err error) {
+	product = &data
 	err = pgCreate(product)
 	return
 }
@@ -105,7 +198,8 @@ func (srv *ProductSrv) createCategoryByID(id uint) *ProductCategory {
 }
 
 // AddCategory add category
-func (srv *ProductSrv) AddCategory(cat *ProductCategory) (err error) {
+func (srv *ProductSrv) AddCategory(data ProductCategory) (cat *ProductCategory, err error) {
+	cat = &data
 	err = pgCreate(cat)
 	return
 }
@@ -133,4 +227,23 @@ func (srv *ProductSrv) ListCategory(params helper.PGQueryParams, args ...interfa
 // CountCategory count category
 func (srv *ProductSrv) CountCategory(args ...interface{}) (count int, err error) {
 	return pgCount(&ProductCategory{}, args...)
+}
+
+// GetCategoryNameFromCache get product category's name from cache
+// If not exists, it will get from db and save to cache
+func (srv *ProductSrv) GetCategoryNameFromCache(id uint) (name string, err error) {
+	if id == 0 {
+		return
+	}
+	value, ok := productCategoryNameCache.Get(id)
+	if ok {
+		return value.(string), nil
+	}
+	cat, err := srv.FindCategoryByID(id)
+	if err != nil {
+		return
+	}
+	name = cat.Name
+	productCategoryNameCache.Add(id, name)
+	return
 }

@@ -26,7 +26,7 @@ func TestConfigurationService(t *testing.T) {
 	assert := assert.New(t)
 	t.Run("is valid", func(t *testing.T) {
 		conf := &Configuration{
-			Status: cs.ConfigDiabled,
+			Status: cs.StatusDisabled,
 		}
 		assert.False(conf.IsValid())
 
@@ -54,11 +54,10 @@ func TestConfigurationService(t *testing.T) {
 
 	srv := ConfigurationSrv{}
 	t.Run("add", func(t *testing.T) {
-		conf := &Configuration{
+		conf, err := srv.Add(Configuration{
 			Name:  "test",
 			Owner: "tree.xie",
-		}
-		err := srv.Add(conf)
+		})
 		assert.Nil(err)
 		assert.NotEmpty(conf.ID)
 		id = conf.ID

@@ -15,6 +15,9 @@
 package service
 
 import (
+	"encoding/json"
+	"errors"
+
 	"github.com/jinzhu/gorm"
 	"github.com/lib/pq"
 	"github.com/vicanso/elton"
@@ -28,15 +31,17 @@ import (
 )
 
 const (
-	// UserAccount user account field
-	UserAccount = "account"
-	// UserLoginAt user login at
-	UserLoginAt = "loginAt"
-	// UserRoles user roles
-	UserRoles = "roles"
-	// UserGroups user groups
-	UserGroups = "groups"
-	// UserLoginToken user login token
+	UserSessionInfoKey = "user-session-info"
+
+	// // UserAccount user account field
+	// UserAccount = "account"
+	// // UserLoginAt user login at
+	// UserLoginAt = "loginAt"
+	// // UserRoles user roles
+	// UserRoles = "roles"
+	// // UserGroups user groups
+	// UserGroups = "groups"
+	// // UserLoginToken user login token
 	UserLoginToken = "loginToken"
 )
 
@@ -45,9 +50,18 @@ var (
 )
 
 type (
+	// UserSessionInfo user session info
+	UserSessionInfo struct {
+		Account   string
+		ID        uint
+		Roles     []string
+		Groups    []string
+		LoginedAt string
+	}
 	// UserSession user session struct
 	UserSession struct {
-		se *session.Session
+		se   *session.Session
+		info *UserSessionInfo
 	}
 	// User user
 	User struct {
@@ -58,9 +72,10 @@ type (
 		Roles    pq.StringArray `json:"roles,omitempty" gorm:"type:text[]"`
 		Groups   pq.StringArray `json:"groups,omitempty" gorm:"type:text[]"`
 		// 用户状态
-		Status int    `json:"status,omitempty"`
-		Email  string `json:"email,omitempty"`
-		Mobile string `json:"mobile,omitempty"`
+		Status     int    `json:"status,omitempty"`
+		StatusDesc string `json:"statusDesc,omitempty" gorm:"-"`
+		Email      string `json:"email,omitempty"`
+		Mobile     string `json:"mobile,omitempty"`
 	}
 	// UserRole user role
 	UserRole struct {
@@ -122,6 +137,22 @@ func (u *User) AfterCreate(scope *gorm.Scope) (err error) {
 	return
 }
 
+// BeforeCreate before create hook
+func (u *User) BeforeCreate() (err error) {
+	if len(u.Roles) == 0 {
+		// 自动添加用户角色
+		u.Roles = []string{
+			cs.UserRoleNormal,
+		}
+	}
+	return
+}
+
+func (u *User) AfterFind() (err error) {
+	u.StatusDesc = getStatusDesc(u.Status)
+	return
+}
+
 // ListRoles list all user roles
 func (srv *UserSrv) ListRoles() []*UserRole {
 	return []*UserRole{
@@ -173,15 +204,12 @@ func (srv *UserSrv) createLoginRecordByID(id uint) *UserLoginRecord {
 }
 
 // Add add user
-func (srv *UserSrv) Add(u *User) (err error) {
+func (srv *UserSrv) Add(data User) (u *User, err error) {
+	u = &data
 	if u.Status == 0 {
 		u.Status = cs.StatusEnabled
 	}
-	if len(u.Roles) == 0 {
-		u.Roles = pq.StringArray([]string{
-			cs.UserRoleNormal,
-		})
-	}
+
 	err = pgCreate(u)
 	return
 }
@@ -316,99 +344,109 @@ func (srv *UserSrv) CountLoginRecord(args ...interface{}) (count int, err error)
 	return pgCount(&UserLoginRecord{}, args...)
 }
 
-// GetAccount get the account
-func (u *UserSession) GetAccount() string {
-	if u.se == nil {
-		return ""
+// GetUesrInfo get user info
+func (us *UserSession) GetUserInfo() (info *UserSessionInfo, err error) {
+	info = us.info
+	if info != nil {
+		return
 	}
-	return u.se.GetString(UserAccount)
+	data := us.se.GetString(UserSessionInfoKey)
+	info = new(UserSessionInfo)
+	err = json.Unmarshal([]byte(data), info)
+	if err != nil {
+		return
+	}
+	us.info = info
+	return
 }
 
-// SetAccount set the account
-func (u *UserSession) SetAccount(account string) error {
-	return u.se.Set(UserAccount, account)
+// MustGetUserInfo get user info, if not exists, it will panic
+func (us *UserSession) MustGetUserInfo() (info *UserSessionInfo) {
+	info, err := us.GetUserInfo()
+	if err != nil {
+		panic(err)
+	}
+	if info == nil {
+		panic(errors.New("get user info fail"))
+	}
+	return info
 }
 
-// GetUpdatedAt get updated at
-func (u *UserSession) GetUpdatedAt() string {
-	return u.se.GetUpdatedAt()
+// IsLogined check user is logined
+func (us *UserSession) IsLogined() bool {
+	info, err := us.GetUserInfo()
+	if err != nil || info == nil {
+		return false
+	}
+	return info.Account != ""
 }
 
-// SetLoginAt set the login at
-func (u *UserSession) SetLoginAt(date string) error {
-	return u.se.Set(UserLoginAt, date)
+// SetUserInfo set user session info
+func (us *UserSession) SetUserInfo(data User) (err error) {
+	info := UserSessionInfo{
+		Account:   data.Account,
+		ID:        data.ID,
+		Roles:     data.Roles,
+		Groups:    data.Groups,
+		LoginedAt: util.NowString(),
+	}
+	buf, err := json.Marshal(&info)
+	if err != nil {
+		return
+	}
+	err = us.se.Set(UserSessionInfoKey, string(buf))
+	if err != nil {
+		return
+	}
+	return
 }
 
-// GetLoginAt get login at
-func (u *UserSession) GetLoginAt() string {
-	return u.se.GetString(UserLoginAt)
+// GetAccount get the account
+func (us *UserSession) GetAccount() string {
+	info := us.MustGetUserInfo()
+	return info.Account
 }
 
 // SetLoginToken get user login token
-func (u *UserSession) SetLoginToken(token string) error {
-	return u.se.Set(UserLoginToken, token)
+func (us *UserSession) SetLoginToken(token string) error {
+	return us.se.Set(UserLoginToken, token)
 }
 
 // GetLoginToken get user login token
-func (u *UserSession) GetLoginToken() string {
-	return u.se.GetString(UserLoginToken)
-}
-
-// SetRoles set user roles
-func (u *UserSession) SetRoles(roles []string) error {
-	return u.se.Set(UserRoles, roles)
+func (us *UserSession) GetLoginToken() string {
+	return us.se.GetString(UserLoginToken)
 }
 
 // GetRoles get user roles
-func (u *UserSession) GetRoles() []string {
-	result, ok := u.se.Get(UserRoles).([]interface{})
-	if !ok {
-		return nil
-	}
-	roles := []string{}
-	for _, item := range result {
-		role, _ := item.(string)
-		if role != "" {
-			roles = append(roles, role)
-		}
-	}
-	return roles
-}
-
-// SetGroups set user groups
-func (u *UserSession) SetGroups(groups []string) error {
-	return u.se.Set(UserGroups, groups)
+func (us *UserSession) GetRoles() []string {
+	info := us.MustGetUserInfo()
+	return info.Roles
 }
 
 // GetGroups get user groups
-func (u *UserSession) GetGroups() []string {
-	result, ok := u.se.Get(UserGroups).([]interface{})
-	if !ok {
-		return nil
-	}
-	groups := []string{}
-	for _, item := range result {
-		group, _ := item.(string)
-		if group != "" {
-			groups = append(groups, group)
-		}
-	}
-	return groups
+func (us *UserSession) GetGroups() []string {
+	info := us.MustGetUserInfo()
+	return info.Groups
+}
+
+func (us *UserSession) GetLoginedAt() string {
+	info := us.MustGetUserInfo()
+	return info.LoginedAt
 }
 
 // Destroy destroy user session
-func (u *UserSession) Destroy() error {
-	return u.se.Destroy()
+func (us *UserSession) Destroy() error {
+	return us.se.Destroy()
 }
 
 // Refresh refresh user session
-func (u *UserSession) Refresh() error {
-	return u.se.Refresh()
+func (us *UserSession) Refresh() error {
+	return us.se.Refresh()
 }
 
 // ClearSessionID clear session id
-func (u *UserSession) ClearSessionID() {
-	u.se.ID = ""
+func (us *UserSession) ClearSessionID() {
+	us.se.ID = ""
 }
 
 // NewUserSession create a user session

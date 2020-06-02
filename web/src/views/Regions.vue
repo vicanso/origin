@@ -106,7 +106,7 @@ export default {
     regions: state => state.region.list.data || []
   }),
   methods: {
-    ...mapActions(["listRegion", "listRegionCategory", "listRegionStatus"]),
+    ...mapActions(["listRegion", "listStatus", "listRegionCategory"]),
     async fetch() {
       const { query } = this;
       try {
@@ -128,7 +128,7 @@ export default {
       });
       regionCategories.push(...categories);
 
-      const { statuses } = await this.listRegionStatus();
+      const { statuses } = await this.listStatus();
       regionStatuses.length = 0;
       regionStatuses.push({
         name: "所有",

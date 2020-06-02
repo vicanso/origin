@@ -1,10 +1,6 @@
 import request from "@/helpers/request";
 import { REGIONS, REGIONS_LIST_CATEGORIES, REGIONS_ID } from "@/constants/url";
-import {
-  listStatus,
-  attachStatusDesc,
-  attachUpdatedAtDesc
-} from "@/store/modules/common";
+import { attachStatusDesc, attachUpdatedAtDesc } from "@/store/modules/common";
 import { findByID } from "@/helpers/util";
 
 const state = {
@@ -108,7 +104,6 @@ export default {
     async listRegion({ commit }, { params, categoy }) {
       commit(mutationRegionListProcessing, true);
       try {
-        await listStatus({ commit });
         const { data } = await request.get(REGIONS, {
           params
         });
@@ -119,7 +114,6 @@ export default {
         commit(mutationRegionListProcessing, false);
       }
     },
-    listRegionStatus: listStatus,
     listRegionCategory,
     async updateRegionByID({ commit }, { id, data }) {
       commit(mutationRegionUpdateProcessing, true);

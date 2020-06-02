@@ -63,7 +63,7 @@ type (
 		TrackID string `json:"trackId,omitempty"`
 		// 登录时间
 		// Example: 2019-10-26T10:11:25+08:00
-		LoginAt string `json:"loginAt,omitempty"`
+		LoginedAt string `json:"loginedAt,omitempty"`
 	}
 	loginTokenResp struct {
 		// 登录Token
@@ -267,12 +267,12 @@ func pickUserInfo(c *elton.Context) (userInfo *userInfoResp) {
 		IP:        c.RealIP(),
 		TrackID:   getTrackID(c),
 	}
-	account := us.GetAccount()
-	if account != "" {
-		userInfo.Account = account
+	if us.IsLogined() {
+		userInfo.Account = us.GetAccount()
 		userInfo.Roles = us.GetRoles()
 		userInfo.Groups = us.GetGroups()
 		userInfo.Anonymous = false
+		userInfo.LoginedAt = us.GetLoginedAt()
 	}
 	return
 }
@@ -387,11 +387,10 @@ func (ctrl userCtrl) register(c *elton.Context) (err error) {
 	if err != nil {
 		return
 	}
-	u := &service.User{
+	u, err := userSrv.Add(service.User{
 		Account:  params.Account,
 		Password: params.Password,
-	}
-	err = userSrv.Add(u)
+	})
 	if err != nil {
 		return
 	}
@@ -440,9 +439,7 @@ func (ctrl userCtrl) login(c *elton.Context) (err error) {
 	}
 	_ = userSrv.AddLoginRecord(loginRecord, c)
 	omitUserInfo(u)
-	_ = us.SetAccount(u.Account)
-	_ = us.SetRoles(u.Roles)
-	_ = us.SetGroups(u.Groups)
+	us.SetUserInfo(*u)
 	c.Body = u
 	return
 }

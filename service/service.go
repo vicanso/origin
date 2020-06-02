@@ -15,8 +15,19 @@
 package service
 
 import (
+	"sort"
+
+	"github.com/vicanso/origin/cs"
 	"github.com/vicanso/origin/helper"
 	"github.com/vicanso/origin/log"
+)
+
+type (
+	StatusInfo struct {
+		Name  string `json:"name,omitempty"`
+		Value int    `json:"value,omitempty"`
+	}
+	StatusInfoList []*StatusInfo
 )
 
 var (
@@ -28,5 +39,40 @@ var (
 
 	logger = log.Default()
 
-	redisSrv = new(helper.Redis)
+	redisSrv   = new(helper.Redis)
+	productSrv = new(ProductSrv)
+	regionSrv  = new(RegionSrv)
+	brandSrv   = new(BrandSrv)
+
+	statusInfoList StatusInfoList
+	statusDict     map[int]string
 )
+
+func init() {
+	statusDict = map[int]string{
+		cs.StatusEnabled:  "启用",
+		cs.StatusDisabled: "禁用",
+	}
+	statusInfoList = make(StatusInfoList, 0)
+	for k, v := range statusDict {
+		statusInfoList = append(statusInfoList, &StatusInfo{
+			Name:  v,
+			Value: k,
+		})
+	}
+	sort.Slice(statusInfoList, func(i, j int) bool {
+		return statusInfoList[i].Value < statusInfoList[j].Value
+	})
+}
+
+func getStatusDesc(status int) string {
+	value, ok := statusDict[status]
+	if !ok {
+		return ""
+	}
+	return value
+}
+
+func GetStatusList() []*StatusInfo {
+	return statusInfoList
+}

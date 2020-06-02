@@ -128,7 +128,7 @@ func (ctrl configurationCtrl) add(c *elton.Context) (err error) {
 		return
 	}
 	us := getUserSession(c)
-	conf := &service.Configuration{
+	conf, err := configSrv.Add(service.Configuration{
 		Name:      params.Name,
 		Category:  params.Category,
 		Status:    params.Status,
@@ -136,8 +136,7 @@ func (ctrl configurationCtrl) add(c *elton.Context) (err error) {
 		Owner:     us.GetAccount(),
 		BeginDate: params.BeginDate,
 		EndDate:   params.EndDate,
-	}
-	err = configSrv.Add(conf)
+	})
 	if err != nil {
 		return
 	}

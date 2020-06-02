@@ -31,9 +31,27 @@ const fields = [
   },
   {
     label: "单位：",
-    key: "unit",
+    type: "specsUnit",
+    key: "specs",
+    dataType: "number",
+    placeholder: "请输入产品规格",
+    selectKey: "unit",
     clearable: true,
-    placeholder: "请输入产品单位"
+    selectPlaceholder: "请输入产品单位",
+    options: [
+      {
+        name: "盒",
+        value: "盒"
+      },
+      {
+        name: "克",
+        value: "克"
+      },
+      {
+        name: "个",
+        value: "个"
+      }
+    ]
   },
   {
     label: "状态：",
@@ -70,14 +88,16 @@ const fields = [
   {
     label: "主图：",
     key: "mainPic",
-    placeholder: "请输入主图位置"
+    placeholder: "请输入主图位置",
+    dataType: "number"
   },
   {
     label: "图片：",
     key: "files",
     span: 24,
     type: "upload",
-    bucket: "origin-pics"
+    bucket: "origin-pics",
+    limit: 10
   },
   {
     label: "开始时间：",
@@ -124,7 +144,7 @@ export default {
   },
   methods: {
     ...mapActions([
-      "listProductStatus",
+      "listStatus",
       "listBrand",
       "getProductByID",
       "updateProductByID",
@@ -137,7 +157,7 @@ export default {
       this.productID = Number(id);
     }
     try {
-      const { statuses } = await this.listProductStatus();
+      const { statuses } = await this.listStatus();
       productStatuses.length = 0;
       productStatuses.push(...statuses);
       this.fields = fields;

@@ -21,7 +21,6 @@ import (
 	"github.com/vicanso/origin/cs"
 	"github.com/vicanso/origin/router"
 	"github.com/vicanso/origin/service"
-	"github.com/vicanso/origin/util"
 	"github.com/vicanso/origin/validate"
 )
 
@@ -100,16 +99,13 @@ func (ctrl brandCtrl) add(c *elton.Context) (err error) {
 	if err != nil {
 		return
 	}
-	brand := &service.Brand{
+
+	brand, err := brandSrv.Add(service.Brand{
 		Name:    params.Name,
 		Status:  params.Status,
 		Logo:    params.Logo,
 		Catalog: params.Catalog,
-	}
-
-	brand.FirstLetter = util.GetFirstLetter(params.Name)
-
-	err = brandSrv.Add(brand)
+	})
 	if err != nil {
 		return
 	}
@@ -177,17 +173,12 @@ func (ctrl brandCtrl) updateByID(c *elton.Context) (err error) {
 		return
 	}
 
-	brand := service.Brand{
+	err = brandSrv.UpdateByID(uint(id), service.Brand{
 		Name:    params.Name,
 		Status:  params.Status,
 		Logo:    params.Logo,
 		Catalog: params.Catalog,
-	}
-	if brand.Name != "" {
-		brand.FirstLetter = util.GetFirstLetter(brand.Name)
-	}
-
-	err = brandSrv.UpdateByID(uint(id), brand)
+	})
 
 	if err != nil {
 		return

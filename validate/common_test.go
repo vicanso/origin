@@ -25,21 +25,18 @@ func TestCommonValidate(t *testing.T) {
 
 	t.Run("xLimit", func(t *testing.T) {
 		type xLimit struct {
-			Value int `json:"value" validate:"xLimit"`
+			Value string `json:"value" validate:"xLimit"`
 		}
 
 		x := xLimit{}
 
-		err := doValidate(&x, []byte(`{"value": 0}`))
+		err := doValidate(&x, []byte(`{"value": ""}`))
 		assert.Equal(`Key: 'xLimit.Value' Error:Field validation for 'Value' failed on the 'xLimit' tag`, err.Error())
 
-		err = doValidate(&x, []byte(`{"value": 10}`))
+		err = doValidate(&x, []byte(`{"value": "10"}`))
 		assert.Nil(err)
 
-		err = doValidate(&x, []byte(`{"value": 110}`))
-		assert.Equal(`Key: 'xLimit.Value' Error:Field validation for 'Value' failed on the 'xLimit' tag`, err.Error())
-
-		err = doValidate(&x, []byte(`{"value": -1}`))
+		err = doValidate(&x, []byte(`{"value": "1000"}`))
 		assert.Equal(`Key: 'xLimit.Value' Error:Field validation for 'Value' failed on the 'xLimit' tag`, err.Error())
 
 	})

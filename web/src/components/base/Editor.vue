@@ -38,6 +38,27 @@
               />
             </el-select>
             <el-input
+              v-else-if="field.type === 'specsUnit'"
+              :placeholder="field.placeholder"
+              v-model="current[field.key]"
+              :clearable="field.clearable"
+            >
+              <el-select
+                class="inputSelect"
+                v-model="current[field.selectKey]"
+                slot="append"
+                :placeholder="field.selectPlaceholder"
+              >
+                <el-option
+                  v-for="item in field.options"
+                  :key="item.name"
+                  :label="item.name"
+                  :value="item.value"
+                />
+              </el-select>
+            </el-input>
+
+            <el-input
               type="textarea"
               v-else-if="field.type === 'textarea'"
               v-model="current[field.key]"
@@ -238,4 +259,6 @@ export default {
     margin-right: 5px
   .select, .btn
     width: 100%
+  .inputSelect
+    min-width: 60px
 </style>

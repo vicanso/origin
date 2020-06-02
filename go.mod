@@ -18,7 +18,7 @@ require (
 	github.com/oklog/ulid/v2 v2.0.2
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/spf13/viper v1.7.0
-	github.com/stretchr/testify v1.5.1
+	github.com/stretchr/testify v1.6.0
 	github.com/tidwall/gjson v1.6.0
 	github.com/vicanso/count-warner v1.0.0
 	github.com/vicanso/elton v1.0.2
@@ -26,6 +26,7 @@ require (
 	github.com/vicanso/go-axios v0.1.2
 	github.com/vicanso/hes v0.2.1
 	github.com/vicanso/ips v1.0.0
+	github.com/vicanso/lru-ttl v0.1.0
 	go.uber.org/automaxprocs v1.3.0
 	go.uber.org/zap v1.15.0
 	golang.org/x/image v0.0.0-20200430140353-33d19683fad8

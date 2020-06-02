@@ -1,11 +1,7 @@
 import request from "@/helpers/request";
 
 import { BRANDS, BRANDS_ID } from "@/constants/url";
-import {
-  listStatus,
-  attachStatusDesc,
-  attachUpdatedAtDesc
-} from "@/store/modules/common";
+import { attachUpdatedAtDesc, attachStatusDesc } from "@/store/modules/common";
 import { addNoCacheQueryParam, toUploadFiles, findByID } from "@/helpers/util";
 
 const prefix = "brand";
@@ -22,8 +18,8 @@ const state = {
 };
 
 function enhanceBrandInfo(item) {
-  attachStatusDesc(item);
   attachUpdatedAtDesc(item);
+  attachStatusDesc(item);
   item.files = toUploadFiles(item.logo);
 }
 
@@ -54,6 +50,10 @@ export default {
   actions: {
     // addBrand 添加品牌信息
     async addBrand({ commit }, brand) {
+      if (brand.files) {
+        brand.logo = brand.files[0].url;
+        delete brand.files;
+      }
       commit(mutationBrandProcessing, true);
       try {
         const { data } = await request.post(BRANDS, brand);
@@ -62,12 +62,10 @@ export default {
         commit(mutationBrandProcessing, false);
       }
     },
-    listBrandStatus: listStatus,
     // listBrand 获取品牌
     async listBrand({ commit }, params) {
       commit(mutationBrandProcessing, true);
       try {
-        await listStatus({ commit });
         const { data } = await request.get(BRANDS, {
           params: addNoCacheQueryParam(params)
         });

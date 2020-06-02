@@ -8,6 +8,7 @@
     :updateByID="updateProductCategoryByID"
     :add="addProductCategory"
     :fields="fields"
+    :rules="rules"
   />
 </template>
 <script>
@@ -69,12 +70,33 @@ export default {
     return {
       fields: null,
       categoryID: 0,
-      processing: false
+      processing: false,
+
+      rules: {
+        name: [
+          {
+            required: true,
+            message: "产品分类名称不能为空"
+          }
+        ],
+        level: [
+          {
+            required: true,
+            message: "产品分类级别不能为空"
+          }
+        ],
+        status: [
+          {
+            required: true,
+            message: "产品分类状态不能为空"
+          }
+        ]
+      }
     };
   },
   methods: {
     ...mapActions([
-      "listProductCategoryStatus",
+      "listStatus",
       "getProductCategoryByID",
       "updateProductCategoryByID",
       "addProductCategory"
@@ -87,7 +109,7 @@ export default {
       this.categoryID = Number(id);
     }
     try {
-      const { statuses } = await this.listProductCategoryStatus();
+      const { statuses } = await this.listStatus();
       categoryStatuses.length = 0;
       categoryStatuses.push(...statuses);
       this.fields = fields;

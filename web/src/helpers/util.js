@@ -152,7 +152,11 @@ export function toUploadFiles(files) {
     return [];
   }
   if (Array.isArray(files)) {
-    return files;
+    return files.map(file => {
+      return {
+        url: file
+      };
+    });
   }
   return [
     {

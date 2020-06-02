@@ -15,7 +15,12 @@
 package service
 
 import (
+	"time"
+
+	"github.com/jinzhu/gorm"
+	lruTTL "github.com/vicanso/lru-ttl"
 	"github.com/vicanso/origin/helper"
+	"github.com/vicanso/origin/util"
 )
 
 type (
@@ -24,6 +29,7 @@ type (
 
 		Name        string `json:"name,omitempty" gorm:"type:varchar(100);not null;unique_index:idx_brand_name"`
 		Status      int    `json:"status,omitempty"`
+		StatusDesc  string `json:"statusDesc,omitempty" gorm:"-"`
 		Logo        string `json:"logo,omitempty"`
 		Catalog     string `json:"catalog,omitempty"`
 		FirstLetter string `json:"firstLetter,omitempty"`
@@ -31,8 +37,38 @@ type (
 	BrandSrv struct{}
 )
 
+var (
+	// brandNameCache brandh's name cache
+	brandNameCache = lruTTL.New(100, 300*time.Second)
+)
+
 func init() {
 	pgGetClient().AutoMigrate(&Brand{})
+}
+
+func (u *Brand) AfterFind() (err error) {
+	u.StatusDesc = getStatusDesc(u.Status)
+	return
+}
+
+func (b *Brand) BeforeCreate() (err error) {
+	// 自动生成拼音首字母
+	if b.Name != "" {
+		b.FirstLetter = util.GetFirstLetter(b.Name)
+	}
+	return
+}
+func (b *Brand) AfterUpdate(tx *gorm.DB) (err error) {
+	if b.Name != "" {
+		letter := util.GetFirstLetter(b.Name)
+		// 自动更新拼音首字母
+		if b.FirstLetter != letter {
+			tx.Model(b).Update(Brand{
+				FirstLetter: letter,
+			})
+		}
+	}
+	return
 }
 
 func (srv *BrandSrv) createByID(id uint) *Brand {
@@ -42,7 +78,8 @@ func (srv *BrandSrv) createByID(id uint) *Brand {
 }
 
 // Add add brand
-func (srv *BrandSrv) Add(brand *Brand) (err error) {
+func (srv *BrandSrv) Add(data Brand) (brand *Brand, err error) {
+	brand = &data
 	err = pgCreate(brand)
 	return
 }
@@ -70,4 +107,23 @@ func (srv *BrandSrv) List(params helper.PGQueryParams, args ...interface{}) (res
 // Count count the brand
 func (srv *BrandSrv) Count(args ...interface{}) (count int, err error) {
 	return pgCount(&Brand{}, args...)
+}
+
+// GetNameFromCache get name from cache
+// If not exists, it willl get from db and save it to cache
+func (srv *BrandSrv) GetNameFromCache(id uint) (name string, err error) {
+	if id == 0 {
+		return
+	}
+	value, ok := brandNameCache.Get(id)
+	if ok {
+		return value.(string), nil
+	}
+	brand, err := srv.FindByID(id)
+	if err != nil {
+		return
+	}
+	name = brand.Name
+	brandNameCache.Add(id, name)
+	return
 }

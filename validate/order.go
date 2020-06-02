@@ -15,17 +15,7 @@
 package validate
 
 func init() {
-	AddAlias("xProductName", "min=1,max=50")
-	AddAlias("xProductPrice", "min=0.01,max=1000")
-	AddAlias("xProductUnit", "min=1,max=2")
-	AddAlias("xProductSpecs", "number,min=1,max=1000")
-	AddAlias("xProductCatalog", "min=1,max=1000")
-	AddAlias("xProductSN", "min=1,max=100")
-	AddAlias("xProductMainPic", "min=1,max=20")
-	AddAlias("xProductKeyword", "min=1,max=100")
-	AddAlias("xProductOrigin", "min=1,max=100")
-	AddAlias("xProductBrand", "min=1")
-
-	AddAlias("xProductCategoryName", "min=1,max=10")
-	AddAlias("xProductCategoryLevel", "number,min=1,max=3")
+	AddAlias("xOrderProductID", "number,min=1")
+	// 暂仅支持一次最大1000
+	AddAlias("xOrderProductCount", "number,min=1,max=1000")
 }

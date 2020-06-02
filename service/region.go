@@ -15,6 +15,10 @@
 package service
 
 import (
+	"strings"
+	"time"
+
+	lruTTL "github.com/vicanso/lru-ttl"
 	"github.com/vicanso/origin/cs"
 	"github.com/vicanso/origin/helper"
 )
@@ -23,11 +27,12 @@ type (
 	Region struct {
 		helper.Model
 
-		Category int    `json:"category,omitempty" gorm:"not null;index:idx_region_category_name"`
-		Name     string `json:"name,omitempty" gorm:"not null;index:idx_region_category_name"`
-		Code     string `json:"code,omitempty" gorm:"not null;unique_index:idx_region_code"`
-		Parent   string `json:"parent,omitempty" gorm:"not null;index:idx_region_parent"`
-		Status   int    `json:"status,omitempty"`
+		Category   int    `json:"category,omitempty" gorm:"not null;index:idx_region_category_name"`
+		Name       string `json:"name,omitempty" gorm:"not null;index:idx_region_category_name"`
+		Code       string `json:"code,omitempty" gorm:"not null;unique_index:idx_region_code"`
+		Parent     string `json:"parent,omitempty" gorm:"not null;index:idx_region_parent"`
+		Status     int    `json:"status,omitempty"`
+		StatusDesc string `json:"statusDesc,omitempty" gorm:"-"`
 	}
 	RegionCategory struct {
 		Name  string `json:"name,omitempty"`
@@ -37,8 +42,18 @@ type (
 	RegionSrv struct{}
 )
 
+var (
+	// regionNameCache region's cache
+	regionNameCache = lruTTL.New(100, 300*time.Second)
+)
+
 func init() {
 	pgGetClient().AutoMigrate(&Region{})
+}
+
+func (r *Region) AfterFind() (err error) {
+	r.StatusDesc = getStatusDesc(r.Status)
+	return
 }
 
 // GetCategoryIndex get index of category
@@ -84,7 +99,8 @@ func (srv *RegionSrv) createByID(id uint) *Region {
 }
 
 // Add add region
-func (srv *RegionSrv) Add(region *Region) (err error) {
+func (srv *RegionSrv) Add(data Region) (region *Region, err error) {
+	region = &data
 	err = pgCreate(region)
 	return
 }
@@ -108,8 +124,47 @@ func (srv *RegionSrv) FindByID(id uint) (region *Region, err error) {
 	return
 }
 
+// FindByCode find by code
+func (srv *RegionSrv) FindByCode(code string) (region *Region, err error) {
+	region = new(Region)
+	err = pgGetClient().First(region, "code = ?", code).Error
+	return
+}
+
 // UpdateByID update region by id
 func (srv *RegionSrv) UpdateByID(id uint, attrs ...interface{}) (err error) {
 	err = pgGetClient().Model(srv.createByID(id)).Update(attrs...).Error
+	return
+}
+
+// GetNameFromCache get region's name from cache
+// If not exists, it will get from db and save to cache
+func (srv *RegionSrv) GetNameFromCache(code string) (name string, err error) {
+	if code == "" {
+		return
+	}
+	value, ok := regionNameCache.Get(code)
+	if ok {
+		return value.(string), nil
+	}
+	// 最多查询5层
+	regions := make([]string, 0)
+	searchCode := code
+	for i := 0; i < 5; i++ {
+		region, e := srv.FindByCode(searchCode)
+		if e != nil {
+			err = e
+			return
+		}
+		regions = append([]string{
+			region.Name,
+		}, regions...)
+		searchCode = region.Parent
+		if searchCode == "" {
+			break
+		}
+	}
+	name = strings.Join(regions, " ")
+	regionNameCache.Add(code, name)
 	return
 }

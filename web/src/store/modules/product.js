@@ -1,12 +1,13 @@
 import request from "@/helpers/request";
 
 import { PRODUCTS, PRODUCTS_ID } from "@/constants/url";
-import { formatDate, addNoCacheQueryParam, findByID } from "@/helpers/util";
 import {
-  listStatus,
-  attachStatusDesc,
-  attachUpdatedAtDesc
-} from "@/store/modules/common";
+  formatDate,
+  addNoCacheQueryParam,
+  findByID,
+  toUploadFiles
+} from "@/helpers/util";
+import { attachStatusDesc, attachUpdatedAtDesc } from "@/store/modules/common";
 
 const prefix = "product";
 const mutationProductProcessing = `${prefix}.processing`;
@@ -29,6 +30,13 @@ function fillAndUpdate(item) {
   item.endedAtDesc = formatDate(item.endedAt);
   attachUpdatedAtDesc(item);
   attachStatusDesc(item);
+  item.files = toUploadFiles(item.pics);
+}
+
+function convertFilesToPics(item) {
+  if (item.files && item.files.length !== 0) {
+    item.pics = item.files.map(file => file.url);
+  }
 }
 
 export default {
@@ -58,6 +66,7 @@ export default {
   actions: {
     // addProduct 添加产品
     async addProduct({ commit }, product) {
+      convertFilesToPics(product);
       commit(mutationProductProcessing, true);
       try {
         const { data } = await request.post(PRODUCTS, product);
@@ -66,12 +75,10 @@ export default {
         commit(mutationProductProcessing, false);
       }
     },
-    listProductStatus: listStatus,
     // listProduct 获取产品
     async listProduct({ commit }, params) {
       commit(mutationProductProcessing, true);
       try {
-        await listStatus({ commit });
         const { data } = await request.get(PRODUCTS, {
           params: addNoCacheQueryParam(params)
         });
@@ -92,6 +99,7 @@ export default {
         const { data } = await request.get(url, {
           params: addNoCacheQueryParam()
         });
+        fillAndUpdate(data);
         return data;
       } finally {
         commit(mutationProductProcessing, false);
@@ -102,6 +110,7 @@ export default {
       if (!data || Object.keys(data).length === 0) {
         return;
       }
+      convertFilesToPics(data);
       commit(mutationProductProcessing, true);
       try {
         const url = PRODUCTS_ID.replace(":id", id);

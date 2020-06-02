@@ -9,14 +9,18 @@
       <el-table v-loading="processing" :data="products" row-key="id" stripe>
         <el-table-column prop="name" key="name" label="名称" width="180" />
         <el-table-column prop="price" key="price" label="单价" width="100" />
-        <el-table-column prop="unit" key="unit" label="单位" width="100" />
+        <el-table-column key="unit" label="单位" width="100">
+          <template slot-scope="scope">
+            {{ scope.row.specs + scope.row.unit }}
+          </template>
+        </el-table-column>
         <el-table-column
           prop="statusDesc"
           key="statusDesc"
           label="状态"
           width="80"
         />
-        <el-table-column prop="brand" key="brand" label="品牌" />
+        <el-table-column prop="brandDesc" key="brand" label="品牌" />
         <el-table-column
           prop="startedAtDesc"
           key="startedAtDesc"
@@ -32,7 +36,7 @@
         <el-table-column label="分类" width="100">
           <template slot-scope="scope">
             <ul>
-              <li v-for="category in scope.row.categories" :key="category">
+              <li v-for="category in scope.row.categoriesDesc" :key="category">
                 {{ category }}
               </li>
             </ul>

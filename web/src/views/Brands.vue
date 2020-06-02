@@ -114,7 +114,7 @@ export default {
     })
   },
   methods: {
-    ...mapActions(["listBrand", "listBrandStatus"]),
+    ...mapActions(["listBrand", "listStatus"]),
     async fetch() {
       const { query } = this;
       try {
@@ -126,7 +126,7 @@ export default {
   },
   async beforeMount() {
     try {
-      const { statuses } = await this.listBrandStatus();
+      const { statuses } = await this.listStatus();
       brandStatuses.length = 0;
       brandStatuses.push({
         name: "所有",

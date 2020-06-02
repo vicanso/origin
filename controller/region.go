@@ -122,7 +122,7 @@ func (ctrl regionCtrl) importFromFile(c *elton.Context) (err error) {
 			return
 		}
 		for key, value := range m {
-			err = regionSrv.Add(&service.Region{
+			_, err = regionSrv.Add(service.Region{
 				Category: categoryIndex,
 				Name:     value,
 				Code:     key,
@@ -163,7 +163,7 @@ func (ctrl regionCtrl) importFromFile(c *elton.Context) (err error) {
 			err = hes.New("category is invalid")
 			return
 		}
-		err = regionSrv.Add(&region)
+		_, err = regionSrv.Add(region)
 		if err != nil {
 			return
 		}

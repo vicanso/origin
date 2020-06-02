@@ -51,8 +51,9 @@ type (
 		// 配置由谁创建
 		Owner string `json:"owner,omitempty" gorm:"type:varchar(20);not null"`
 		// 配置状态
-		Status int    `json:"status,omitempty"`
-		Data   string `json:"data,omitempty"`
+		Status     int    `json:"status,omitempty"`
+		StatusDesc string `json:"statusDesc,omitempty" gorm:"-"`
+		Data       string `json:"data,omitempty"`
 		// 启用开始时间
 		BeginDate *time.Time `json:"beginDate,omitempty"`
 		// 启用结束时间
@@ -68,21 +69,17 @@ func init() {
 	signedKeys.SetKeys(config.GetSignedKeys())
 }
 
+func (c *Configuration) AfterFind() (err error) {
+	c.StatusDesc = getStatusDesc(c.Status)
+	return
+}
+
 // IsValid check the config is valid
 func (conf *Configuration) IsValid() bool {
 	if conf.Status != cs.StatusEnabled {
 		return false
 	}
-	now := util.Now().Unix()
-	// 如果开始时间大于当前时间，未开始启用
-	if conf.BeginDate != nil && conf.BeginDate.Unix() > now {
-		return false
-	}
-	// 如果结束时间少于当前时间，已结束
-	if conf.EndDate != nil && conf.EndDate.Unix() < now {
-		return false
-	}
-	return true
+	return util.IsBetween(conf.BeginDate, conf.EndDate)
 }
 
 // createByID create a configuration by id
@@ -93,7 +90,8 @@ func (srv *ConfigurationSrv) createByID(id uint) *Configuration {
 }
 
 // Add add configuration
-func (srv *ConfigurationSrv) Add(conf *Configuration) (err error) {
+func (srv *ConfigurationSrv) Add(data Configuration) (conf *Configuration, err error) {
+	conf = &data
 	err = pgCreate(conf)
 	return
 }

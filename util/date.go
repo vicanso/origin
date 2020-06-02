@@ -81,3 +81,17 @@ func ChinaNow() time.Time {
 	loc, _ := time.LoadLocation("Asia/Shanghai")
 	return Now().In(loc)
 }
+
+// IsBetween now is between begin and end
+func IsBetween(begin *time.Time, end *time.Time) bool {
+	now := Now().Unix()
+	// 如果开始时间大于当前时间，未开始
+	if begin != nil && begin.Unix() > now {
+		return false
+	}
+	// 如果结束时间少于当前时间，已结束
+	if end != nil && end.Unix() < now {
+		return false
+	}
+	return true
+}

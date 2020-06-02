@@ -62,6 +62,8 @@ var (
 	productSrv = new(service.ProductSrv)
 	// 地区服务
 	regionSrv = new(service.RegionSrv)
+	// 订单服务
+	orderSrv = new(service.OrderSrv)
 
 	// 创建新的并发控制中间件
 	newConcurrentLimit = middleware.NewConcurrentLimit
@@ -187,10 +189,7 @@ func newTracker(action string) elton.Handler {
 
 func isLogin(c *elton.Context) bool {
 	us := service.NewUserSession(c)
-	if us == nil || us.GetAccount() == "" {
-		return false
-	}
-	return true
+	return us.IsLogined()
 }
 
 func checkLogin(c *elton.Context) (err error) {

@@ -1,10 +1,6 @@
 import request from "@/helpers/request";
 import { PRODUCT_CATEGORIES, PRODUCT_CATEGORIES_ID } from "@/constants/url";
-import {
-  listStatus,
-  attachStatusDesc,
-  attachUpdatedAtDesc
-} from "@/store/modules/common";
+import { attachStatusDesc, attachUpdatedAtDesc } from "@/store/modules/common";
 import { addNoCacheQueryParam, findByID } from "@/helpers/util";
 
 const prefix = "productCategory";
@@ -31,7 +27,6 @@ export default {
         state.list.count = count;
       }
       productCategories.forEach(item => {
-        attachStatusDesc(item);
         attachUpdatedAtDesc(item);
       });
       state.list.data = productCategories;
@@ -74,7 +69,6 @@ export default {
         commit(mutationProductCategoryListProcessing, false);
       }
     },
-    listProductCategoryStatus: listStatus,
     // getProductCategoryByID 通过id获取产品分类信息
     async getProductCategoryByID({ commit }, id) {
       const found = findByID(state.list.data, id);
