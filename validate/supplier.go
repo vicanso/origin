@@ -15,7 +15,7 @@
 package validate
 
 func init() {
-	AddAlias("xBrandName", "min=1,max=20")
-	AddAlias("xBrandLogo", "min=1,max=100")
-	AddAlias("xBrandCatalog", "min=1,max=1000")
+	AddAlias("xSupplierName", "min=1,max=50")
+	AddAlias("xSupplierAddress", "min=1,max=100")
+	AddAlias("xSupplierContact", "min=1,max=10")
 }

@@ -39,5 +39,4 @@ func init() {
 		return isAllInString(fl, cs.UserGroups)
 	})
 	AddAlias("xUserEmail", "email")
-	AddAlias("xUserMobile", "number,len=11")
 }

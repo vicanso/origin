@@ -28,6 +28,7 @@ func init() {
 	AddAlias("xOrder", "ascii,min=0,max=100")
 	AddAlias("xFields", "ascii,min=0,max=100")
 	AddAlias("xKeyword", "min=1,max=10")
+	AddAlias("xMobile", "number,len=11")
 
 	durationRegexp := regexp.MustCompile("^[1-9][0-9]*(ms|[smh])$")
 	Add("xDuration", func(fl validator.FieldLevel) bool {

@@ -64,6 +64,8 @@ var (
 	regionSrv = new(service.RegionSrv)
 	// 订单服务
 	orderSrv = new(service.OrderSrv)
+	// 供应商服务
+	supplierSrv = new(service.SupplierSrv)
 
 	// 创建新的并发控制中间件
 	newConcurrentLimit = middleware.NewConcurrentLimit
@@ -123,11 +125,13 @@ func init() {
 	captchaValidate = middleware.ValidateCaptcha(magicalValue)
 }
 
+// add add query and argument to query condition
 func (conditions *queryConditions) add(query string, arg interface{}) {
 	conditions.addQuery(query)
 	conditions.addArgs(arg)
 }
 
+// addQuery add query to query condition
 func (conditions *queryConditions) addQuery(arr ...string) {
 	if len(conditions.queryList) == 0 {
 		conditions.queryList = make([]string, 0)
@@ -135,6 +139,7 @@ func (conditions *queryConditions) addQuery(arr ...string) {
 	conditions.queryList = append(conditions.queryList, arr...)
 }
 
+// addArgs add arguments to query condition
 func (conditions *queryConditions) addArgs(args ...interface{}) {
 	if len(conditions.args) == 0 {
 		conditions.args = make([]interface{}, 0)
@@ -142,6 +147,7 @@ func (conditions *queryConditions) addArgs(args ...interface{}) {
 	conditions.args = append(conditions.args, args...)
 }
 
+// toArray convert query conditions to gorm query arguments
 func (conditions *queryConditions) toArray() []interface{} {
 	arr := make([]interface{}, 0)
 	if len(conditions.queryList) != 0 {
@@ -151,6 +157,7 @@ func (conditions *queryConditions) toArray() []interface{} {
 	return arr
 }
 
+// newTracker create a new trakcer middleware
 func newTracker(action string) elton.Handler {
 	return M.NewTracker(M.TrackerConfig{
 		Mask: regexp.MustCompile(`(?i)password`),
@@ -208,6 +215,7 @@ func checkAnonymous(c *elton.Context) (err error) {
 	return c.Next()
 }
 
+// newCheckRolesMiddleware create a new check roles middleware
 func newCheckRolesMiddleware(validRoles []string) elton.Handler {
 	return func(c *elton.Context) (err error) {
 		if !isLogin(c) {
@@ -225,6 +233,7 @@ func newCheckRolesMiddleware(validRoles []string) elton.Handler {
 	}
 }
 
+// newCheckGroupsMiddleware create a new check groups middleware
 func newCheckGroupsMiddleware(validGroups []string) elton.Handler {
 	return func(c *elton.Context) (err error) {
 		if !isLogin(c) {
@@ -252,4 +261,17 @@ func (params listParams) toPGQueryParams() helper.PGQueryParams {
 		Order:  params.Order,
 		Fields: params.Fields,
 	}
+}
+
+// getIDFromParams get id form context params
+func getIDFromParams(c *elton.Context) (id uint, err error) {
+	value, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		he := hes.Wrap(err)
+		he.Category = "parse-int"
+		err = he
+		return
+	}
+	id = uint(value)
+	return
 }

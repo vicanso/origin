@@ -16,7 +16,6 @@ package controller
 
 import (
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -99,7 +98,7 @@ type (
 	}
 	updateMeParams struct {
 		Email       string `json:"email,omitempty" validate:"omitempty,xUserEmail"`
-		Mobile      string `json:"mobile,omitempty" validate:"omitempty,xUserMobile"`
+		Mobile      string `json:"mobile,omitempty" validate:"omitempty,xMobile"`
 		Password    string `json:"password,omitempty" validate:"omitempty,xUserPassword"`
 		NewPassword string `json:"newPassword,omitempty" validate:"omitempty,xUserPassword"`
 	}
@@ -565,11 +564,11 @@ func (ctrl userCtrl) list(c *elton.Context) (err error) {
 
 // findByID get user byd id
 func (ctrl userCtrl) findByID(c *elton.Context) (err error) {
-	id, err := strconv.Atoi(c.Param("id"))
+	id, err := getIDFromParams(c)
 	if err != nil {
 		return
 	}
-	data, err := userSrv.FindByID(uint(id))
+	data, err := userSrv.FindByID(id)
 	if err != nil {
 		return
 	}
@@ -579,7 +578,7 @@ func (ctrl userCtrl) findByID(c *elton.Context) (err error) {
 
 // updateByID user update
 func (ctrl userCtrl) updateByID(c *elton.Context) (err error) {
-	id, err := strconv.Atoi(c.Param("id"))
+	id, err := getIDFromParams(c)
 	if err != nil {
 		return
 	}
@@ -606,7 +605,7 @@ func (ctrl userCtrl) updateByID(c *elton.Context) (err error) {
 	if len(params.Groups) != 0 {
 		user.Groups = pq.StringArray(params.Groups)
 	}
-	err = userSrv.UpdateByID(uint(id), user)
+	err = userSrv.UpdateByID(id, user)
 	if err != nil {
 		return
 	}

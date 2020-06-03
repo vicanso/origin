@@ -53,4 +53,9 @@ const (
 
 	// ActionOrderAdd add order
 	ActionOrderAdd = "add-order"
+
+	// ActionSupplierAdd add supplier
+	ActionSupplierAdd = "add-supplier"
+	// ActionSupplierUpdate update supplier
+	ActionSupplierUpdate = "update-supplier"
 )

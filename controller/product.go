@@ -15,7 +15,6 @@
 package controller
 
 import (
-	"strconv"
 	"time"
 
 	"github.com/vicanso/elton"
@@ -236,11 +235,11 @@ func (ctrl productCtrl) list(c *elton.Context) (err error) {
 
 // findByID find product by id
 func (ctrl productCtrl) findByID(c *elton.Context) (err error) {
-	id, err := strconv.Atoi(c.Param("id"))
+	id, err := getIDFromParams(c)
 	if err != nil {
 		return
 	}
-	data, err := productSrv.FindByID(uint(id))
+	data, err := productSrv.FindByID(id)
 	if err != nil {
 		return
 	}
@@ -251,7 +250,7 @@ func (ctrl productCtrl) findByID(c *elton.Context) (err error) {
 
 // updateByID update product by id
 func (ctrl productCtrl) updateByID(c *elton.Context) (err error) {
-	id, err := strconv.Atoi(c.Param("id"))
+	id, err := getIDFromParams(c)
 	if err != nil {
 		return
 	}
@@ -277,7 +276,7 @@ func (ctrl productCtrl) updateByID(c *elton.Context) (err error) {
 		Origin:     params.Origin,
 		Brand:      params.Brand,
 	}
-	err = productSrv.UpdateByID(uint(id), product)
+	err = productSrv.UpdateByID(id, product)
 	if err != nil {
 		return
 	}
@@ -339,7 +338,7 @@ func (ctrl productCtrl) listCategory(c *elton.Context) (err error) {
 
 // updateCategoryByID update category by id
 func (ctrl productCtrl) updateCategoryByID(c *elton.Context) (err error) {
-	id, err := strconv.Atoi(c.Param("id"))
+	id, err := getIDFromParams(c)
 	if err != nil {
 		return
 	}
@@ -354,7 +353,7 @@ func (ctrl productCtrl) updateCategoryByID(c *elton.Context) (err error) {
 		Status:  params.Status,
 		Belongs: params.Belongs,
 	}
-	err = productSrv.UpdateCategoryByID(uint(id), cat)
+	err = productSrv.UpdateCategoryByID(id, cat)
 	if err != nil {
 		return
 	}
@@ -364,11 +363,11 @@ func (ctrl productCtrl) updateCategoryByID(c *elton.Context) (err error) {
 
 // findCategoryByID find category by id
 func (ctrl productCtrl) findCategoryByID(c *elton.Context) (err error) {
-	id, err := strconv.Atoi(c.Param("id"))
+	id, err := getIDFromParams(c)
 	if err != nil {
 		return
 	}
-	data, err := productSrv.FindCategoryByID(uint(id))
+	data, err := productSrv.FindCategoryByID(id)
 	if err != nil {
 		return
 	}

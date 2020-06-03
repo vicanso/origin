@@ -8,6 +8,7 @@ import brandStore from "@/store/modules/brand";
 import productStore from "@/store/modules/product";
 import regionStore from "@/store/modules/region";
 import productCategoryStore from "@/store/modules/productCategory";
+import supplierStore from "@/store/modules/supplier";
 
 Vue.use(Vuex);
 
@@ -22,6 +23,7 @@ export default new Vuex.Store({
     brand: brandStore,
     product: productStore,
     region: regionStore,
-    productCategory: productCategoryStore
+    productCategory: productCategoryStore,
+    supplier: supplierStore
   }
 });

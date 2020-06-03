@@ -15,7 +15,6 @@
 package controller
 
 import (
-	"strconv"
 	"strings"
 	"time"
 
@@ -146,7 +145,7 @@ func (ctrl configurationCtrl) add(c *elton.Context) (err error) {
 
 // updateByID configuration
 func (ctrl configurationCtrl) updateByID(c *elton.Context) (err error) {
-	id, err := strconv.Atoi(c.Param("id"))
+	id, err := getIDFromParams(c)
 	if err != nil {
 		return
 	}
@@ -155,7 +154,7 @@ func (ctrl configurationCtrl) updateByID(c *elton.Context) (err error) {
 	if err != nil {
 		return
 	}
-	err = configSrv.UpdateByID(uint(id), service.Configuration{
+	err = configSrv.UpdateByID(id, service.Configuration{
 		Status:    params.Status,
 		Data:      params.Data,
 		Category:  params.Category,
@@ -172,11 +171,11 @@ func (ctrl configurationCtrl) updateByID(c *elton.Context) (err error) {
 
 // delete configuration
 func (ctrl configurationCtrl) delete(c *elton.Context) (err error) {
-	id, err := strconv.Atoi(c.Param("id"))
+	id, err := getIDFromParams(c)
 	if err != nil {
 		return
 	}
-	err = configSrv.DeleteByID(uint(id))
+	err = configSrv.DeleteByID(id)
 	if err != nil {
 		return
 	}
@@ -186,11 +185,11 @@ func (ctrl configurationCtrl) delete(c *elton.Context) (err error) {
 
 // findByID find configuration by id
 func (ctrl configurationCtrl) findByID(c *elton.Context) (err error) {
-	id, err := strconv.Atoi(c.Param("id"))
+	id, err := getIDFromParams(c)
 	if err != nil {
 		return
 	}
-	data, err := configSrv.FindByID(uint(id))
+	data, err := configSrv.FindByID(id)
 	if err != nil {
 		return
 	}

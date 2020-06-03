@@ -15,8 +15,6 @@
 package controller
 
 import (
-	"strconv"
-
 	"github.com/vicanso/elton"
 	"github.com/vicanso/origin/cs"
 	"github.com/vicanso/origin/router"
@@ -148,11 +146,11 @@ func (ctrl brandCtrl) list(c *elton.Context) (err error) {
 
 // findByID find brand by id
 func (ctrl brandCtrl) findByID(c *elton.Context) (err error) {
-	id, err := strconv.Atoi(c.Param("id"))
+	id, err := getIDFromParams(c)
 	if err != nil {
 		return
 	}
-	data, err := brandSrv.FindByID(uint(id))
+	data, err := brandSrv.FindByID(id)
 	if err != nil {
 		return
 	}
@@ -163,7 +161,7 @@ func (ctrl brandCtrl) findByID(c *elton.Context) (err error) {
 
 // updateByID update brand by id
 func (ctrl brandCtrl) updateByID(c *elton.Context) (err error) {
-	id, err := strconv.Atoi(c.Param("id"))
+	id, err := getIDFromParams(c)
 	if err != nil {
 		return
 	}
@@ -173,7 +171,7 @@ func (ctrl brandCtrl) updateByID(c *elton.Context) (err error) {
 		return
 	}
 
-	err = brandSrv.UpdateByID(uint(id), service.Brand{
+	err = brandSrv.UpdateByID(id, service.Brand{
 		Name:    params.Name,
 		Status:  params.Status,
 		Logo:    params.Logo,

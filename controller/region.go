@@ -17,7 +17,6 @@ package controller
 import (
 	"encoding/json"
 	"io/ioutil"
-	"strconv"
 
 	"github.com/vicanso/elton"
 	"github.com/vicanso/hes"
@@ -200,11 +199,11 @@ func (ctrl regionCtrl) listRegion(c *elton.Context) (err error) {
 }
 
 func (ctrl regionCtrl) findByID(c *elton.Context) (err error) {
-	id, err := strconv.Atoi(c.Param("id"))
+	id, err := getIDFromParams(c)
 	if err != nil {
 		return
 	}
-	data, err := regionSrv.FindByID(uint(id))
+	data, err := regionSrv.FindByID(id)
 	if err != nil {
 		return
 	}
@@ -214,7 +213,7 @@ func (ctrl regionCtrl) findByID(c *elton.Context) (err error) {
 }
 
 func (ctrl regionCtrl) updateByID(c *elton.Context) (err error) {
-	id, err := strconv.Atoi(c.Param("id"))
+	id, err := getIDFromParams(c)
 	if err != nil {
 		return
 	}
@@ -227,7 +226,7 @@ func (ctrl regionCtrl) updateByID(c *elton.Context) (err error) {
 		Name:   params.Name,
 		Status: params.Status,
 	}
-	err = regionSrv.UpdateByID(uint(id), region)
+	err = regionSrv.UpdateByID(id, region)
 	if err != nil {
 		return
 	}

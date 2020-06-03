@@ -89,13 +89,7 @@ export default {
     };
   },
   methods: {
-    ...mapActions([
-      "listStatus",
-      "addBrand",
-      "getBrandByID",
-      "updateBrandByID",
-      "addBrand"
-    ])
+    ...mapActions(["listStatus", "addBrand", "getBrandByID", "updateBrandByID"])
   },
   async beforeMount() {
     this.processing = true;

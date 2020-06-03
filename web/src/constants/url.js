@@ -23,6 +23,9 @@ export const PRODUCTS_ID = "/products/v1/:id";
 export const PRODUCT_CATEGORIES = "/products/v1/categories";
 export const PRODUCT_CATEGORIES_ID = "/products/v1/categories/:id";
 
+export const SUPPLIERS = "/suppliers/v1";
+export const SUPPLIERS_ID = "/suppliers/v1/:id";
+
 export const FILES = "/files/v1";
 
 export const REGIONS = "/regions/v1";
