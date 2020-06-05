@@ -26,4 +26,4 @@ clean:
 	packr2 clean
 
 lint:
-	golangci-lint run
+	golangci-lint run --timeout 2m --skip-dirs /web
