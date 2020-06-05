@@ -134,6 +134,7 @@ func (ps *pgStats) After(category string) func(*gorm.Scope) {
 			logger.Info("pg process slow or error",
 				zap.String("table", scope.TableName()),
 				zap.String("category", category),
+				zap.String("sql", scope.SQL),
 				zap.String("use", use.String()),
 				zap.Int64("rowsAffected", db.RowsAffected),
 				zap.String("error", message),

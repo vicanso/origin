@@ -111,8 +111,17 @@ type (
 	}
 )
 
+const (
+	errUserCategory = "user"
+)
+
 var (
-	errLoginTokenNil = hes.New("login token is nil")
+	errLoginTokenNil     = hes.New("login token is nil")
+	errUserStatusInvalid = &hes.Error{
+		Message:    "该账户不允许登录",
+		StatusCode: http.StatusBadRequest,
+		Category:   errUserCategory,
+	}
 )
 
 func init() {
@@ -137,8 +146,8 @@ func init() {
 	// 更新用户信息
 	g.PATCH(
 		"/v1/{id}",
-		shouldBeAdmin,
 		newTracker(cs.ActionUserInfoUpdate),
+		shouldBeAdmin,
 		ctrl.updateByID,
 	)
 
@@ -177,7 +186,7 @@ func init() {
 	}, 3*time.Second, cs.ActionLogin)
 	g.POST(
 		"/v1/me/login",
-		middleware.WaitFor(time.Second),
+		middleware.WaitFor(time.Second, true),
 		newTracker(cs.ActionLogin),
 		captchaValidate,
 		shouldAnonymous,
@@ -428,6 +437,10 @@ func (ctrl userCtrl) login(c *elton.Context) (err error) {
 	if err != nil {
 		return
 	}
+	if u.Status != cs.StatusEnabled {
+		err = errUserStatusInvalid
+		return
+	}
 	loginRecord := &service.UserLoginRecord{
 		Account:       params.Account,
 		UserAgent:     c.GetRequestHeader("User-Agent"),
@@ -438,7 +451,7 @@ func (ctrl userCtrl) login(c *elton.Context) (err error) {
 	}
 	_ = userSrv.AddLoginRecord(loginRecord, c)
 	omitUserInfo(u)
-	us.SetUserInfo(*u)
+	_ = us.SetInfo(*u)
 	c.Body = u
 	return
 }

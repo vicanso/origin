@@ -15,6 +15,5 @@
 package validate
 
 func init() {
-	AddAlias("xSupplierName", "min=1,max=50")
-	AddAlias("xSupplierContact", "min=1,max=10")
+	AddAlias("xReceiverName", "min=1,max=10")
 }

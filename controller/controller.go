@@ -66,6 +66,8 @@ var (
 	orderSrv = new(service.OrderSrv)
 	// 供应商服务
 	supplierSrv = new(service.SupplierSrv)
+	// 收货人服务
+	receiverSrv = new(service.ReceiverSrv)
 
 	// 创建新的并发控制中间件
 	newConcurrentLimit = middleware.NewConcurrentLimit
@@ -164,7 +166,7 @@ func newTracker(action string) elton.Handler {
 		OnTrack: func(info *M.TrackerInfo, c *elton.Context) {
 			account := ""
 			us := service.NewUserSession(c)
-			if us != nil {
+			if us != nil && us.IsLogined() {
 				account = us.GetAccount()
 			}
 			fields := make([]zap.Field, 0, 10)
@@ -194,13 +196,13 @@ func newTracker(action string) elton.Handler {
 	})
 }
 
-func isLogin(c *elton.Context) bool {
+func isLogined(c *elton.Context) bool {
 	us := service.NewUserSession(c)
 	return us.IsLogined()
 }
 
 func checkLogin(c *elton.Context) (err error) {
-	if !isLogin(c) {
+	if !isLogined(c) {
 		err = errShouldLogin
 		return
 	}
@@ -208,7 +210,7 @@ func checkLogin(c *elton.Context) (err error) {
 }
 
 func checkAnonymous(c *elton.Context) (err error) {
-	if isLogin(c) {
+	if isLogined(c) {
 		err = errLoginAlready
 		return
 	}
@@ -218,7 +220,7 @@ func checkAnonymous(c *elton.Context) (err error) {
 // newCheckRolesMiddleware create a new check roles middleware
 func newCheckRolesMiddleware(validRoles []string) elton.Handler {
 	return func(c *elton.Context) (err error) {
-		if !isLogin(c) {
+		if !isLogined(c) {
 			err = errShouldLogin
 			return
 		}
@@ -236,7 +238,7 @@ func newCheckRolesMiddleware(validRoles []string) elton.Handler {
 // newCheckGroupsMiddleware create a new check groups middleware
 func newCheckGroupsMiddleware(validGroups []string) elton.Handler {
 	return func(c *elton.Context) (err error) {
-		if !isLogin(c) {
+		if !isLogined(c) {
 			err = errShouldLogin
 			return
 		}

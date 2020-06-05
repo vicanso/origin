@@ -37,6 +37,9 @@ const (
 	// ActionFileUpload upload file
 	ActionFileUpload = "upload-file"
 
+	// ActionRegionUpdate update region
+	ActionRegionUpdate = "update-region"
+
 	// ActionBrandAdd add brand
 	ActionBrandAdd = "add-brand"
 	// ActionBrandUpdate update brand
@@ -58,4 +61,9 @@ const (
 	ActionSupplierAdd = "add-supplier"
 	// ActionSupplierUpdate update supplier
 	ActionSupplierUpdate = "update-supplier"
+
+	// ActionReceiverAdd add receiver
+	ActionReceiverAdd = "add-receiver"
+	// ActionReceiverUpdate update receiver
+	ActionReceiverUpdate = "update-receiver"
 )

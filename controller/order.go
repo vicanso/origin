@@ -15,13 +15,13 @@
 package controller
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/vicanso/elton"
 	"github.com/vicanso/hes"
 	"github.com/vicanso/origin/cs"
 	"github.com/vicanso/origin/router"
+	"github.com/vicanso/origin/service"
 	"github.com/vicanso/origin/validate"
 )
 
@@ -59,6 +59,7 @@ func init() {
 	)
 }
 
+// add add order
 func (orderCtrl) add(c *elton.Context) (err error) {
 	params := addOrderParams{}
 	err = validate.Do(&params, c.RequestBody)
@@ -69,9 +70,18 @@ func (orderCtrl) add(c *elton.Context) (err error) {
 		err = errProductsIsEmpty
 		return
 	}
-	// us := getUserSession(c)
-	// orderSrv.CreateWithSubOrders(us.GetAccount())
-
-	fmt.Println(params)
+	us := getUserSession(c)
+	subOrders := make([]service.SubOrder, len(params.Products))
+	for index, prod := range params.Products {
+		subOrders[index] = service.SubOrder{
+			Product:      prod.ID,
+			ProductCount: prod.Count,
+		}
+	}
+	order, err := orderSrv.CreateWithSubOrders(us.GetID(), subOrders)
+	if err != nil {
+		return
+	}
+	c.Created(order)
 	return
 }

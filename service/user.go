@@ -345,7 +345,7 @@ func (srv *UserSrv) CountLoginRecord(args ...interface{}) (count int, err error)
 }
 
 // GetUesrInfo get user info
-func (us *UserSession) GetUserInfo() (info *UserSessionInfo, err error) {
+func (us *UserSession) GetInfo() (info *UserSessionInfo, err error) {
 	info = us.info
 	if info != nil {
 		return
@@ -360,9 +360,9 @@ func (us *UserSession) GetUserInfo() (info *UserSessionInfo, err error) {
 	return
 }
 
-// MustGetUserInfo get user info, if not exists, it will panic
-func (us *UserSession) MustGetUserInfo() (info *UserSessionInfo) {
-	info, err := us.GetUserInfo()
+// MustGetInfo get user info, if not exists, it will panic
+func (us *UserSession) MustGetInfo() (info *UserSessionInfo) {
+	info, err := us.GetInfo()
 	if err != nil {
 		panic(err)
 	}
@@ -374,15 +374,15 @@ func (us *UserSession) MustGetUserInfo() (info *UserSessionInfo) {
 
 // IsLogined check user is logined
 func (us *UserSession) IsLogined() bool {
-	info, err := us.GetUserInfo()
+	info, err := us.GetInfo()
 	if err != nil || info == nil {
 		return false
 	}
 	return info.Account != ""
 }
 
-// SetUserInfo set user session info
-func (us *UserSession) SetUserInfo(data User) (err error) {
+// SetInfo set user session info
+func (us *UserSession) SetInfo(data User) (err error) {
 	info := UserSessionInfo{
 		Account:   data.Account,
 		ID:        data.ID,
@@ -403,8 +403,14 @@ func (us *UserSession) SetUserInfo(data User) (err error) {
 
 // GetAccount get the account
 func (us *UserSession) GetAccount() string {
-	info := us.MustGetUserInfo()
+	info := us.MustGetInfo()
 	return info.Account
+}
+
+// GetID get user id
+func (us *UserSession) GetID() uint {
+	info := us.MustGetInfo()
+	return info.ID
 }
 
 // SetLoginToken get user login token
@@ -419,18 +425,18 @@ func (us *UserSession) GetLoginToken() string {
 
 // GetRoles get user roles
 func (us *UserSession) GetRoles() []string {
-	info := us.MustGetUserInfo()
+	info := us.MustGetInfo()
 	return info.Roles
 }
 
 // GetGroups get user groups
 func (us *UserSession) GetGroups() []string {
-	info := us.MustGetUserInfo()
+	info := us.MustGetInfo()
 	return info.Groups
 }
 
 func (us *UserSession) GetLoginedAt() string {
-	info := us.MustGetUserInfo()
+	info := us.MustGetInfo()
 	return info.LoginedAt
 }
 

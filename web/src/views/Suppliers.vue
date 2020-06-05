@@ -14,7 +14,11 @@
           label="状态"
           width="80"
         />
-        <el-table-column prop="address" key="address" label="地址" />
+        <el-table-column key="address" label="地址">
+          <template slot-scope="scope">
+            {{ (scope.row.baseAddressDesc || "") + scope.row.address }}
+          </template>
+        </el-table-column>
         <el-table-column prop="contact" key="contact" label="联系人" />
         <el-table-column prop="mobile" key="mobile" label="联系电话" />
         <el-table-column fixed="right" label="操作" width="80">

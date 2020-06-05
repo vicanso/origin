@@ -31,8 +31,6 @@ const (
 	blockIPCategory           = "blockIP"
 	routerConfigCategory      = "router"
 	routerConcurrencyCategory = "routerConcurrency"
-
-	defaultConfigurationLimit = 200
 )
 
 var (
@@ -45,13 +43,13 @@ type (
 		helper.Model
 
 		// 配置名称，唯一
-		Name string `json:"name,omitempty" gorm:"type:varchar(30);not null;unique"`
+		Name string `json:"name,omitempty" gorm:"type:varchar(30);not null;unique_index:idx_configuration_name"`
 		// 配置分类
 		Category string `json:"category,omitempty" gorm:"type:varchar(20)"`
 		// 配置由谁创建
 		Owner string `json:"owner,omitempty" gorm:"type:varchar(20);not null"`
 		// 配置状态
-		Status     int    `json:"status,omitempty"`
+		Status     int    `json:"status,omitempty" gorm:"index:idx_configuration_status"`
 		StatusDesc string `json:"statusDesc,omitempty" gorm:"-"`
 		Data       string `json:"data,omitempty"`
 		// 启用开始时间

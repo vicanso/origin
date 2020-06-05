@@ -4,7 +4,7 @@
       v-if="!processing && fields"
       title="更新用户信息"
       icon="el-icon-user"
-      :id="userID"
+      :id="id"
       :findByID="getUserByID"
       :updateByID="updateUserByID"
       :fields="fields"
@@ -30,7 +30,13 @@ const fields = [
     placeholder: "请选择用户角色",
     labelWidth: "100px",
     multiple: true,
-    options: userRoles
+    options: userRoles,
+    rules: [
+      {
+        required: true,
+        message: "用户角色不能为空"
+      }
+    ]
   },
   {
     label: "用户组：",
@@ -38,7 +44,13 @@ const fields = [
     type: "select",
     placeholder: "请选择用户分组",
     multiple: true,
-    options: userGroups
+    options: userGroups,
+    rules: [
+      {
+        required: true,
+        message: "用户分组不能为空"
+      }
+    ]
   },
   {
     label: "用户状态：",
@@ -46,7 +58,13 @@ const fields = [
     type: "select",
     placeholder: "请选择用户状态",
     labelWidth: "100px",
-    options: userStatuses
+    options: userStatuses,
+    rules: [
+      {
+        required: true,
+        message: "用户状态不能为空"
+      }
+    ]
   },
   {
     key: "hidden",
@@ -64,7 +82,7 @@ export default {
     return {
       fields: null,
       processing: false,
-      userID: 0
+      id: 0
     };
   },
   methods: {
@@ -80,7 +98,7 @@ export default {
     this.processing = true;
     const { id } = this.$route.query;
     if (id) {
-      this.userID = Number(id);
+      this.id = Number(id);
     }
     try {
       const { roles } = await this.listUserRole();

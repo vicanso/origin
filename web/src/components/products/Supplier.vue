@@ -3,12 +3,11 @@
     v-if="!processing && fields"
     title="添加/更新供应商信息"
     icon="el-icon-good"
-    :id="supplierID"
+    :id="id"
     :findByID="getSupplierByID"
     :updateByID="updateSupplierByID"
     :fields="fields"
     :add="addSupplier"
-    :rules="rules"
   />
 </template>
 <script>
@@ -21,31 +20,73 @@ const fields = [
     label: "名称：",
     key: "name",
     clearable: true,
-    placeholder: "请输入供应商名称"
+    placeholder: "请输入供应商名称",
+    rules: [
+      {
+        required: true,
+        message: "供应商名称不能为空"
+      }
+    ]
   },
   {
     label: "状态：",
     key: "status",
     type: "select",
     placeholder: "请选择供应商状态",
-    options: supplierStatuses
+    options: supplierStatuses,
+    rules: [
+      {
+        required: true,
+        message: "供应商状态不能为空"
+      }
+    ]
   },
   {
     label: "联系人：",
     key: "contact",
-    placeholder: "请输入联系人"
+    placeholder: "请输入联系人",
+    rules: [
+      {
+        required: true,
+        message: "供应商联系人不能为空"
+      }
+    ]
   },
   {
     label: "联系方式：",
     key: "mobile",
     placeholder: "请输入联系人电话",
-    labelWidth: "100px"
+    labelWidth: "100px",
+    rules: [
+      {
+        required: true,
+        message: "供应商联系方式不能为空"
+      }
+    ]
   },
   {
     label: "地址：",
+    key: "baseAddress",
+    type: "region",
+    placeholder: "请选择供应商地址",
+    rules: [
+      {
+        required: true,
+        message: "供应商地址不能为空"
+      }
+    ]
+  },
+  {
+    label: "",
     key: "address",
+    labelWidth: "0px",
     placeholder: "请输入供应商地址",
-    span: 16
+    rules: [
+      {
+        required: true,
+        message: "供应商地址不能为空"
+      }
+    ]
   }
 ];
 
@@ -57,40 +98,8 @@ export default {
   data() {
     return {
       fields: null,
-      brandID: 0,
-      processing: false,
-      rules: {
-        name: [
-          {
-            required: true,
-            message: "供应商名称不能为空"
-          }
-        ],
-        status: [
-          {
-            required: true,
-            message: "供应商状态不能为空"
-          }
-        ],
-        contact: [
-          {
-            required: true,
-            message: "供应商联系人不能为空"
-          }
-        ],
-        mobile: [
-          {
-            required: true,
-            message: "供应商联系方式不能为空"
-          }
-        ],
-        address: [
-          {
-            required: true,
-            message: "供应商地址不能为空"
-          }
-        ]
-      }
+      id: 0,
+      processing: false
     };
   },
   methods: {
@@ -105,7 +114,7 @@ export default {
     this.processing = true;
     const { id } = this.$route.query;
     if (id) {
-      this.supplierID = Number(id);
+      this.id = Number(id);
     }
     try {
       const { statuses } = await this.listStatus();

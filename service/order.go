@@ -28,33 +28,34 @@ import (
 type (
 	// 订单状态
 	OrderStatus int
-	Order       struct {
+	// 子订单状态
+	SubOrderStatus int
+	Order          struct {
 		helper.Model
 
 		// 编号
 		SN string `json:"sn,omitempty" gorm:"not null;unique_index:idx_order_sn"`
 		// 用户ID
-		User uint `json:"user,omitempty" gorm:"index:idx_order_user"`
+		UserID uint `json:"userID,omitempty" gorm:"index:idx_order_user"`
 		// 总金额
-		Amount float64 `json:"amount,omitempty"`
+		Amount float64 `json:"amount,omitempty" gorm:"not null"`
 		// 支付金额
-		PayAmount float64 `json:"payAmount,omitempty"`
+		PayAmount float64 `json:"payAmount,omitempty" gorm:"not null"`
 		// 状态
 		Status     OrderStatus `json:"status,omitempty" gorm:"index:idx_order_status"`
 		StatusDesc string      `json:"statusDesc,omitempty" gorm:"-"`
+
 		// 物流单号
 		DeliverySN string `json:"deliverySN,omitempty" gorm:"index:idx_order_delivery_sn"`
 		// 物流公司
 		DeliveryCompany string `json:"deliveryCompany,omitempty"`
 
 		// 收货人
-		ReceiverName          string `json:"receiverName,omitempty"`
-		ReceiverMobile        string `json:"receiverMobile,omitempty"`
-		ReceiverProvince      string `json:"receiverProvince,omitempty"`
-		ReceiverCity          string `json:"receiverCity,omitempty"`
-		ReceiverArea          string `json:"receiverArea,omitempty"`
-		ReceiverStreet        string `json:"receiverStreet,omitempty"`
-		ReceiverDetailAddress string `json:"receiverDetailAddress,omitempty"`
+		ReceiverName   string `json:"receiverName,omitempty"`
+		ReceiverMobile string `json:"receiverMobile,omitempty"`
+		// 收货人地址（地址编码）
+		ReceiverBaseAddress string `json:"receiverBaseAddress,omitempty"`
+		ReceiverAddress     string `json:"receiverAddress,omitempty"`
 
 		// 时间
 		PaidAt     *time.Time `json:"paidAt,omitempty"`
@@ -68,15 +69,18 @@ type (
 		Product      uint    `json:"product,omitempty" gorm:"not null"`
 		ProductName  string  `json:"productName,omitempty" gorm:"not null"`
 		ProductPrice float64 `json:"productPrice,omitempty" grom:"not null"`
-		ProductUnit  string  `json:"productUnit,omitempty" gorm:"not null"`
+		// 规格汇总
+		ProductSpecsCount uint   `json:"productSpecsCount,omitempty" gorm:"not null"`
+		ProductUnit       string `json:"productUnit,omitempty" gorm:"not null"`
 		// 数量
-		ProductCount int `json:"productCount,omitempty" gorm:"not null"`
+		ProductCount uint `json:"productCount,omitempty" gorm:"not null"`
 		// 金额
 		ProductAmount float64 `json:"productAmount,omitempty" gorm:"not null"`
 		// 支付金额
 		ProductPayAmount float64 `json:"productPayAmount,omitempty" gorm:"not null"`
+		// TODO 子订单状态
 		// 状态
-		Status int `json:"status,omitempty"`
+		Status SubOrderStatus `json:"status,omitempty" gorm:"index:idx_sub_order_status"`
 	}
 	OrderSrv struct{}
 )
@@ -86,8 +90,10 @@ const (
 )
 
 const (
+	// 初始化
+	OrderStatusInited OrderStatus = iota + 1
 	// 待支付
-	OrderStatusPendingPayment OrderStatus = iota + 1
+	OrderStatusPendingPayment
 	// 已支付
 	OrderStatusPaid
 	// 待发货
@@ -100,6 +106,39 @@ const (
 	OrderStatusClosed
 )
 
+const (
+	// 初始化
+	SubOrderStatusInited SubOrderStatus = iota + 1
+	// 申请取消
+	SubOrderStatusApplyCanceled
+	// 取消
+	SubOrderStatusCanceled
+	// 退款中
+	SubOrderStatusRefunds
+	// 完成
+	SubOrderStatusDone
+	// 已关闭
+	SubOrderStatusClosed
+)
+
+var orderStatusDict = map[OrderStatus]string{
+	OrderStatusInited:         "初始化",
+	OrderStatusPendingPayment: "待支付",
+	OrderStatusPaid:           "已支付",
+	OrderStatusToBeShipped:    "待发货",
+	OrderStatusShipped:        "已发货",
+	OrderStatusDone:           "已完成",
+	OrderStatusClosed:         "已关闭",
+}
+var subOrderStatusDict = map[SubOrderStatus]string{
+	SubOrderStatusInited:        "初始化",
+	SubOrderStatusApplyCanceled: "申请取消",
+	SubOrderStatusCanceled:      "已取消",
+	SubOrderStatusRefunds:       "退款中",
+	SubOrderStatusDone:          "完成",
+	SubOrderStatusClosed:        "已关闭",
+}
+
 var (
 	errOrderIdInvalid = &hes.Error{
 		Message:    "订单ID不能为空",
@@ -111,29 +150,21 @@ var (
 		StatusCode: http.StatusBadRequest,
 		Category:   errOrderCatgory,
 	}
-
-	orderStatusDict map[OrderStatus]string
+	errOrderAmountInValid = &hes.Error{
+		Message:    "订单金额异常",
+		StatusCode: http.StatusBadRequest,
+		Category:   errOrderCatgory,
+	}
+	errOrderProductInvalid = &hes.Error{
+		Message:    "产品代码非法",
+		StatusCode: http.StatusBadRequest,
+		Category:   errOrderCatgory,
+	}
 )
 
 func init() {
-	orderStatusDict = map[OrderStatus]string{
-		OrderStatusPendingPayment: "待支付",
-		OrderStatusPaid:           "已支付",
-		OrderStatusToBeShipped:    "待发货",
-		OrderStatusShipped:        "已发货",
-		OrderStatusDone:           "已完成",
-		OrderStatusClosed:         "已关闭",
-	}
 	pgGetClient().AutoMigrate(&Order{}).
 		AutoMigrate(&SubOrder{})
-
-	// srv := new(OrderSrv)
-	// fmt.Println(srv.CreateWithSubOrders(1, []SubOrder{
-	// 	{
-	// 		Product:      1,
-	// 		ProductCount: 3,
-	// 	},
-	// }))
 }
 
 // CheckValid check sub order is valid
@@ -152,15 +183,21 @@ func (subOrder *SubOrder) BeforeCreate() error {
 	if err != nil {
 		return err
 	}
+	subOrder.Status = SubOrderStatusInited
 	subOrder.ProductAmount = subOrder.ProductPrice * float64(subOrder.ProductCount)
 	// 支付价格暂时无优惠
 	subOrder.ProductPayAmount = subOrder.ProductAmount
 	return nil
 }
 
+// TODO 针对子订单的状态
+func (subOrder *SubOrder) AfterFind() (err error) {
+	return
+}
+
 func (order *Order) BeforeCreate() (err error) {
 	// 设置状态
-	order.Status = OrderStatusPendingPayment
+	order.Status = OrderStatusInited
 	return
 }
 
@@ -179,8 +216,8 @@ func (srv *OrderSrv) genSN() string {
 // CreateWithSubOrders create order with sub orders
 func (srv *OrderSrv) CreateWithSubOrders(user uint, data []SubOrder) (order *Order, err error) {
 	order = &Order{
-		SN:   srv.genSN(),
-		User: user,
+		SN:     srv.genSN(),
+		UserID: user,
 	}
 	subOrders := make([]*SubOrder, len(data))
 	for i, order := range data {
@@ -200,11 +237,7 @@ func (srv *OrderSrv) CreateWithSubOrders(user uint, data []SubOrder) (order *Ord
 	if err != nil {
 		return
 	}
-	// 正常产品代码不会导致查询不到
-	if len(products) != len(ids) {
-		err = hes.New("产品代码异常")
-		return
-	}
+
 	for _, p := range products {
 		err = p.CheckAvailable()
 		if err != nil {
@@ -219,11 +252,14 @@ func (srv *OrderSrv) CreateWithSubOrders(user uint, data []SubOrder) (order *Ord
 		}
 		var amount, payAmount float64
 		for _, subOrder := range subOrders {
+			found := false
 			for _, p := range products {
 				// 订单记录产品当前信息，避免产品更新后，信息不符合
 				if subOrder.Product == p.ID {
+					found = true
 					subOrder.ProductName = p.Name
 					subOrder.ProductPrice = p.Price
+					subOrder.ProductSpecsCount = p.Specs * subOrder.ProductCount
 					subOrder.ProductUnit = p.Unit
 					subOrder.Order = order.ID
 					err = tx.Create(subOrder).Error
@@ -234,8 +270,18 @@ func (srv *OrderSrv) CreateWithSubOrders(user uint, data []SubOrder) (order *Ord
 					payAmount += subOrder.ProductPayAmount
 				}
 			}
+			if !found {
+				err = errOrderProductInvalid
+				return
+			}
 		}
+		if amount == 0 || payAmount == 0 {
+			err = errOrderAmountInValid
+			return
+		}
+
 		err = tx.Model(order).Update(&Order{
+			Status:    OrderStatusPendingPayment,
 			Amount:    amount,
 			PayAmount: payAmount,
 		}).Error

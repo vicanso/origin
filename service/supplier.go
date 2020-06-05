@@ -20,10 +20,12 @@ type (
 	Supplier struct {
 		helper.Model
 
-		Name    string `json:"name,omitempty" gorm:"type:varchar(50);not null;index:idx_supplier_name"`
-		Address string `json:"address,omitempty"`
-		Mobile  string `json:"mobile,omitempty"`
-		Contact string `json:"contact,omitempty"`
+		Name            string `json:"name,omitempty" gorm:"type:varchar(50);not null;index:idx_supplier_name"`
+		BaseAddress     string `json:"baseAddress,omitempty"`
+		BaseAddressDesc string `json:"baseAddressDesc,omitempty" gorm:"-"`
+		Address         string `json:"address,omitempty"`
+		Mobile          string `json:"mobile,omitempty"`
+		Contact         string `json:"contact,omitempty"`
 
 		// 状态
 		Status int `json:"status,omitempty" gorm:"index:idx_supplier_status"`
@@ -39,6 +41,7 @@ func init() {
 
 func (s *Supplier) AfterFind() (err error) {
 	s.StatusDesc = getStatusDesc(s.Status)
+	s.BaseAddressDesc, _ = regionSrv.GetNameFromCache(s.BaseAddress, 0)
 	return
 }
 

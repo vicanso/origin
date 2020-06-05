@@ -25,20 +25,20 @@ import (
 )
 
 const (
-	xCaptchHeader = "X-Captcha"
-	errCategory   = "common-validate"
+	xCaptchHeader     = "X-Captcha"
+	errCommonCategory = "common-validate"
 )
 
 var (
 	errQueryNotAllow = &hes.Error{
 		StatusCode: http.StatusBadRequest,
 		Message:    "query is not allowed",
-		Category:   errCategory,
+		Category:   errCommonCategory,
 	}
 	errCaptchIsInvalid = &hes.Error{
 		StatusCode: http.StatusBadRequest,
-		Message:    "captcha is invalid",
-		Category:   errCategory,
+		Message:    "图形验证码错误",
+		Category:   errCommonCategory,
 	}
 )
 
@@ -52,11 +52,19 @@ func NoQuery(c *elton.Context) (err error) {
 }
 
 // WaitFor at least wait for duration
-func WaitFor(d time.Duration) elton.Handler {
+func WaitFor(d time.Duration, args ...bool) elton.Handler {
 	ns := d.Nanoseconds()
+	onlyErrOccurred := false
+	if len(args) != 0 {
+		onlyErrOccurred = args[0]
+	}
 	return func(c *elton.Context) (err error) {
 		start := time.Now()
 		err = c.Next()
+		// 如果未出错，而且配置为仅在出错时才等待
+		if err == nil && onlyErrOccurred {
+			return
+		}
 		use := time.Now().UnixNano() - start.UnixNano()
 		// 无论成功还是失败都wait for
 		if use < ns {

@@ -3,12 +3,11 @@
     v-if="!processing && fields"
     title="添加/更新品牌信息"
     icon="el-icon-good"
-    :id="brandID"
+    :id="id"
     :findByID="getBrandByID"
     :updateByID="updateBrandByID"
     :fields="fields"
     :add="addBrand"
-    :rules="rules"
   />
 </template>
 <script>
@@ -22,7 +21,13 @@ const fields = [
     key: "name",
     clearable: true,
     placeholder: "请输入品牌名称",
-    span: 12
+    span: 12,
+    rules: [
+      {
+        required: true,
+        message: "品牌名称不能为空"
+      }
+    ]
   },
   {
     label: "状态：",
@@ -30,14 +35,26 @@ const fields = [
     span: 12,
     type: "select",
     placeholder: "请选择产品状态",
-    options: brandStatuses
+    options: brandStatuses,
+    rules: [
+      {
+        required: true,
+        message: "品牌状态不能为空"
+      }
+    ]
   },
   {
     label: "LOGO：",
     key: "files",
     span: 24,
     type: "upload",
-    bucket: "origin-pics"
+    bucket: "origin-pics",
+    rules: [
+      {
+        required: true,
+        message: "品牌图标不能为空"
+      }
+    ]
   },
   {
     label: "简介：",
@@ -45,7 +62,13 @@ const fields = [
     key: "catalog",
     type: "textarea",
     span: 24,
-    autosize: { minRows: 5, maxRows: 10 }
+    autosize: { minRows: 5, maxRows: 10 },
+    rules: [
+      {
+        required: true,
+        message: "品牌简介不能为空"
+      }
+    ]
   }
 ];
 
@@ -57,35 +80,8 @@ export default {
   data() {
     return {
       fields: null,
-      brandID: 0,
-      processing: false,
-
-      rules: {
-        name: [
-          {
-            required: true,
-            message: "品牌名称不能为空"
-          }
-        ],
-        status: [
-          {
-            required: true,
-            message: "品牌状态不能为空"
-          }
-        ],
-        files: [
-          {
-            required: true,
-            message: "品牌图标不能为空"
-          }
-        ],
-        catalog: [
-          {
-            required: true,
-            message: "品牌简介不能为空"
-          }
-        ]
-      }
+      id: 0,
+      processing: false
     };
   },
   methods: {
@@ -95,7 +91,7 @@ export default {
     this.processing = true;
     const { id } = this.$route.query;
     if (id) {
-      this.brandID = Number(id);
+      this.id = Number(id);
     }
     try {
       const { statuses } = await this.listStatus();

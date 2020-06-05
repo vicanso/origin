@@ -4,7 +4,7 @@
     title="添加/更新产品信息"
     icon="el-icon-files"
     :fields="fields"
-    :id="productID"
+    :id="id"
     :findByID="getProductByID"
     :updateByID="updateProductByID"
     :add="addProduct"
@@ -20,14 +20,26 @@ const fields = [
     label: "名称：",
     key: "name",
     clearable: true,
-    placeholder: "请输入产品名称"
+    placeholder: "请输入产品名称",
+    rules: [
+      {
+        required: true,
+        message: "产品名称不能为空"
+      }
+    ]
   },
   {
     label: "单价：",
     key: "price",
     clearable: true,
     dataType: "number",
-    placeholder: "请输入产品单价"
+    placeholder: "请输入产品单价",
+    rules: [
+      {
+        required: true,
+        message: "产品单价不能为空"
+      }
+    ]
   },
   {
     label: "单位：",
@@ -51,6 +63,12 @@ const fields = [
         name: "个",
         value: "个"
       }
+    ],
+    rules: [
+      {
+        required: true,
+        message: "产品规格不能为空"
+      }
     ]
   },
   {
@@ -58,13 +76,25 @@ const fields = [
     key: "status",
     placeholder: "请选择产品状态",
     type: "select",
-    options: productStatuses
+    options: productStatuses,
+    rules: [
+      {
+        required: true,
+        message: "产品状态不能为空"
+      }
+    ]
   },
   {
     label: "分类：",
     key: "categories",
     placeholder: "请选择产品分类",
-    type: "productCategory"
+    type: "productCategory",
+    rules: [
+      {
+        required: true,
+        message: "产品分类不能为空"
+      }
+    ]
   },
   {
     label: "品牌：",
@@ -81,9 +111,21 @@ const fields = [
     showAllLevels: true
   },
   {
+    label: "供应商",
+    key: "supplier",
+    placeholder: "请选择供应商",
+    type: "supplier"
+  },
+  {
     label: "SN：",
     key: "sn",
     placeholder: "请输入产品SN码"
+  },
+  {
+    label: "热度：",
+    key: "hot",
+    dataType: "numbber",
+    placeholder: "请输入产品热度(1-1000)"
   },
   {
     label: "主图：",
@@ -105,7 +147,13 @@ const fields = [
     type: "datePicker",
     pickerType: "datetime",
     placeholder: "请选择产品开始销售时间",
-    labelWidth: "100px"
+    labelWidth: "100px",
+    rules: [
+      {
+        required: true,
+        message: "产品开始销售时间不能为空"
+      }
+    ]
   },
   {
     label: "结束时间：",
@@ -113,7 +161,13 @@ const fields = [
     type: "datePicker",
     pickerType: "datetime",
     placeholder: "请选择产品结束销售时间",
-    labelWidth: "100px"
+    labelWidth: "100px",
+    rules: [
+      {
+        required: true,
+        message: "产品结束销售时间不能为空"
+      }
+    ]
   },
   {
     label: "关键字：",
@@ -138,7 +192,7 @@ export default {
   data() {
     return {
       fields: null,
-      productID: 0,
+      id: 0,
       processing: false
     };
   },
@@ -154,7 +208,7 @@ export default {
   async beforeMount() {
     const { id } = this.$route.query;
     if (id) {
-      this.productID = Number(id);
+      this.id = Number(id);
     }
     try {
       const { statuses } = await this.listStatus();

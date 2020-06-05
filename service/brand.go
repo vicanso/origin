@@ -28,7 +28,7 @@ type (
 		helper.Model
 
 		Name        string `json:"name,omitempty" gorm:"type:varchar(100);not null;unique_index:idx_brand_name"`
-		Status      int    `json:"status,omitempty"`
+		Status      int    `json:"status,omitempty" gorm:"index:idx_brand_status"`
 		StatusDesc  string `json:"statusDesc,omitempty" gorm:"-"`
 		Logo        string `json:"logo,omitempty"`
 		Catalog     string `json:"catalog,omitempty"`

@@ -52,8 +52,8 @@ func init() {
 	g.POST(
 		"/v1",
 		loadUserSession,
-		checkMarketingGroup,
 		newTracker(cs.ActionBrandAdd),
+		checkMarketingGroup,
 		ctrl.add,
 	)
 	// 品牌列表
@@ -72,8 +72,8 @@ func init() {
 	g.PATCH(
 		"/v1/{id}",
 		loadUserSession,
-		checkMarketingGroup,
 		newTracker(cs.ActionBrandUpdate),
+		checkMarketingGroup,
 		ctrl.updateByID,
 	)
 }

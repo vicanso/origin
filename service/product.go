@@ -32,32 +32,45 @@ type (
 
 		Name string `json:"name,omitempty" gorm:"type:varchar(30);not null;index:idx_product_name"`
 		// 单价
-		Price float64 `json:"price,omitempty"`
+		Price float64 `json:"price,omitempty" gorm:"not null"`
 		// 规格，规格+单位表示完整的购买单位，如规则为250，单位为克
-		Specs int `json:"specs,omitempty"`
+		Specs uint `json:"specs,omitempty" gorm:"not null"`
 		// 单位
-		Unit    string         `json:"unit,omitempty"`
+		Unit    string         `json:"unit,omitempty" gorm:"not null"`
 		Catalog string         `json:"catalog,omitempty"`
 		Pics    pq.StringArray `json:"pics,omitempty" gorm:"type:text[]"`
 		// 主图，从1开始
-		MainPic    int           `json:"mainPic,omitempty"`
-		SN         string        `json:"sn,omitempty"`
-		Status     int           `json:"status,omitempty" gorm:"index:idx_product_status"`
-		StatusDesc string        `json:"statusDesc,omitempty" gorm:"-"`
-		Keywords   string        `json:"keywords,omitempty"`
+		MainPic int    `json:"mainPic,omitempty"`
+		SN      string `json:"sn,omitempty"`
+
+		Status     int    `json:"status,omitempty" gorm:"index:idx_product_status"`
+		StatusDesc string `json:"statusDesc,omitempty" gorm:"-"`
+
+		// 热度
+		Hot int `json:"hot,omitempty"`
+		// 关键字
+		Keywords string `json:"keywords,omitempty"`
+
 		Categories pq.Int64Array `json:"categories,omitempty" gorm:"type:int[]"`
 		// 产品分类说明（在获取数据后转换生成）
 		CategoriesDesc []string   `json:"categoriesDesc,omitempty" gorm:"-"`
-		StartedAt      *time.Time `json:"startedAt,omitempty"`
-		EndedAt        *time.Time `json:"endedAt,omitempty"`
+		StartedAt      *time.Time `json:"startedAt,omitempty" gorm:"not null;index:idx_product_started_at"`
+		EndedAt        *time.Time `json:"endedAt,omitempty" gorm:"not null;index:idx_product_ended_at"`
+
 		// 产地
 		Origin string `json:"origin,omitempty"`
 		// 产地说明
 		OrginDesc string `json:"orginDesc,omitempty" gorm:"-"`
+
 		// 产品品牌
 		Brand uint `json:"brand,omitempty"`
 		// 产品品牌说明
 		BrandDesc string `json:"brandDesc,omitempty" gorm:"-"`
+
+		// 供应商
+		Supplier uint `json:"supplier,omitempty"`
+		// 供应商说明
+		SupplierDesc string `json:"supplierDesc,omitempty" gorm:"-"`
 	}
 	// ProductCategory product category
 	ProductCategory struct {
@@ -117,7 +130,7 @@ func (p *Product) AfterFind() (err error) {
 	p.CategoriesDesc = categoriesDesc
 
 	// 如果获取失败，忽略出错
-	p.OrginDesc, _ = regionSrv.GetNameFromCache(p.Origin)
+	p.OrginDesc, _ = regionSrv.GetNameFromCache(p.Origin, 0)
 
 	// 如果获取失败，忽略出错
 	p.BrandDesc, _ = brandSrv.GetNameFromCache(p.Brand)

@@ -39,8 +39,9 @@ type (
 	}
 
 	updateRegionParams struct {
-		Name   string `json:"name,omitempty" validate:"omitempty,xRegionName"`
-		Status int    `json:"status,omitempty" validate:"omitempty,xStatus"`
+		Name     string `json:"name,omitempty" validate:"omitempty,xRegionName"`
+		Status   int    `json:"status,omitempty" validate:"omitempty,xStatus"`
+		Priority int    `json:"priority,omitempty" validate:"omitempty,xRegionPriority"`
 	}
 )
 
@@ -72,6 +73,7 @@ func init() {
 	g.PATCH(
 		"/v1/{id}",
 		loadUserSession,
+		newTracker(cs.ActionRegionUpdate),
 		checkMarketingGroup,
 		ctrl.updateByID,
 	)
@@ -178,16 +180,16 @@ func (ctrl regionCtrl) listRegion(c *elton.Context) (err error) {
 	if err != nil {
 		return
 	}
-	queryParmas := params.toPGQueryParams()
+	queryParams := params.toPGQueryParams()
 	args := params.toConditions()
 	count := -1
-	if queryParmas.Offset == 0 {
+	if queryParams.Offset == 0 {
 		count, err = regionSrv.Count(args...)
 		if err != nil {
 			return
 		}
 	}
-	result, err := regionSrv.List(queryParmas, args...)
+	result, err := regionSrv.List(queryParams, args...)
 	if err != nil {
 		return
 	}
@@ -223,8 +225,9 @@ func (ctrl regionCtrl) updateByID(c *elton.Context) (err error) {
 		return
 	}
 	region := service.Region{
-		Name:   params.Name,
-		Status: params.Status,
+		Name:     params.Name,
+		Status:   params.Status,
+		Priority: params.Priority,
 	}
 	err = regionSrv.UpdateByID(id, region)
 	if err != nil {

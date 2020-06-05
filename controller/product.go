@@ -30,7 +30,7 @@ type (
 	addProductParams struct {
 		Name       string     `json:"name,omitempty" validate:"xProductName"`
 		Price      float64    `json:"price,omitempty" validate:"xProductPrice"`
-		Specs      int        `json:"specs,omitempty" validate:"xProductSpecs"`
+		Specs      uint       `json:"specs,omitempty" validate:"xProductSpecs"`
 		Unit       string     `json:"unit,omitempty" validate:"xProductUnit"`
 		Catalog    string     `json:"catalog,omitempty" validate:"xProductCatalog"`
 		Pics       []string   `json:"pics,omitempty"`
@@ -45,11 +45,13 @@ type (
 		Origin string `json:"origin,omitempty" validate:"omitempty,xProductOrigin"`
 		// 产品品牌
 		Brand uint `json:"brand,omitempty" validate:"omitempty,xProductBrand"`
+		// 供应商
+		Supplier uint `json:"supplier,omitempty" validate:"xProductSupplier"`
 	}
 	updateProductParams struct {
 		Name       string     `json:"name,omitempty" validate:"omitempty,xProductName"`
 		Price      float64    `json:"price,omitempty" validate:"omitempty,xProductPrice"`
-		Specs      int        `json:"specs,omitempty" validate:"omitempty,xProductSpecs"`
+		Specs      uint       `json:"specs,omitempty" validate:"omitempty,xProductSpecs"`
 		Unit       string     `json:"unit,omitempty" validate:"omitempty,xProductUnit"`
 		Catalog    string     `json:"catalog,omitempty" validate:"omitempty,xProductCatalog"`
 		Pics       []string   `json:"pics,omitempty"`
@@ -64,6 +66,8 @@ type (
 		Origin string `json:"origin,omitempty" validate:"omitempty,xProductOrigin"`
 		// 产品品牌
 		Brand uint `json:"brand,omitempty" validate:"omitempty,xProductBrand"`
+		// 供应商
+		Supplier uint `json:"supplier,omitempty" validate:"omitempty,xProductSupplier"`
 	}
 	listProductParams struct {
 		listParams
@@ -109,16 +113,16 @@ func init() {
 	g.POST(
 		"/v1/categories",
 		loadUserSession,
-		checkMarketingGroup,
 		newTracker(cs.ActionProductCategoryAdd),
+		checkMarketingGroup,
 		ctrl.addCategory,
 	)
 	// 更新产品分类
 	g.PATCH(
 		"/v1/categories/{id}",
 		loadUserSession,
-		checkMarketingGroup,
 		newTracker(cs.ActionProductCategoryUpdate),
+		checkMarketingGroup,
 		ctrl.updateCategoryByID,
 	)
 	// 获取产品分类详情
@@ -132,8 +136,8 @@ func init() {
 	g.POST(
 		"/v1",
 		loadUserSession,
-		checkMarketingGroup,
 		newTracker(cs.ActionProductAdd),
+		checkMarketingGroup,
 		ctrl.add,
 	)
 	// 查询产品详情
@@ -146,8 +150,8 @@ func init() {
 	g.PATCH(
 		"/v1/{id}",
 		loadUserSession,
-		checkMarketingGroup,
 		newTracker(cs.ActionProductUpdate),
+		checkMarketingGroup,
 		ctrl.updateByID,
 	)
 }
@@ -193,6 +197,7 @@ func (ctrl productCtrl) add(c *elton.Context) (err error) {
 		EndedAt:    params.EndedAt,
 		Origin:     params.Origin,
 		Brand:      params.Brand,
+		Supplier:   params.Supplier,
 	})
 	if err != nil {
 		return
@@ -275,6 +280,7 @@ func (ctrl productCtrl) updateByID(c *elton.Context) (err error) {
 		EndedAt:    params.EndedAt,
 		Origin:     params.Origin,
 		Brand:      params.Brand,
+		Supplier:   params.Supplier,
 	}
 	err = productSrv.UpdateByID(id, product)
 	if err != nil {

@@ -178,3 +178,14 @@ export function findByID(arr, id) {
   });
   return found;
 }
+
+// getFieldRules get field rules
+export function getFieldRules(fields) {
+  const rules = {};
+  fields.forEach(field => {
+    if (field.rules) {
+      rules[field.key] = field.rules;
+    }
+  });
+  return rules;
+}

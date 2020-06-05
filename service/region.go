@@ -33,6 +33,7 @@ type (
 		Parent     string `json:"parent,omitempty" gorm:"not null;index:idx_region_parent"`
 		Status     int    `json:"status,omitempty"`
 		StatusDesc string `json:"statusDesc,omitempty" gorm:"-"`
+		Priority   int    `json:"priority,omitempty"`
 	}
 	RegionCategory struct {
 		Name  string `json:"name,omitempty"`
@@ -53,6 +54,13 @@ func init() {
 
 func (r *Region) AfterFind() (err error) {
 	r.StatusDesc = getStatusDesc(r.Status)
+	return
+}
+
+func (r *Region) BeforeCreate() (err error) {
+	if r.Priority == 0 {
+		r.Priority = 1
+	}
 	return
 }
 
@@ -139,7 +147,7 @@ func (srv *RegionSrv) UpdateByID(id uint, attrs ...interface{}) (err error) {
 
 // GetNameFromCache get region's name from cache
 // If not exists, it will get from db and save to cache
-func (srv *RegionSrv) GetNameFromCache(code string) (name string, err error) {
+func (srv *RegionSrv) GetNameFromCache(code string, startLevel int) (name string, err error) {
 	if code == "" {
 		return
 	}
@@ -164,7 +172,7 @@ func (srv *RegionSrv) GetNameFromCache(code string) (name string, err error) {
 			break
 		}
 	}
-	name = strings.Join(regions, " ")
+	name = strings.Join(regions[startLevel:], "")
 	regionNameCache.Add(code, name)
 	return
 }

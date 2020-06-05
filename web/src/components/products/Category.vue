@@ -3,12 +3,11 @@
     v-if="!processing && fields"
     title="添加/更新产品分类信息"
     icon="el-icon-set-up"
-    :id="categoryID"
+    :id="id"
     :findByID="getProductCategoryByID"
     :updateByID="updateProductCategoryByID"
     :add="addProductCategory"
     :fields="fields"
-    :rules="rules"
   />
 </template>
 <script>
@@ -22,7 +21,13 @@ const fields = [
     key: "name",
     clearable: true,
     span: 6,
-    placeholder: "请输入分类名称"
+    placeholder: "请输入分类名称",
+    rules: [
+      {
+        required: true,
+        message: "产品分类名称不能为空"
+      }
+    ]
   },
   {
     label: "级别：",
@@ -43,6 +48,12 @@ const fields = [
         name: "第三级",
         value: 3
       }
+    ],
+    rules: [
+      {
+        required: true,
+        message: "产品分类级别不能为空"
+      }
     ]
   },
   {
@@ -50,7 +61,13 @@ const fields = [
     key: "status",
     type: "select",
     span: 6,
-    options: categoryStatuses
+    options: categoryStatuses,
+    rules: [
+      {
+        required: true,
+        message: "产品分类状态不能为空"
+      }
+    ]
   },
   {
     label: "上级分类：",
@@ -69,29 +86,8 @@ export default {
   data() {
     return {
       fields: null,
-      categoryID: 0,
-      processing: false,
-
-      rules: {
-        name: [
-          {
-            required: true,
-            message: "产品分类名称不能为空"
-          }
-        ],
-        level: [
-          {
-            required: true,
-            message: "产品分类级别不能为空"
-          }
-        ],
-        status: [
-          {
-            required: true,
-            message: "产品分类状态不能为空"
-          }
-        ]
-      }
+      id: 0,
+      processing: false
     };
   },
   methods: {
@@ -106,7 +102,7 @@ export default {
     this.processing = true;
     const { id } = this.$route.query;
     if (id) {
-      this.categoryID = Number(id);
+      this.id = Number(id);
     }
     try {
       const { statuses } = await this.listStatus();

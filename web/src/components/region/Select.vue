@@ -1,11 +1,12 @@
 <template>
   <el-cascader
-    class="region"
+    class="regionSelect"
     v-if="inited"
     clearable
     :props="props"
     @change="handleChange"
     v-model="region"
+    :value="region"
     :show-all-levels="$props.showAllLevels"
   ></el-cascader>
 </template>
@@ -16,7 +17,7 @@ const countryLevel = 0;
 const chinaCode = "CN";
 
 export default {
-  name: "Region",
+  name: "RegionSelect",
   props: {
     maxLevel: {
       type: Number,
@@ -33,13 +34,34 @@ export default {
     value: String
   },
   data() {
+    const region = [];
+    // 如果代码全是数字，直接转换为中国地址
+    const { value } = this.$props;
+    if (value) {
+      if (/\d/.test(value)) {
+        // 440111009
+        // 地址代码分割：省两位，市两位，区两位，后面的为街道
+        const offsets = [2, 2, 2, 3];
+        region.push("CN");
+        let offset = 0;
+        offsets.forEach(item => {
+          offset += item;
+          if (value.length >= offset) {
+            region.push(value.substring(0, offset));
+          }
+        });
+      } else {
+        region.push(value);
+      }
+    }
     return {
       inited: false,
-      region: this.$props.value || "",
+      region,
       query: {
         limit: 100,
         status: 1,
-        fields: "code,name"
+        fields: "code,name",
+        order: "-priority"
       },
       props: {
         lazy: true,
@@ -61,10 +83,15 @@ export default {
       let level = node.level + startLevel;
       let category = this.categories[level].value;
       const leaf = level === maxLevel - 1;
+      let parent = "";
+      if (node.data) {
+        parent = node.data.value;
+      }
       try {
         const { regions } = await this.listRegion({
           params: Object.assign(
             {
+              parent,
               category
             },
             this.query
@@ -100,7 +127,7 @@ export default {
 };
 </script>
 <style lang="sass" scoped>
-.region
-  .el-cascader
+.regionSelect
+  &.el-cascader
     width: 100%
 </style>

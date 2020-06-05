@@ -8,7 +8,7 @@
       v-if="inited"
       :label-width="$props.labelWidth"
       ref="baseEditorForm"
-      :rules="$props.rules"
+      :rules="rules"
       :model="current"
     >
       <el-row :gutter="15">
@@ -76,6 +76,10 @@
               v-else-if="field.type === 'brand'"
               v-model="current[field.key]"
             />
+            <SupplierSelect
+              v-else-if="field.type === 'supplier'"
+              v-model="current[field.key]"
+            />
             <RegionSelect
               v-else-if="field.type === 'region'"
               v-model="current[field.key]"
@@ -120,11 +124,12 @@
   </el-card>
 </template>
 <script>
-import { diff, validateForm, omitNil } from "@/helpers/util";
+import { diff, validateForm, omitNil, getFieldRules } from "@/helpers/util";
 import Upload from "@/components/Upload.vue";
 import BrandSelect from "@/components/products/BrandSelect.vue";
 import RegionSelect from "@/components/region/Select.vue";
 import CategorySelect from "@/components/products/CategorySelect.vue";
+import SupplierSelect from "@/components/products/SupplierSelect.vue";
 
 export default {
   name: "BaseEditor",
@@ -132,6 +137,7 @@ export default {
     BrandSelect,
     RegionSelect,
     CategorySelect,
+    SupplierSelect,
     Upload
   },
   props: {
@@ -151,8 +157,7 @@ export default {
     id: Number,
     findByID: Function,
     updateByID: Function,
-    add: Function,
-    rules: Object
+    add: Function
   },
   data() {
     const { id, fields } = this.$props;
@@ -167,7 +172,8 @@ export default {
       originData: null,
       processing: false,
       submitText,
-      current
+      current,
+      rules: getFieldRules(fields)
     };
   },
   methods: {
@@ -175,7 +181,8 @@ export default {
       this.current.files = files;
     },
     async handleAdd(data) {
-      const { add, rules } = this.$props;
+      const { add } = this.$props;
+      const { rules } = this;
       this.processing = true;
       try {
         if (rules) {
@@ -191,8 +198,8 @@ export default {
       }
     },
     async handleUpdate(data) {
-      const { id, updateByID, rules } = this.$props;
-      const { originData } = this;
+      const { id, updateByID } = this.$props;
+      const { originData, rules } = this;
       const updateInfo = diff(omitNil(data), originData);
       if (updateInfo.modifiedCount === 0) {
         this.$message.warning("请先修改要更新的信息");

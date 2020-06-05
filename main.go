@@ -37,6 +37,10 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
 	"time"
 
 	"github.com/dustin/go-humanize"
@@ -96,13 +100,35 @@ func main() {
 		fmt.Printf("version %s\nbuild at %s\n%s\n", Version, BuildAt, GO)
 		return
 	}
-	defer func() {
+	closeOnce := sync.Once{}
+	closeDeps := func() {
 		// 关闭influxdb，flush统计数据
 		helper.GetInfluxSrv().Close()
+	}
+	defer func() {
+		closeOnce.Do(closeDeps)
 	}()
 
 	logger := log.Default()
 	e := elton.New()
+
+	// 非开发环境，监听信号退出
+	if !util.IsDevelopment() {
+
+		c := make(chan os.Signal)
+		signal.Notify(c, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+		go func() {
+			for s := range c {
+				logger.Info("server will be closed",
+					zap.String("signal", s.String()),
+				)
+				// docker 在10秒内退出，因此设置8秒后退出
+				e.GracefulClose(8 * time.Second)
+				closeOnce.Do(closeDeps)
+				os.Exit(0)
+			}
+		}()
+	}
 
 	e.SignedKeys = service.GetSignedKeys()
 	e.GenerateID = func() string {

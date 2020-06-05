@@ -26,18 +26,20 @@ type (
 	supplierCtrl struct{}
 
 	addSupplierParams struct {
-		Name    string `json:"name,omitempty" validate:"xSupplierName"`
-		Address string `json:"address,omitempty" validate:"xSupplierAddress"`
-		Mobile  string `json:"mobile,omitempty" validate:"xMobile"`
-		Contact string `json:"contact,omitempty" validate:"xSupplierContact"`
-		Status  int    `json:"status,omitempty" validate:"xStatus"`
+		Name        string `json:"name,omitempty" validate:"xSupplierName"`
+		BaseAddress string `json:"baseAddress,omitempty" validate:"xBaseAddress"`
+		Address     string `json:"address,omitempty" validate:"xBaseAddress"`
+		Mobile      string `json:"mobile,omitempty" validate:"xMobile"`
+		Contact     string `json:"contact,omitempty" validate:"xSupplierContact"`
+		Status      int    `json:"status,omitempty" validate:"xStatus"`
 	}
 	updateSupplierParms struct {
-		Name    string `json:"name,omitempty" validate:"omitempty,xSupplierName"`
-		Address string `json:"address,omitempty" validate:"omitempty,xSupplierAddress"`
-		Mobile  string `json:"mobile,omitempty" validate:"omitempty,xMobile"`
-		Contact string `json:"contact,omitempty" validate:"omitempty,xSupplierContact"`
-		Status  int    `json:"status,omitempty" validate:"omitempty,xStatus"`
+		Name        string `json:"name,omitempty" validate:"omitempty,xSupplierName"`
+		BaseAddress string `json:"baseAddress,omitempty" validate:"omitempty,xBaseAddress"`
+		Address     string `json:"address,omitempty" validate:"omitempty,xBaseAddress"`
+		Mobile      string `json:"mobile,omitempty" validate:"omitempty,xMobile"`
+		Contact     string `json:"contact,omitempty" validate:"omitempty,xSupplierContact"`
+		Status      int    `json:"status,omitempty" validate:"omitempty,xStatus"`
 	}
 	listSupplierParams struct {
 		listParams
@@ -60,16 +62,16 @@ func init() {
 	g.POST(
 		"/v1",
 		loadUserSession,
-		checkMarketingGroup,
 		newTracker(cs.ActionSupplierAdd),
+		checkMarketingGroup,
 		ctrl.add,
 	)
 
 	g.PATCH(
 		"/v1/{id}",
 		loadUserSession,
-		checkMarketingGroup,
 		newTracker(cs.ActionSupplierUpdate),
+		checkMarketingGroup,
 		ctrl.updateByID,
 	)
 	g.GET(
@@ -100,11 +102,12 @@ func (supplierCtrl) add(c *elton.Context) (err error) {
 		return
 	}
 	supplier, err := supplierSrv.Add(service.Supplier{
-		Name:    params.Name,
-		Address: params.Address,
-		Mobile:  params.Mobile,
-		Contact: params.Contact,
-		Status:  params.Status,
+		Name:        params.Name,
+		BaseAddress: params.BaseAddress,
+		Address:     params.Address,
+		Mobile:      params.Mobile,
+		Contact:     params.Contact,
+		Status:      params.Status,
 	})
 	if err != nil {
 		return
@@ -125,11 +128,12 @@ func (supplierCtrl) updateByID(c *elton.Context) (err error) {
 		return
 	}
 	err = supplierSrv.UpdateByID(id, &service.Supplier{
-		Name:    params.Name,
-		Address: params.Address,
-		Mobile:  params.Mobile,
-		Contact: params.Contact,
-		Status:  params.Status,
+		Name:        params.Name,
+		BaseAddress: params.BaseAddress,
+		Address:     params.Address,
+		Mobile:      params.Mobile,
+		Contact:     params.Contact,
+		Status:      params.Status,
 	})
 	if err != nil {
 		return
