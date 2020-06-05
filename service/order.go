@@ -81,6 +81,8 @@ type (
 		// TODO 子订单状态
 		// 状态
 		Status SubOrderStatus `json:"status,omitempty" gorm:"index:idx_sub_order_status"`
+		// 状态描述
+		StatusDesc string `json:"statusDesc,omitempty" gorm:"-"`
 	}
 	OrderSrv struct{}
 )
@@ -192,6 +194,10 @@ func (subOrder *SubOrder) BeforeCreate() error {
 
 // TODO 针对子订单的状态
 func (subOrder *SubOrder) AfterFind() (err error) {
+	value, ok := subOrderStatusDict[subOrder.Status]
+	if ok {
+		subOrder.StatusDesc = value
+	}
 	return
 }
 
