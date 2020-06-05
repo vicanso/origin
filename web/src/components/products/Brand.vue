@@ -48,13 +48,7 @@ const fields = [
     key: "files",
     span: 24,
     type: "upload",
-    bucket: "origin-pics",
-    rules: [
-      {
-        required: true,
-        message: "品牌图标不能为空"
-      }
-    ]
+    bucket: "origin-pics"
   },
   {
     label: "简介：",

@@ -28,7 +28,7 @@ type (
 	addBrandParams struct {
 		Name    string `json:"name,omitempty" validate:"xBrandName"`
 		Status  int    `json:"status,omitempty" validate:"xStatus"`
-		Logo    string `json:"logo,omitempty" validate:"xBrandLogo"`
+		Logo    string `json:"logo,omitempty" validate:"omitempty,xBrandLogo"`
 		Catalog string `json:"catalog,omitempty" validate:"xBrandCatalog"`
 	}
 	updateBrandParams struct {
