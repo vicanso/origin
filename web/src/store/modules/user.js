@@ -156,13 +156,13 @@ export default {
     [mutationUserListRoleProcessing](state, processing) {
       state.roleListProcessing = processing;
     },
-    [mutationUserListRole](state, { roles }) {
+    [mutationUserListRole](state, { roles = [] }) {
       state.roles = roles;
     },
     [mutationUserListGroupProcessing](state, processing) {
       state.groupListProcessing = processing;
     },
-    [mutationuserListGroup](state, { groups }) {
+    [mutationuserListGroup](state, { groups = [] }) {
       state.groups = groups;
     },
     [mutationUserUpdateProcessing](state, processing) {
@@ -289,7 +289,9 @@ export default {
           data.newPassword = generatePassword(data.newPassword);
         }
         await request.patch(USERS_ME, data);
-        commit(mutationUserProfileUpdate, data);
+        if (Object.keys(data).length !== 0) {
+          commit(mutationUserProfileUpdate, data);
+        }
       } finally {
         commit(mutationUserProfileProcessing, false);
       }
@@ -334,9 +336,6 @@ export default {
       }
       commit(mutationUserProfileProcessing, true);
       try {
-        await listUserRole({ commit });
-        await listStatus({ commit });
-        await listUserGroup({ commit });
         const { data } = await request.get(USERS_ME_PROFILE);
         commit(mutationUserProfile, data);
         return data;

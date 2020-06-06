@@ -58,6 +58,7 @@ export default {
   bottom: 0
   left: 0
   overflow: hidden
+  overflow-y: auto
 .mainContent
   padding-left: $mainNavWidth
   padding-top: $mainHeaderHeight

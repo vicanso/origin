@@ -19,8 +19,18 @@
             {{ (scope.row.baseAddressDesc || "") + scope.row.address }}
           </template>
         </el-table-column>
-        <el-table-column prop="contact" key="contact" label="联系人" />
-        <el-table-column prop="mobile" key="mobile" label="联系电话" />
+        <el-table-column
+          prop="contact"
+          key="contact"
+          label="联系人"
+          width="120"
+        />
+        <el-table-column
+          prop="mobile"
+          key="mobile"
+          label="联系电话"
+          width="180"
+        />
         <el-table-column fixed="right" label="操作" width="80">
           <template slot-scope="scope">
             <el-button

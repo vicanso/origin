@@ -114,7 +114,13 @@ const fields = [
     label: "供应商",
     key: "supplier",
     placeholder: "请选择供应商",
-    type: "supplier"
+    type: "supplier",
+    rules: [
+      {
+        required: true,
+        message: "商品供应商不能为空"
+      }
+    ]
   },
   {
     label: "SN：",
@@ -180,7 +186,13 @@ const fields = [
     type: "textarea",
     autosize: { minRows: 5, maxRows: 10 },
     span: 24,
-    placeholder: "请输入产品简介"
+    placeholder: "请输入产品简介",
+    rules: [
+      {
+        required: true,
+        message: "产品简介不能为空"
+      }
+    ]
   }
 ];
 
