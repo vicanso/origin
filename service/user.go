@@ -17,6 +17,7 @@ package service
 import (
 	"encoding/json"
 	"errors"
+	"net/http"
 
 	"github.com/jinzhu/gorm"
 	"github.com/lib/pq"
@@ -31,22 +32,27 @@ import (
 )
 
 const (
+	// UserSessionInfoKey user session info
 	UserSessionInfoKey = "user-session-info"
-
-	// // UserAccount user account field
-	// UserAccount = "account"
-	// // UserLoginAt user login at
-	// UserLoginAt = "loginAt"
-	// // UserRoles user roles
-	// UserRoles = "roles"
-	// // UserGroups user groups
-	// UserGroups = "groups"
-	// // UserLoginToken user login token
+	// UserLoginToken user login token
 	UserLoginToken = "loginToken"
+
+	errUserCategory = "user"
 )
 
 var (
-	errAccountOrPasswordInvalid = hes.New("account or password is invalid")
+	errAccountOrPasswordInvalid = &hes.Error{
+		Message:    "账户或者密码错误",
+		StatusCode: http.StatusBadRequest,
+		Category:   errUserCategory,
+	}
+)
+
+var (
+	// 用户角色
+	userRolesMap map[string]string
+	// 用户分组
+	userGroupsMap map[string]string
 )
 
 type (
@@ -67,10 +73,19 @@ type (
 	User struct {
 		helper.Model
 
-		Account  string         `json:"account,omitempty" gorm:"type:varchar(20);not null;unique_index:idx_users_account"`
-		Password string         `json:"-" gorm:"type:varchar(128);not null"`
-		Roles    pq.StringArray `json:"roles,omitempty" gorm:"type:text[]"`
-		Groups   pq.StringArray `json:"groups,omitempty" gorm:"type:text[]"`
+		Account  string `json:"account,omitempty" gorm:"type:varchar(20);not null;unique_index:idx_users_account"`
+		Password string `json:"-,omitempty" gorm:"type:varchar(128);not null"`
+
+		// 用户角色
+		Roles pq.StringArray `json:"roles,omitempty" gorm:"type:text[]"`
+		// 用户角色描述
+		RolesDesc []string `json:"rolesDesc,omitempty" gorm:"-"`
+
+		// 用户群组
+		Groups pq.StringArray `json:"groups,omitempty" gorm:"type:text[]"`
+		// 用户群组描述
+		GroupsDesc []string `json:"groupsDesc,omitempty" gorm:"-"`
+
 		// 用户状态
 		Status     int    `json:"status,omitempty"`
 		StatusDesc string `json:"statusDesc,omitempty" gorm:"-"`
@@ -122,6 +137,17 @@ func init() {
 	pgGetClient().AutoMigrate(&User{}).
 		AutoMigrate(&UserLoginRecord{}).
 		AutoMigrate(&UserTrackRecord{})
+
+	userRolesMap = map[string]string{
+		cs.UserRoleNormal: "普通用户",
+		cs.UserRoleAdmin:  "管理员",
+		cs.UserRoleSu:     "超级用户",
+	}
+	userGroupsMap = map[string]string{
+		cs.UserGroupIT:        "研发部",
+		cs.UserGroupMarketing: "市场部",
+		cs.UserGroupFinance:   "财务部",
+	}
 }
 
 // AfterCreate after create hook
@@ -150,43 +176,50 @@ func (u *User) BeforeCreate() (err error) {
 
 func (u *User) AfterFind() (err error) {
 	u.StatusDesc = getStatusDesc(u.Status)
+
+	userRolesDesc := make([]string, 0)
+	for _, role := range u.Roles {
+		value, ok := userRolesMap[role]
+		if ok {
+			userRolesDesc = append(userRolesDesc, value)
+		}
+	}
+	u.RolesDesc = userRolesDesc
+
+	userGroupsDesc := make([]string, 0)
+	for _, group := range u.Groups {
+		value, ok := userGroupsMap[group]
+		if ok {
+			userGroupsDesc = append(userGroupsDesc, value)
+		}
+	}
+	u.GroupsDesc = userGroupsDesc
+
 	return
 }
 
 // ListRoles list all user roles
 func (srv *UserSrv) ListRoles() []*UserRole {
-	return []*UserRole{
-		{
-			Name:  "普通用户",
-			Value: cs.UserRoleNormal,
-		},
-		{
-			Name:  "管理员",
-			Value: cs.UserRoleAdmin,
-		},
-		{
-			Name:  "超级用户",
-			Value: cs.UserRoleSu,
-		},
+	userRoles := make([]*UserRole, 0)
+	for key, value := range userRolesMap {
+		userRoles = append(userRoles, &UserRole{
+			Name:  value,
+			Value: key,
+		})
 	}
+	return userRoles
 }
 
 // ListGroups list all user group
 func (srv *UserSrv) ListGroups() []*UserGroup {
-	return []*UserGroup{
-		{
-			Name:  "研发部",
-			Value: cs.UserGroupIT,
-		},
-		{
-			Name:  "市场部",
-			Value: cs.UserGroupMarketing,
-		},
-		{
-			Name:  "财务部",
-			Value: cs.UserGroupFinance,
-		},
+	userGroups := make([]*UserGroup, 0)
+	for key, value := range userGroupsMap {
+		userGroups = append(userGroups, &UserGroup{
+			Name:  value,
+			Value: key,
+		})
 	}
+	return userGroups
 }
 
 // createByID create a user model by id

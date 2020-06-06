@@ -90,36 +90,10 @@ function commitUserInfo(commit, data) {
     groups: data.groups || []
   });
 }
-
-function updateDescList(user, key) {
-  if (!user[key]) {
-    user[key] = [];
-  }
-  const descList = [];
-  user[key].map(item => {
-    state[key].forEach(desc => {
-      if (desc.value === item) {
-        descList.push(desc.name);
-      }
-    });
-  });
-  user[`${key}Desc`] = descList;
-}
-
-function updateUserRoleDesc(user) {
-  updateDescList(user, "roles");
-}
-
-function updateUserGroupDesc(user) {
-  updateDescList(user, "groups");
-}
-
 function updateUserDesc(user) {
   user.updatedAtDesc = formatDate(user.updatedAt);
   attachUpdatedAtDesc(user);
   attachStatusDesc(user);
-  updateUserRoleDesc(user);
-  updateUserGroupDesc(user);
 }
 
 // listUserRole 获取用户角色列表
@@ -324,9 +298,6 @@ export default {
     async listUser({ commit }, params) {
       commit(mutationUserListProcessing, true);
       try {
-        await listUserRole({ commit });
-        await listStatus({ commit });
-        await listUserGroup({ commit });
         const { data } = await request.get(USERS, {
           params
         });

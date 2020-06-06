@@ -44,16 +44,16 @@ var (
 	brandSrv   = new(BrandSrv)
 
 	statusInfoList StatusInfoList
-	statusDict     map[int]string
+	statusMap      map[int]string
 )
 
 func init() {
-	statusDict = map[int]string{
+	statusMap = map[int]string{
 		cs.StatusEnabled:  "启用",
 		cs.StatusDisabled: "禁用",
 	}
 	statusInfoList = make(StatusInfoList, 0)
-	for k, v := range statusDict {
+	for k, v := range statusMap {
 		statusInfoList = append(statusInfoList, &StatusInfo{
 			Name:  v,
 			Value: k,
@@ -65,7 +65,7 @@ func init() {
 }
 
 func getStatusDesc(status int) string {
-	value, ok := statusDict[status]
+	value, ok := statusMap[status]
 	if !ok {
 		return ""
 	}
