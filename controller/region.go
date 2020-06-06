@@ -41,7 +41,7 @@ type (
 	updateRegionParams struct {
 		Name     string `json:"name,omitempty" validate:"omitempty,xRegionName"`
 		Status   int    `json:"status,omitempty" validate:"omitempty,xStatus"`
-		Priority int    `json:"priority,omitempty" validate:"omitempty,xRegionPriority"`
+		Priority int    `json:"priority,omitempty" validate:"omitempty,xPriority"`
 	}
 )
 

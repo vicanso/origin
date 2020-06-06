@@ -22,7 +22,6 @@ import (
 func init() {
 	AddAlias("xRegionName", "min=1,max=10")
 	AddAlias("xRegionParent", "min=1,max=8")
-	AddAlias("xRegionPriority", "min=1,max=100")
 	Add("xRegionCategory", func(fl validator.FieldLevel) bool {
 		return isInString(fl, []string{
 			cs.RegionCountry,

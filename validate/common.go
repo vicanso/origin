@@ -33,6 +33,10 @@ func init() {
 	AddAlias("xBaseAddress", "min=1,max=10")
 	// 详细地址
 	AddAlias("xAddress", "min=1,max=100")
+	// 优先级
+	AddAlias("xPriority", "min=1,max=100")
+	// 热度
+	AddAlias("xHot", "min=1,max=1000")
 
 	durationRegexp := regexp.MustCompile("^[1-9][0-9]*(ms|[smh])$")
 	Add("xDuration", func(fl validator.FieldLevel) bool {

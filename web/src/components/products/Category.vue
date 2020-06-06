@@ -20,7 +20,6 @@ const fields = [
     label: "名称：",
     key: "name",
     clearable: true,
-    span: 6,
     placeholder: "请输入分类名称",
     rules: [
       {
@@ -33,7 +32,6 @@ const fields = [
     label: "级别：",
     key: "level",
     type: "select",
-    span: 6,
     placeholder: "请选择分类级别",
     options: [
       {
@@ -60,7 +58,6 @@ const fields = [
     label: "状态：",
     key: "status",
     type: "select",
-    span: 6,
     options: categoryStatuses,
     rules: [
       {
@@ -70,10 +67,15 @@ const fields = [
     ]
   },
   {
+    label: "热度：",
+    key: "hot",
+    dataType: "number",
+    placeholder: "请输入产品热度(1-1000)"
+  },
+  {
     label: "上级分类：",
     labelWidth: "90px",
     key: "belongs",
-    span: 6,
     type: "productCategory"
   }
 ];

@@ -84,6 +84,8 @@ type (
 		Belongs pq.Int64Array `json:"belongs,omitempty" gorm:"type:int[]"`
 		// 所属分类描述
 		BelongsDesc []string `json:"belongsDesc,omitempty" gorm:"-"`
+		// 热度
+		Hot int `json:"hot,omitempty"`
 	}
 	ProductSrv struct{}
 )

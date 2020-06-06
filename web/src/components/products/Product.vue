@@ -124,7 +124,7 @@ const fields = [
   {
     label: "热度：",
     key: "hot",
-    dataType: "numbber",
+    dataType: "number",
     placeholder: "请输入产品热度(1-1000)"
   },
   {

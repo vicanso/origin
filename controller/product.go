@@ -47,6 +47,8 @@ type (
 		Brand uint `json:"brand,omitempty" validate:"omitempty,xProductBrand"`
 		// 供应商
 		Supplier uint `json:"supplier,omitempty" validate:"xProductSupplier"`
+		// 热度
+		Hot int `json:"hot,omitempty" validate:"omitempty,xHot"`
 	}
 	updateProductParams struct {
 		Name       string     `json:"name,omitempty" validate:"omitempty,xProductName"`
@@ -68,6 +70,8 @@ type (
 		Brand uint `json:"brand,omitempty" validate:"omitempty,xProductBrand"`
 		// 供应商
 		Supplier uint `json:"supplier,omitempty" validate:"omitempty,xProductSupplier"`
+		// 热度
+		Hot int `json:"hot,omitempty" validate:"omitempty,xHot"`
 	}
 	listProductParams struct {
 		listParams
@@ -77,12 +81,14 @@ type (
 		Level   int     `json:"level,omitempty" validate:"xProductCategoryLevel"`
 		Status  int     `json:"status,omitempty" validate:"xStatus"`
 		Belongs []int64 `json:"belongs,omitempty"`
+		Hot     int     `json:"hot,omitempty" validate:"omitempty,xHot"`
 	}
 	updateProductCategoryParams struct {
 		Name    string  `json:"name,omitempty" validate:"omitempty,xProductCategoryName"`
 		Level   int     `json:"level,omitempty" validate:"omitempty,xProductCategoryLevel"`
 		Status  int     `json:"status,omitempty" validate:"omitempty,xStatus"`
 		Belongs []int64 `json:"belongs,omitempty"`
+		Hot     int     `json:"hot,omitempty" validate:"omitempty,xHot"`
 	}
 	listProductCategoryParams struct {
 		listParams
@@ -198,6 +204,7 @@ func (ctrl productCtrl) add(c *elton.Context) (err error) {
 		Origin:     params.Origin,
 		Brand:      params.Brand,
 		Supplier:   params.Supplier,
+		Hot:        params.Hot,
 	})
 	if err != nil {
 		return
@@ -281,6 +288,7 @@ func (ctrl productCtrl) updateByID(c *elton.Context) (err error) {
 		Origin:     params.Origin,
 		Brand:      params.Brand,
 		Supplier:   params.Supplier,
+		Hot:        params.Hot,
 	}
 	err = productSrv.UpdateByID(id, product)
 	if err != nil {
@@ -302,6 +310,7 @@ func (ctrl productCtrl) addCategory(c *elton.Context) (err error) {
 		Level:   params.Level,
 		Status:  params.Status,
 		Belongs: params.Belongs,
+		Hot:     params.Hot,
 	})
 	if err != nil {
 		return
@@ -358,6 +367,7 @@ func (ctrl productCtrl) updateCategoryByID(c *elton.Context) (err error) {
 		Level:   params.Level,
 		Status:  params.Status,
 		Belongs: params.Belongs,
+		Hot:     params.Hot,
 	}
 	err = productSrv.UpdateCategoryByID(id, cat)
 	if err != nil {
