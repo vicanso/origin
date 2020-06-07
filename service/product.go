@@ -109,10 +109,17 @@ var (
 
 var (
 	// productCategoryNameCache product category's name cache
-	productCategoryNameCache = lruTTL.New(100, 300*time.Second)
+	productCategoryNameCache *lruTTL.Cache
 )
 
 func init() {
+	ttl := 300 * time.Second
+	// 本地开发环境，设置缓存为1秒
+	if util.IsDevelopment() {
+		ttl = time.Second
+	}
+	productCategoryNameCache = lruTTL.New(1000, ttl)
+
 	pgGetClient().AutoMigrate(&Product{}).
 		AutoMigrate(&ProductCategory{})
 }

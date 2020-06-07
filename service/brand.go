@@ -39,10 +39,16 @@ type (
 
 var (
 	// brandNameCache brandh's name cache
-	brandNameCache = lruTTL.New(100, 300*time.Second)
+	brandNameCache *lruTTL.Cache
 )
 
 func init() {
+	ttl := 300 * time.Second
+	// 本地开发环境，设置缓存为1秒
+	if util.IsDevelopment() {
+		ttl = time.Second
+	}
+	brandNameCache = lruTTL.New(500, ttl)
 	pgGetClient().AutoMigrate(&Brand{})
 }
 

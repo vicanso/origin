@@ -21,6 +21,7 @@ import (
 	lruTTL "github.com/vicanso/lru-ttl"
 	"github.com/vicanso/origin/cs"
 	"github.com/vicanso/origin/helper"
+	"github.com/vicanso/origin/util"
 )
 
 type (
@@ -45,10 +46,16 @@ type (
 
 var (
 	// regionNameCache region's cache
-	regionNameCache = lruTTL.New(100, 300*time.Second)
+	regionNameCache *lruTTL.Cache
 )
 
 func init() {
+	ttl := 300 * time.Second
+	// 本地开发环境，设置缓存为1秒
+	if util.IsDevelopment() {
+		ttl = time.Second
+	}
+	regionNameCache = lruTTL.New(200, ttl)
 	pgGetClient().AutoMigrate(&Region{})
 }
 
