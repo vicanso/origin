@@ -82,6 +82,7 @@ type (
 		Status  int     `json:"status,omitempty" validate:"xStatus"`
 		Belongs []int64 `json:"belongs,omitempty"`
 		Hot     int     `json:"hot,omitempty" validate:"omitempty,xHot"`
+		Icon    string  `json:"icon,omitempty" validate:"xFile"`
 	}
 	updateProductCategoryParams struct {
 		Name    string  `json:"name,omitempty" validate:"omitempty,xProductCategoryName"`
@@ -89,6 +90,7 @@ type (
 		Status  int     `json:"status,omitempty" validate:"omitempty,xStatus"`
 		Belongs []int64 `json:"belongs,omitempty"`
 		Hot     int     `json:"hot,omitempty" validate:"omitempty,xHot"`
+		Icon    string  `json:"icon,omitempty" validate:"omitempty,xFile"`
 	}
 	listProductCategoryParams struct {
 		listParams
@@ -311,6 +313,7 @@ func (ctrl productCtrl) addCategory(c *elton.Context) (err error) {
 		Status:  params.Status,
 		Belongs: params.Belongs,
 		Hot:     params.Hot,
+		Icon:    params.Icon,
 	})
 	if err != nil {
 		return
@@ -368,6 +371,7 @@ func (ctrl productCtrl) updateCategoryByID(c *elton.Context) (err error) {
 		Status:  params.Status,
 		Belongs: params.Belongs,
 		Hot:     params.Hot,
+		Icon:    params.Icon,
 	}
 	err = productSrv.UpdateCategoryByID(id, cat)
 	if err != nil {

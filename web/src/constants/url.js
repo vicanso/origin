@@ -26,7 +26,7 @@ export const PRODUCT_CATEGORIES_ID = "/products/v1/categories/:id";
 export const SUPPLIERS = "/suppliers/v1";
 export const SUPPLIERS_ID = "/suppliers/v1/:id";
 
-export const FILES = "/files/v1";
+export const FILES_IMAGES = "/files/v1/images";
 
 export const REGIONS = "/regions/v1";
 export const REGIONS_ID = "/regions/v1/:id";

@@ -28,13 +28,13 @@ type (
 	addBrandParams struct {
 		Name    string `json:"name,omitempty" validate:"xBrandName"`
 		Status  int    `json:"status,omitempty" validate:"xStatus"`
-		Logo    string `json:"logo,omitempty" validate:"omitempty,xBrandLogo"`
+		Logo    string `json:"logo,omitempty" validate:"omitempty,xFile"`
 		Catalog string `json:"catalog,omitempty" validate:"xBrandCatalog"`
 	}
 	updateBrandParams struct {
 		Name    string `json:"name,omitempty" validate:"omitempty,xBrandName"`
 		Status  int    `json:"status,omitempty" validate:"omitempty,xStatus"`
-		Logo    string `json:"logo,omitempty" validate:"omitempty,xBrandLogo"`
+		Logo    string `json:"logo,omitempty" validate:"omitempty,xFile"`
 		Catalog string `json:"catalog,omitempty" validate:"omitempty,xBrandCatalog"`
 	}
 	listBrandParams struct {

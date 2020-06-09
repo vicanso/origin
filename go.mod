@@ -3,6 +3,7 @@ module github.com/vicanso/origin
 go 1.14
 
 require (
+	github.com/disintegration/imaging v1.6.2
 	github.com/dustin/go-humanize v1.0.0
 	github.com/fogleman/gg v1.3.0
 	github.com/go-playground/validator/v10 v10.3.0

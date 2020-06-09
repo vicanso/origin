@@ -70,6 +70,9 @@
               :files="current[field.key]"
               :bucket="field.bucket"
               :limit="field.limit"
+              :contentType="field.contentType"
+              :width="field.width"
+              :height="field.height"
               @change="handleUpload"
             />
             <BrandSelect

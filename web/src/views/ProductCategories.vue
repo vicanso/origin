@@ -31,6 +31,12 @@
             <span v-else>--</span>
           </template>
         </el-table-column>
+        <el-table-column key="icon" label="图标">
+          <template slot-scope="scope">
+            <img v-if="scope.row.icon" :width="60" :src="scope.row.icon" />
+            <span v-else>--</span>
+          </template>
+        </el-table-column>
         <el-table-column
           prop="updatedAtDesc"
           key="updatedAtDesc"

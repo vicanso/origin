@@ -15,10 +15,15 @@
 package service
 
 import (
+	"bytes"
+	"image"
+	"image/jpeg"
+	"image/png"
 	"io"
 	"io/ioutil"
 	"net/http"
 
+	"github.com/disintegration/imaging"
 	"github.com/minio/minio-go/v6"
 	"github.com/vicanso/origin/config"
 )
@@ -77,3 +82,49 @@ func (srv *FileSrv) GetData(bucket, filename string) (data []byte, header http.H
 	}
 	return
 }
+
+func (srv *FileSrv) OptimImage(reader io.Reader, imageType string, width, height int) (buffer *bytes.Buffer, err error) {
+	var img image.Image
+	switch imageType {
+	default:
+		img, _, err = image.Decode(reader)
+	case "png":
+		img, err = png.Decode(reader)
+	case "jpg":
+		fallthrough
+	case "jpeg":
+		img, err = jpeg.Decode(reader)
+	}
+	if err != nil {
+		return
+	}
+	img = imaging.Resize(img, width, height, imaging.Lanczos)
+	buffer = new(bytes.Buffer)
+	switch imageType {
+	default:
+		err = jpeg.Encode(buffer, img, &jpeg.Options{
+			Quality: 80,
+		})
+	case "png":
+		err = png.Encode(buffer, img)
+	}
+	if err != nil {
+		return
+	}
+	return
+}
+
+// func imageDecode(buf []byte, sourceType EncodeType) (img image.Image, err error) {
+// 	reader := bytes.NewReader(buf)
+// 	switch sourceType {
+// 	default:
+// 		img, _, err = image.Decode(reader)
+// 	case EncodeTypeWEBP:
+// 		img, err = WebpDecode(reader)
+// 	case EncodeTypePNG:
+// 		img, err = png.Decode(reader)
+// 	case EncodeTypeJPEG:
+// 		img, err = jpeg.Decode(reader)
+// 	}
+// 	return
+// }

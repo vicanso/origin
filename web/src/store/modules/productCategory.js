@@ -1,7 +1,7 @@
 import request from "@/helpers/request";
 import { PRODUCT_CATEGORIES, PRODUCT_CATEGORIES_ID } from "@/constants/url";
 import { attachStatusDesc, attachUpdatedAtDesc } from "@/store/modules/common";
-import { addNoCacheQueryParam, findByID } from "@/helpers/util";
+import { addNoCacheQueryParam, findByID, toUploadFiles } from "@/helpers/util";
 
 const prefix = "productCategory";
 const mutationProductCategoryList = `${prefix}.list`;
@@ -16,6 +16,12 @@ const state = {
   }
 };
 
+function enhanceBrandInfo(item) {
+  attachUpdatedAtDesc(item);
+  attachStatusDesc(item);
+  item.files = toUploadFiles(item.icon);
+}
+
 export default {
   state,
   mutations: {
@@ -26,9 +32,7 @@ export default {
       if (count >= 0) {
         state.list.count = count;
       }
-      productCategories.forEach(item => {
-        attachUpdatedAtDesc(item);
-      });
+      productCategories.forEach(enhanceBrandInfo);
       state.list.data = productCategories;
     },
     [mutationProductCategoryUpdate](state, { id, data }) {
@@ -38,14 +42,17 @@ export default {
       const found = findByID(state.list.data, id);
       if (found) {
         Object.assign(found, data);
-        attachStatusDesc(found);
-        attachUpdatedAtDesc(found);
+        enhanceBrandInfo(found);
       }
     }
   },
   actions: {
     // addProductCategory 添加产品分类
     async addProductCategory({ commit }, productCategory) {
+      if (productCategory.files) {
+        productCategory.icon = productCategory.files[0].url;
+        delete productCategory.files;
+      }
       commit(mutationProductCategoryListProcessing, true);
       try {
         const { data } = await request.post(
@@ -81,6 +88,7 @@ export default {
         const { data } = await request.get(url, {
           params: addNoCacheQueryParam()
         });
+        enhanceBrandInfo(data);
         return data;
       } finally {
         commit(mutationProductCategoryListProcessing, false);
@@ -88,6 +96,10 @@ export default {
     },
     // updateProductCategoryByID 通过ID更新产品信息
     async updateProductCategoryByID({ commit }, { id, data }) {
+      if (data.files) {
+        data.icon = data.files[0].url;
+        delete data.files;
+      }
       commit(mutationProductCategoryListProcessing, true);
       try {
         const url = PRODUCT_CATEGORIES_ID.replace(":id", id);

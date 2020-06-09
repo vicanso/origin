@@ -77,6 +77,22 @@ const fields = [
     labelWidth: "90px",
     key: "belongs",
     type: "productCategory"
+  },
+  {
+    label: "图标：",
+    key: "files",
+    span: 24,
+    type: "upload",
+    bucket: "origin-pics",
+    width: 128,
+    height: 128,
+    contentType: "image/png",
+    rules: [
+      {
+        required: true,
+        message: "产品分类图标不能为空"
+      }
+    ]
   }
 ];
 

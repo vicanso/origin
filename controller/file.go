@@ -17,6 +17,7 @@ package controller
 import (
 	"bytes"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/vicanso/origin/cs"
@@ -37,6 +38,8 @@ type (
 type (
 	fileUploadParams struct {
 		Bucket string `json:"bucket,omitempty" validate:"xFileBucket"`
+		Width  string `json:"width,omitempty" validate:"omitempty,xFileWidth"`
+		Height string `json:"height,omitempty" validate:"omitempty,xFileHeight"`
 	}
 )
 
@@ -60,21 +63,20 @@ func init() {
 	ctrl := fileCtrl{}
 	g := router.NewGroup("/files")
 	g.POST(
-		"/v1",
+		"/v1/images",
 		loadUserSession,
 		newCheckGroupsMiddleware([]string{
 			cs.UserGroupMarketing,
 		}),
 		newTracker(cs.ActionFileUpload),
-		ctrl.upload,
+		ctrl.uploadImage,
 	)
 
 	g.GET(filePreviwRoute, ctrl.preview)
 }
 
-// upload file upload
-func (ctrl fileCtrl) upload(c *elton.Context) (err error) {
-
+// uploadImage image upload
+func (ctrl fileCtrl) uploadImage(c *elton.Context) (err error) {
 	file, header, err := c.Request.FormFile("file")
 	if err != nil {
 		return
@@ -89,13 +91,21 @@ func (ctrl fileCtrl) upload(c *elton.Context) (err error) {
 	if err != nil {
 		return
 	}
+	width, _ := strconv.Atoi(params.Width)
+	height, _ := strconv.Atoi(params.Height)
+	fileType := strings.Split(contentType, "/")[1]
+	buffer, err := fileSrv.OptimImage(file, fileType, width, height)
+	if err != nil {
+		return
+	}
+
 	us := getUserSession(c)
-	filename := util.GenUlid() + "." + strings.Split(contentType, "/")[1]
+	filename := util.GenUlid() + "." + fileType
 	_, err = fileSrv.Upload(service.UploadParams{
 		Bucket: params.Bucket,
 		Name:   filename,
-		Reader: file,
-		Size:   header.Size,
+		Reader: buffer,
+		Size:   int64(buffer.Len()),
 		Opts: minio.PutObjectOptions{
 			ContentType: contentType,
 			UserTags: map[string]string{

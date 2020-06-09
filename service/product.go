@@ -86,6 +86,8 @@ type (
 		BelongsDesc []string `json:"belongsDesc,omitempty" gorm:"-"`
 		// 热度
 		Hot int `json:"hot,omitempty"`
+		// 图标
+		Icon string `json:"icon,omitempty"`
 	}
 	ProductSrv struct{}
 )
@@ -161,6 +163,14 @@ func (pc *ProductCategory) AfterFind() (err error) {
 	}
 	pc.BelongsDesc = belongsDesc
 
+	return
+}
+
+func (pc *ProductCategory) BeforeCreate() (err error) {
+	// 热度默认设置为1
+	if pc.Hot == 0 {
+		pc.Hot = 1
+	}
 	return
 }
 

@@ -23,4 +23,6 @@ func init() {
 	Add("xFileBucket", func(fl validator.FieldLevel) bool {
 		return isInString(fl, buckes)
 	})
+	AddAlias("xFileWidth", "number,min=1,max=3")
+	AddAlias("xFileHeight", "number,min=1,max=3")
 }

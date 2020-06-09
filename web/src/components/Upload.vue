@@ -18,7 +18,7 @@
 </template>
 <script>
 import { contains } from "@/helpers/util";
-import { FILES } from "@/constants/url";
+import { FILES_IMAGES } from "@/constants/url";
 export default {
   props: {
     bucket: {
@@ -29,17 +29,27 @@ export default {
       type: Number,
       default: 1
     },
-    files: Array
+    files: Array,
+    contentType: String,
+    width: Number,
+    height: Number
   },
   data() {
-    const { files } = this.$props;
+    const { files, bucket, width, height } = this.$props;
     let fileList = [];
     if (files) {
       fileList = files.slice(0);
     }
+    const params = [`bucket=${bucket}`];
+    if (width) {
+      params.push(`width=${width}`);
+    }
+    if (height) {
+      params.push(`height=${height}`);
+    }
     return {
       fileList,
-      action: FILES + "?bucket=" + this.$props.bucket
+      action: FILES_IMAGES + `?${params.join("&")}`
     };
   },
   methods: {
@@ -61,8 +71,16 @@ export default {
       this.$message.error(err.message);
     },
     handleBeforeUpload(file) {
-      if (!contains(["image/jpeg", "image/png"], file.type)) {
-        this.$message.warning("仅支持上传JPG与PNG格式");
+      const { contentType } = this.$props;
+      const validTypes = [];
+      // 暂时仅支持图片类上传
+      if (!contentType) {
+        validTypes.push("image/jpeg", "image/png");
+      } else {
+        validTypes.push(contentType);
+      }
+      if (!contains(validTypes, file.type)) {
+        this.$message.warning(`仅支持上传${validTypes.join("，")}格式`);
         return false;
       }
       const tooLarge = file.size / 1024 / 1024 > 1;
