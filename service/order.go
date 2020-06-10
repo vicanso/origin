@@ -236,7 +236,7 @@ func (srv *OrderSrv) CreateWithSubOrders(user uint, data []SubOrder) (order *Ord
 			ids = append(ids, id)
 		}
 	}
-	products, err := productSrv.List(helper.PGQueryParams{
+	products, err := productSrv.List(PGQueryParams{
 		Limit:  len(ids),
 		Fields: "-catalog,categories",
 	}, "id IN (?)", ids)

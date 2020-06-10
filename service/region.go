@@ -121,7 +121,7 @@ func (srv *RegionSrv) Add(data Region) (region *Region, err error) {
 }
 
 // List list region
-func (srv *RegionSrv) List(params helper.PGQueryParams, args ...interface{}) (result []*Region, err error) {
+func (srv *RegionSrv) List(params PGQueryParams, args ...interface{}) (result []*Region, err error) {
 	result = make([]*Region, 0)
 	err = pgQuery(params, args...).Find(&result).Error
 	return

@@ -20,8 +20,6 @@ import (
 	"github.com/vicanso/origin/cs"
 	"github.com/vicanso/origin/router"
 
-	"github.com/vicanso/origin/helper"
-
 	"github.com/vicanso/elton"
 	"github.com/vicanso/hes"
 	"github.com/vicanso/origin/service"
@@ -140,7 +138,7 @@ func (receiverCtrl) list(c *elton.Context) (err error) {
 	us := getUserSession(c)
 	conds := queryConditions{}
 	conds.add("user_id = ?", us.GetID())
-	result, err := receiverSrv.List(helper.PGQueryParams{}, conds.toArray()...)
+	result, err := receiverSrv.List(PGQueryParams{}, conds.toArray()...)
 	if err != nil {
 		return
 	}

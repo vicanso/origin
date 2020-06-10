@@ -30,6 +30,8 @@ type (
 	StatusInfoList []*StatusInfo
 )
 
+type PGQueryParams = helper.PGQueryParams
+
 var (
 	pgCreate    = helper.PGCreate
 	pgGetClient = helper.PGGetClient

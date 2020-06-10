@@ -20,11 +20,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/vicanso/origin/helper"
-
 	"github.com/vicanso/elton"
 	"github.com/vicanso/hes"
 	"github.com/vicanso/origin/cs"
+	"github.com/vicanso/origin/helper"
 	"github.com/vicanso/origin/log"
 	"github.com/vicanso/origin/middleware"
 	"github.com/vicanso/origin/service"
@@ -68,6 +67,8 @@ var (
 	supplierSrv = new(service.SupplierSrv)
 	// 收货人服务
 	receiverSrv = new(service.ReceiverSrv)
+	// 广告服务
+	advertisementSrv = new(service.AdvertisementSrv)
 
 	// 创建新的并发控制中间件
 	newConcurrentLimit = middleware.NewConcurrentLimit
@@ -118,6 +119,8 @@ type (
 		args      []interface{}
 	}
 )
+
+type PGQueryParams = helper.PGQueryParams
 
 func init() {
 	magicalValue := ""
@@ -254,10 +257,10 @@ func newCheckGroupsMiddleware(validGroups []string) elton.Handler {
 }
 
 // toPGQueryParams to pg query params
-func (params listParams) toPGQueryParams() helper.PGQueryParams {
+func (params listParams) toPGQueryParams() PGQueryParams {
 	limit, _ := strconv.Atoi(params.Limit)
 	offset, _ := strconv.Atoi(params.Offset)
-	return helper.PGQueryParams{
+	return PGQueryParams{
 		Limit:  limit,
 		Offset: offset,
 		Order:  params.Order,

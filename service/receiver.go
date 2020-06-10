@@ -66,7 +66,7 @@ func (srv *ReceiverSrv) FindByID(id uint) (receiver *Receiver, err error) {
 }
 
 // List list receiver
-func (srv *ReceiverSrv) List(params helper.PGQueryParams, args ...interface{}) (result []*Receiver, err error) {
+func (srv *ReceiverSrv) List(params PGQueryParams, args ...interface{}) (result []*Receiver, err error) {
 	result = make([]*Receiver, 0)
 	err = pgQuery(params, args...).Find(&result).Error
 	return

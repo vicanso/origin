@@ -102,3 +102,14 @@ var (
 		RegionStreet,
 	}
 )
+
+const (
+	// 首页
+	AdvertisementHome = "home"
+)
+
+var (
+	AdvertisementCategories = []string{
+		AdvertisementHome,
+	}
+)

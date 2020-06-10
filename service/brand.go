@@ -104,7 +104,7 @@ func (srv *BrandSrv) FindByID(id uint) (brand *Brand, err error) {
 }
 
 // List list brands
-func (srv *BrandSrv) List(params helper.PGQueryParams, args ...interface{}) (result []*Brand, err error) {
+func (srv *BrandSrv) List(params PGQueryParams, args ...interface{}) (result []*Brand, err error) {
 	result = make([]*Brand, 0)
 	err = pgQuery(params, args...).Find(&result).Error
 	return

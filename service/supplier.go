@@ -72,7 +72,7 @@ func (srv *SupplierSrv) FindByID(id uint) (supplier *Supplier, err error) {
 }
 
 // List list supplier
-func (srv *SupplierSrv) List(params helper.PGQueryParams, args ...interface{}) (result []*Supplier, err error) {
+func (srv *SupplierSrv) List(params PGQueryParams, args ...interface{}) (result []*Supplier, err error) {
 	result = make([]*Supplier, 0)
 	err = pgQuery(params, args...).Find(&result).Error
 	return

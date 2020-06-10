@@ -180,7 +180,7 @@ func GetSignedKeys() elton.SignedKeysGenerator {
 }
 
 // List list configurations
-func (srv *ConfigurationSrv) List(params helper.PGQueryParams, args ...interface{}) (result []*Configuration, err error) {
+func (srv *ConfigurationSrv) List(params PGQueryParams, args ...interface{}) (result []*Configuration, err error) {
 	result = make([]*Configuration, 0)
 	err = pgQuery(params, args...).Find(&result).Error
 	return

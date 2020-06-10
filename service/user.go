@@ -354,7 +354,7 @@ func (srv *UserSrv) AddTrackRecord(r *UserTrackRecord, c *elton.Context) (err er
 }
 
 // List list users
-func (srv *UserSrv) List(params helper.PGQueryParams, args ...interface{}) (result []*User, err error) {
+func (srv *UserSrv) List(params PGQueryParams, args ...interface{}) (result []*User, err error) {
 	result = make([]*User, 0)
 	err = pgQuery(params, args...).Find(&result).Error
 	return
@@ -366,7 +366,7 @@ func (srv *UserSrv) Count(args ...interface{}) (count int, err error) {
 }
 
 // ListLoginRecord list login record
-func (srv *UserSrv) ListLoginRecord(params helper.PGQueryParams, args ...interface{}) (result []*UserLoginRecord, err error) {
+func (srv *UserSrv) ListLoginRecord(params PGQueryParams, args ...interface{}) (result []*UserLoginRecord, err error) {
 	result = make([]*UserLoginRecord, 0)
 	err = pgQuery(params, args...).Find(&result).Error
 	return

@@ -212,7 +212,7 @@ func (srv *ProductSrv) FindByID(id uint) (product *Product, err error) {
 }
 
 // List list product
-func (srv *ProductSrv) List(params helper.PGQueryParams, args ...interface{}) (result []*Product, err error) {
+func (srv *ProductSrv) List(params PGQueryParams, args ...interface{}) (result []*Product, err error) {
 	result = make([]*Product, 0)
 	err = pgQuery(params, args...).Find(&result).Error
 	return
@@ -250,7 +250,7 @@ func (srv *ProductSrv) FindCategoryByID(id uint) (cat *ProductCategory, err erro
 }
 
 // ListCategory list category
-func (srv *ProductSrv) ListCategory(params helper.PGQueryParams, args ...interface{}) (result []*ProductCategory, err error) {
+func (srv *ProductSrv) ListCategory(params PGQueryParams, args ...interface{}) (result []*ProductCategory, err error) {
 	result = make([]*ProductCategory, 0)
 	err = pgQuery(params, args...).Find(&result).Error
 	return

@@ -66,4 +66,9 @@ const (
 	ActionReceiverAdd = "add-receiver"
 	// ActionReceiverUpdate update receiver
 	ActionReceiverUpdate = "update-receiver"
+
+	// ActionAdvertisementAdd add advertisement
+	ActionAdvertisementAdd = "add-advertisement"
+	// ActionAdvertisementUpdate update advertisement
+	ActionAdvertisementUpdate = "update-advertisement"
 )
