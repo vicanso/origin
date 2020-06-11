@@ -144,7 +144,6 @@ const fields = [
     key: "files",
     span: 24,
     type: "upload",
-    bucket: "origin-pics",
     limit: 10
   },
   {

@@ -32,6 +32,7 @@ type (
 		Category  string     `json:"category,omitempty" validate:"xAdvertisementCategory"`
 		StartedAt *time.Time `json:"startedAt,omitempty" validate:"required"`
 		EndedAt   *time.Time `json:"endedAt,omitempty" validate:"required"`
+		Pic       string     `json:"pic,omitempty" validate:"xFile"`
 	}
 	updateAdvertisementParams struct {
 		Status    int        `json:"status,omitempty" validate:"omitempty,xStatus"`
@@ -40,11 +41,14 @@ type (
 		Category  string     `json:"category,omitempty" validate:"omitempty,xAdvertisementCategory"`
 		StartedAt *time.Time `json:"startedAt,omitempty"`
 		EndedAt   *time.Time `json:"endedAt,omitempty"`
+		Pic       string     `json:"pic,omitempty" validate:"omitempty,xFile"`
 	}
 	listAdvertisementParams struct {
 		listParams
 
-		Status string `json:"status,omitempty" validate:"omitempty,xStatus"`
+		Status   string `json:"status,omitempty" validate:"omitempty,xStatus"`
+		Keyword  string `json:"keyword,omitempty" validate:"omitempty,xKeyword"`
+		Category string `json:"category,omitempty" validate:"omitempty,xAdvertisementCategory"`
 	}
 
 	advertisementCtrl struct{}
@@ -56,7 +60,19 @@ func init() {
 
 	g.GET(
 		"/v1",
+		noCacheIfSetNoCache,
 		ctrl.list,
+	)
+	g.GET(
+		"/v1/categories",
+		noCacheIfSetNoCache,
+		ctrl.listCategory,
+	)
+
+	g.GET(
+		"/v1/{id}",
+		noCacheIfSetNoCache,
+		ctrl.findByID,
 	)
 	g.POST(
 		"/v1",
@@ -79,6 +95,12 @@ func (params listAdvertisementParams) toConditions() (conditions []interface{}) 
 	if params.Status != "" {
 		conds.add("status = ?", params.Status)
 	}
+	if params.Keyword != "" {
+		conds.add("summary ILIKE ?", "%"+params.Keyword+"%")
+	}
+	if params.Category != "" {
+		conds.add("category = ?", params.Category)
+	}
 	return conds.toArray()
 }
 
@@ -97,6 +119,7 @@ func (ctrl advertisementCtrl) add(c *elton.Context) (err error) {
 		Category:  params.Category,
 		StartedAt: params.StartedAt,
 		EndedAt:   params.EndedAt,
+		Pic:       params.Pic,
 	})
 	if err != nil {
 		return
@@ -123,6 +146,7 @@ func (ctrl advertisementCtrl) updateByID(c *elton.Context) (err error) {
 		Category:  params.Category,
 		StartedAt: params.StartedAt,
 		EndedAt:   params.EndedAt,
+		Pic:       params.Pic,
 	})
 	if err != nil {
 		return
@@ -172,6 +196,16 @@ func (ctrl advertisementCtrl) list(c *elton.Context) (err error) {
 	}{
 		result,
 		count,
+	}
+	return
+}
+
+func (ctrl advertisementCtrl) listCategory(c *elton.Context) (err error) {
+	c.CacheMaxAge("5m")
+	c.Body = &struct {
+		Categories []*service.AdvertisementCategory `json:"categories,omitempty"`
+	}{
+		advertisementSrv.ListCategory(),
 	}
 	return
 }

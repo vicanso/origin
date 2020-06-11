@@ -17,10 +17,17 @@ package service
 import (
 	"time"
 
+	"github.com/vicanso/origin/cs"
 	"github.com/vicanso/origin/helper"
 )
 
+var (
+	// 广告类别
+	advertisementCategoriesMap map[string]string
+)
+
 type (
+	// Advertisement 广告
 	Advertisement struct {
 		helper.Model
 
@@ -29,22 +36,36 @@ type (
 		// 链接
 		Link string `json:"link,omitempty" gorm:"not null"`
 		// 描述
-		Summary  string `json:"summary,omitempty"`
-		Category string `json:"category,omitempty" gorm:"index:idx_advertisement_category;not null"`
+		Summary      string `json:"summary,omitempty"`
+		Category     string `json:"category,omitempty" gorm:"index:idx_advertisement_category;not null"`
+		CategoryDesc string `json:"categoryDesc,omitempty" gorm:"-"`
+
+		// 图片
+		Pic string `json:"pic,omitempty" gorm:"not null"`
 
 		// 开始结束时间
 		StartedAt *time.Time `json:"startedAt,omitempty" gorm:"not null"`
 		EndedAt   *time.Time `json:"endedAt,omitempty" gorm:"not null"`
 	}
+	// AdvertisementCategory 广告分类
+	AdvertisementCategory struct {
+		Name  string `json:"name,omitempty"`
+		Value string `json:"value,omitempty"`
+	}
 	AdvertisementSrv struct{}
 )
 
 func init() {
+	advertisementCategoriesMap = map[string]string{
+		cs.AdvertisementHome:     "首页",
+		cs.AdvertisementCategory: "分类页",
+	}
 	pgGetClient().AutoMigrate(&Advertisement{})
 }
 
 func (a *Advertisement) AfterFind() (err error) {
 	a.StatusDesc = getStatusDesc(a.Status)
+	a.CategoryDesc = advertisementCategoriesMap[a.Category]
 	return
 }
 
@@ -52,6 +73,18 @@ func (srv *AdvertisementSrv) createByID(id uint) *Advertisement {
 	a := &Advertisement{}
 	a.Model.ID = id
 	return a
+}
+
+// ListCategories list advertisement category
+func (srv *AdvertisementSrv) ListCategory() []*AdvertisementCategory {
+	advertisementCategories := make([]*AdvertisementCategory, 0)
+	for key, value := range advertisementCategoriesMap {
+		advertisementCategories = append(advertisementCategories, &AdvertisementCategory{
+			Name:  value,
+			Value: key,
+		})
+	}
+	return advertisementCategories
 }
 
 // Add add advertisement

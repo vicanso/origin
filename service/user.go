@@ -199,7 +199,7 @@ func (u *User) AfterFind() (err error) {
 }
 
 // ListRoles list all user roles
-func (srv *UserSrv) ListRoles() []*UserRole {
+func (srv *UserSrv) ListRole() []*UserRole {
 	userRoles := make([]*UserRole, 0)
 	for key, value := range userRolesMap {
 		userRoles = append(userRoles, &UserRole{
@@ -211,7 +211,7 @@ func (srv *UserSrv) ListRoles() []*UserRole {
 }
 
 // ListGroups list all user group
-func (srv *UserSrv) ListGroups() []*UserGroup {
+func (srv *UserSrv) ListGroup() []*UserGroup {
 	userGroups := make([]*UserGroup, 0)
 	for key, value := range userGroupsMap {
 		userGroups = append(userGroups, &UserGroup{

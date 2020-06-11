@@ -47,8 +47,7 @@ const fields = [
     label: "LOGO：",
     key: "files",
     span: 24,
-    type: "upload",
-    bucket: "origin-pics"
+    type: "upload"
   },
   {
     label: "简介：",

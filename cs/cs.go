@@ -106,10 +106,13 @@ var (
 const (
 	// 首页
 	AdvertisementHome = "home"
+	// 分类页
+	AdvertisementCategory = "category"
 )
 
 var (
 	AdvertisementCategories = []string{
 		AdvertisementHome,
+		AdvertisementCategory,
 	}
 )

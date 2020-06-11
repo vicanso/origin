@@ -216,11 +216,11 @@ func init() {
 
 	gNoneSession.GET(
 		"/v1/roles",
-		ctrl.listRoles,
+		ctrl.listRole,
 	)
 	gNoneSession.GET(
 		"/v1/groups",
-		ctrl.listGroups,
+		ctrl.listGroup,
 	)
 }
 
@@ -658,19 +658,19 @@ func (ctrl userCtrl) listLoginRecord(c *elton.Context) (err error) {
 }
 
 // listRoles list user roles
-func (ctrl userCtrl) listRoles(c *elton.Context) (err error) {
+func (ctrl userCtrl) listRole(c *elton.Context) (err error) {
 	c.CacheMaxAge("5m")
 	c.Body = map[string][]*service.UserRole{
-		"roles": userSrv.ListRoles(),
+		"roles": userSrv.ListRole(),
 	}
 	return
 }
 
 // listGroups list user group
-func (ctrl userCtrl) listGroups(c *elton.Context) (err error) {
+func (ctrl userCtrl) listGroup(c *elton.Context) (err error) {
 	c.CacheMaxAge("5m")
 	c.Body = map[string][]*service.UserGroup{
-		"groups": userSrv.ListGroups(),
+		"groups": userSrv.ListGroup(),
 	}
 	return
 }

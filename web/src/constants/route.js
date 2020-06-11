@@ -22,3 +22,5 @@ export const PRODUCT_CATEGORIES = "ProductCategories";
 export const SUPPLIERS = "Suppliers";
 
 export const REGIONS = "Regions";
+
+export const ADVERTISEMENTS = "Advertisements";

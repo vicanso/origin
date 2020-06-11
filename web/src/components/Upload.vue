@@ -23,7 +23,7 @@ export default {
   props: {
     bucket: {
       type: String,
-      required: true
+      default: "origin-pics"
     },
     limit: {
       type: Number,

@@ -31,3 +31,7 @@ export const FILES_IMAGES = "/files/v1/images";
 export const REGIONS = "/regions/v1";
 export const REGIONS_ID = "/regions/v1/:id";
 export const REGIONS_LIST_CATEGORIES = "/regions/v1/categories";
+
+export const ADVERTISEMENTS = "/advertisements/v1";
+export const ADVERTISEMENT_CATEGORIES = "/advertisements/v1/categories";
+export const ADVERTISEMENTS_ID = "/advertisements/v1/:id";

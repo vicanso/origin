@@ -98,6 +98,10 @@ func (srv *FileSrv) OptimImage(reader io.Reader, imageType string, width, height
 	if err != nil {
 		return
 	}
+	if width == 0 && height == 0 {
+		width = img.Bounds().Dx()
+		height = img.Bounds().Dy()
+	}
 	img = imaging.Resize(img, width, height, imaging.Lanczos)
 	buffer = new(bytes.Buffer)
 	switch imageType {

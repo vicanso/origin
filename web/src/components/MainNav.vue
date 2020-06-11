@@ -52,7 +52,8 @@ import {
   PRODUCTS,
   PRODUCT_CATEGORIES,
   SUPPLIERS,
-  REGIONS
+  REGIONS,
+  ADVERTISEMENTS
 } from "@/constants/route";
 import { USER_ADMIN, USER_SU, GROUP_MARKETING } from "@/constants/user";
 import { mapState } from "vuex";
@@ -79,6 +80,10 @@ const navs = [
       {
         name: "供应商",
         route: SUPPLIERS
+      },
+      {
+        name: "广告",
+        route: ADVERTISEMENTS
       },
       {
         name: "地区",

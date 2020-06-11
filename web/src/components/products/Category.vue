@@ -83,7 +83,6 @@ const fields = [
     key: "files",
     span: 24,
     type: "upload",
-    bucket: "origin-pics",
     width: 128,
     height: 128,
     contentType: "image/png",

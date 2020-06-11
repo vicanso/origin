@@ -17,7 +17,8 @@ import {
   PRODUCTS,
   REGIONS,
   SUPPLIERS,
-  PRODUCT_CATEGORIES
+  PRODUCT_CATEGORIES,
+  ADVERTISEMENTS
 } from "@/constants/route";
 import Home from "@/views/Home.vue";
 import Login from "@/views/Login.vue";
@@ -34,6 +35,7 @@ import Products from "@/views/Products.vue";
 import Regions from "@/views/Regions.vue";
 import ProductCategories from "@/views/ProductCategories.vue";
 import Suppliers from "@/views/Suppliers.vue";
+import Advertisements from "@/views/Advertisements.vue";
 
 Vue.use(VueRouter);
 
@@ -112,7 +114,8 @@ const routes = [
   {
     path: "/profile",
     name: PROFILE,
-    component: () => import("@/views/Profile.vue"),
+    component: () =>
+      import(/* webpackChunkName: "profile" */ "@/views/Profile.vue"),
     meta: {
       requiresAuth: true
     }
@@ -158,13 +161,20 @@ const routes = [
     }
   },
   {
+    path: "/advertisements",
+    name: ADVERTISEMENTS,
+    component: Advertisements,
+    meta: {
+      requiresAuth: true
+    }
+  },
+  {
     path: "/about",
     name: "About",
     // route level code-splitting
     // this generates a separate chunk (about.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
-    component: () =>
-      import(/* webpackChunkName: "about" */ "../views/About.vue")
+    component: () => import(/* webpackChunkName: "about" */ "@/views/About.vue")
   }
 ];
 
