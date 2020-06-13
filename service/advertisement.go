@@ -39,6 +39,8 @@ type (
 		Summary      string `json:"summary,omitempty"`
 		Category     string `json:"category,omitempty" gorm:"index:idx_advertisement_category;not null"`
 		CategoryDesc string `json:"categoryDesc,omitempty" gorm:"-"`
+		// 热度
+		Hot int `json:"hot,omitempty"`
 
 		// 图片
 		Pic string `json:"pic,omitempty" gorm:"not null"`

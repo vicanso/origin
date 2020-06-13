@@ -22,6 +22,7 @@ const fields = [
     key: "category",
     type: "select",
     placeholder: "请选择广告分类",
+    span: 6,
     options: advertisementCategories,
     rules: [
       {
@@ -35,6 +36,7 @@ const fields = [
     key: "status",
     type: "select",
     placeholder: "请选择广告状态",
+    span: 6,
     options: advertisementStatuses,
     rules: [
       {
@@ -47,10 +49,24 @@ const fields = [
     label: "链接：",
     key: "link",
     placeholder: "请配置广告链接",
+    span: 6,
     rules: [
       {
         required: true,
         message: "广告链接不能为空"
+      }
+    ]
+  },
+  {
+    label: "热度：",
+    key: "hot",
+    placeholder: "请输入广告的热度",
+    span: 6,
+    dataType: "number",
+    rules: [
+      {
+        required: true,
+        message: "广告热度不能为空"
       }
     ]
   },
@@ -139,7 +155,6 @@ export default {
       advertisementStatuses.length = 0;
       advertisementStatuses.push(...statuses);
       const { categories } = await this.listAdvertisementsCategory();
-      console.dir(categories);
       advertisementCategories.length = 0;
       advertisementCategories.push(...categories);
       this.fields = fields;

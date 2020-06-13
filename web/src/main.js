@@ -14,7 +14,7 @@ Vue.config.errorHandler = function(err, vm, info) {
   const { tag } = vm.$vnode.componentOptions;
   console.error(err);
   console.info(vm);
-  console.dir(tag);
+  console.info(tag);
   console.info(info);
   // 如果开发环境，弹alert
   // if (isDevelopment()) {
