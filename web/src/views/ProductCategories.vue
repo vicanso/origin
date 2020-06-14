@@ -19,7 +19,7 @@
           label="状态"
           width="80"
         />
-        <el-table-column prop="hot" key="hot" label="热度" width="80" />
+        <el-table-column prop="rank" key="rank" label="排序" width="80" />
         <el-table-column prop="level" key="level" label="级别" width="80" />
         <el-table-column key="belongs" label="所属分类">
           <template slot-scope="scope">

@@ -67,10 +67,10 @@ const fields = [
     ]
   },
   {
-    label: "热度：",
-    key: "hot",
+    label: "排序：",
+    key: "rank",
     dataType: "number",
-    placeholder: "请输入产品热度(1-1000)"
+    placeholder: "请输入产品排序(1-1000)"
   },
   {
     label: "上级分类：",

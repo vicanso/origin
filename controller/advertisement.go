@@ -33,7 +33,7 @@ type (
 		StartedAt *time.Time `json:"startedAt,omitempty" validate:"required"`
 		EndedAt   *time.Time `json:"endedAt,omitempty" validate:"required"`
 		Pic       string     `json:"pic,omitempty" validate:"xFile"`
-		Hot       int        `json:"hot,omitempty" validate:"xHot"`
+		Rank      int        `json:"rank,omitempty" validate:"xRank"`
 	}
 	updateAdvertisementParams struct {
 		Status    int        `json:"status,omitempty" validate:"omitempty,xStatus"`
@@ -43,7 +43,7 @@ type (
 		StartedAt *time.Time `json:"startedAt,omitempty"`
 		EndedAt   *time.Time `json:"endedAt,omitempty"`
 		Pic       string     `json:"pic,omitempty" validate:"omitempty,xFile"`
-		Hot       int        `json:"hot,omitempty" validate:"omitempty,xHot"`
+		Rank      int        `json:"rank,omitempty" validate:"omitempty,xRank"`
 	}
 	listAdvertisementParams struct {
 		listParams
@@ -122,7 +122,7 @@ func (ctrl advertisementCtrl) add(c *elton.Context) (err error) {
 		StartedAt: params.StartedAt,
 		EndedAt:   params.EndedAt,
 		Pic:       params.Pic,
-		Hot:       params.Hot,
+		Rank:      params.Rank,
 	})
 	if err != nil {
 		return
@@ -150,7 +150,7 @@ func (ctrl advertisementCtrl) updateByID(c *elton.Context) (err error) {
 		StartedAt: params.StartedAt,
 		EndedAt:   params.EndedAt,
 		Pic:       params.Pic,
-		Hot:       params.Hot,
+		Rank:      params.Rank,
 	})
 	if err != nil {
 		return

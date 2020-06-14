@@ -24,7 +24,7 @@
           label="状态"
           width="80"
         />
-        <el-table-column prop="hot" key="hot" label="热度" width="60" />
+        <el-table-column prop="rank" key="rank" label="排序" width="60" />
         <el-table-column prop="link" key="link" label="链接" width="200" />
         <el-table-column label="图片" width="80">
           <template slot-scope="scope">

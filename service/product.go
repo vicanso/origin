@@ -46,8 +46,8 @@ type (
 		Status     int    `json:"status,omitempty" gorm:"index:idx_product_status"`
 		StatusDesc string `json:"statusDesc,omitempty" gorm:"-"`
 
-		// 热度
-		Hot int `json:"hot,omitempty"`
+		// 排序
+		Rank int `json:"rank,omitempty"`
 		// 关键字
 		Keywords string `json:"keywords,omitempty"`
 
@@ -84,8 +84,8 @@ type (
 		Belongs pq.Int64Array `json:"belongs,omitempty" gorm:"type:int[]"`
 		// 所属分类描述
 		BelongsDesc []string `json:"belongsDesc,omitempty" gorm:"-"`
-		// 热度
-		Hot int `json:"hot,omitempty"`
+		// 排序
+		Rank int `json:"rank,omitempty"`
 		// 图标
 		Icon string `json:"icon,omitempty"`
 	}
@@ -167,9 +167,9 @@ func (pc *ProductCategory) AfterFind() (err error) {
 }
 
 func (pc *ProductCategory) BeforeCreate() (err error) {
-	// 热度默认设置为1
-	if pc.Hot == 0 {
-		pc.Hot = 1
+	// 排序默认设置为1
+	if pc.Rank == 0 {
+		pc.Rank = 1
 	}
 	return
 }

@@ -58,15 +58,15 @@ const fields = [
     ]
   },
   {
-    label: "热度：",
-    key: "hot",
-    placeholder: "请输入广告的热度",
+    label: "排序：",
+    key: "rank",
+    placeholder: "请输入广告的排序",
     span: 6,
     dataType: "number",
     rules: [
       {
         required: true,
-        message: "广告热度不能为空"
+        message: "广告排序不能为空"
       }
     ]
   },

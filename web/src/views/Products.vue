@@ -21,7 +21,7 @@
           width="80"
         />
         <el-table-column prop="brandDesc" key="brand" label="品牌" />
-        <el-table-column prop="hot" key="hot" label="热度" />
+        <el-table-column prop="rank" key="rank" label="排序" />
         <el-table-column
           prop="startedAtDesc"
           key="startedAtDesc"

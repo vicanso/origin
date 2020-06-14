@@ -35,8 +35,8 @@ func init() {
 	AddAlias("xAddress", "min=1,max=100")
 	// 优先级
 	AddAlias("xPriority", "min=1,max=100")
-	// 热度
-	AddAlias("xHot", "min=1,max=1000")
+	// 排序
+	AddAlias("xRank", "min=1,max=1000")
 	// 文件路径，以/files为前缀的uri
 	AddAlias("xFile", "startswith=/files")
 
