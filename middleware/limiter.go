@@ -20,9 +20,9 @@ import (
 	"time"
 
 	"github.com/vicanso/elton"
+	"github.com/vicanso/hes"
 	"github.com/vicanso/origin/helper"
 	"github.com/vicanso/origin/log"
-	"github.com/vicanso/hes"
 	"go.uber.org/zap"
 
 	"github.com/vicanso/elton/middleware"
@@ -76,6 +76,14 @@ func createConcurrentLimitLock(prefix string, ttl time.Duration, withDone bool) 
 func NewConcurrentLimit(keys []string, ttl time.Duration, prefix string) elton.Handler {
 	return middleware.NewConcurrentLimiter(middleware.ConcurrentLimiterConfig{
 		Lock: createConcurrentLimitLock(prefix, ttl, false),
+		Keys: keys,
+	})
+}
+
+// NewConcurrentLimitWithDone create a concurrent limit and with done
+func NewConcurrentLimitWithDone(keys []string, ttl time.Duration, prefix string) elton.Handler {
+	return middleware.NewConcurrentLimiter(middleware.ConcurrentLimiterConfig{
+		Lock: createConcurrentLimitLock(prefix, ttl, true),
 		Keys: keys,
 	})
 }

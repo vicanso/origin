@@ -122,8 +122,10 @@ func init() {
 	}
 	productCategoryNameCache = lruTTL.New(1000, ttl)
 
-	pgGetClient().AutoMigrate(&Product{}).
-		AutoMigrate(&ProductCategory{})
+	pgGetClient().AutoMigrate(
+		&Product{},
+		&ProductCategory{},
+	)
 }
 
 func (p *Product) AfterFind() (err error) {
@@ -199,8 +201,8 @@ func (srv *ProductSrv) Add(data Product) (product *Product, err error) {
 }
 
 // UpdateByID update product by id
-func (srv *ProductSrv) UpdateByID(id uint, attrs ...interface{}) (err error) {
-	err = pgGetClient().Model(srv.createByID(id)).Update(attrs...).Error
+func (srv *ProductSrv) UpdateByID(id uint, product Product) (err error) {
+	err = pgGetClient().Model(srv.createByID(id)).Updates(product).Error
 	return
 }
 

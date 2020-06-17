@@ -6,11 +6,22 @@
         地区
       </div>
       <BaseFilter :fields="filterFields" v-if="inited" @filter="filter" />
-      <el-table v-loading="processing" :data="regions" row-key="id" stripe>
+      <el-table
+        v-loading="processing"
+        :data="regions"
+        row-key="id"
+        stripe
+        @sort-change="handleSortChange"
+      >
         <el-table-column prop="name" key="name" label="名称" />
-        <el-table-column prop="code" key="code" label="代码" />
+        <el-table-column prop="code" key="code" label="代码" sortable />
         <el-table-column prop="statusDesc" key="statusDesc" label="状态" />
-        <el-table-column prop="priority" key="priority" label="优先级" />
+        <el-table-column
+          prop="priority"
+          key="priority"
+          label="优先级"
+          sortable
+        />
         <el-table-column
           prop="updatedAtDesc"
           key="updatedAtDesc"

@@ -65,9 +65,7 @@ func init() {
 	g.POST(
 		"/v1/images",
 		loadUserSession,
-		newCheckGroupsMiddleware([]string{
-			cs.UserGroupMarketing,
-		}),
+		checkMarketingGroup,
 		newTracker(cs.ActionFileUpload),
 		ctrl.uploadImage,
 	)

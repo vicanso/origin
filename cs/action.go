@@ -56,6 +56,8 @@ const (
 
 	// ActionOrderAdd add order
 	ActionOrderAdd = "add-order"
+	// ActionOrderPay pay order
+	ActionOrderPay = "pay-order"
 
 	// ActionSupplierAdd add supplier
 	ActionSupplierAdd = "add-supplier"

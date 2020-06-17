@@ -59,8 +59,8 @@ func (srv *SupplierSrv) Add(data Supplier) (supplier *Supplier, err error) {
 }
 
 // UpdateByID update supplier by id
-func (srv *SupplierSrv) UpdateByID(id uint, attrs ...interface{}) (err error) {
-	err = pgGetClient().Model(srv.createByID(id)).Update(attrs...).Error
+func (srv *SupplierSrv) UpdateByID(id uint, supplier Supplier) (err error) {
+	err = pgGetClient().Model(srv.createByID(id)).Updates(supplier).Error
 	return
 }
 

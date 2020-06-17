@@ -91,8 +91,8 @@ func (srv *BrandSrv) Add(data Brand) (brand *Brand, err error) {
 }
 
 // UpdateByID update brand by id
-func (srv *BrandSrv) UpdateByID(id uint, attrs ...interface{}) (err error) {
-	err = pgGetClient().Model(srv.createByID(id)).Update(attrs...).Error
+func (srv *BrandSrv) UpdateByID(id uint, brand Brand) (err error) {
+	err = pgGetClient().Model(srv.createByID(id)).Updates(brand).Error
 	return
 }
 

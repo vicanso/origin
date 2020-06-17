@@ -100,6 +100,10 @@ var (
 	checkMarketingGroup = newCheckGroupsMiddleware([]string{
 		cs.UserGroupMarketing,
 	})
+	// checkLogisticsGroup 判断用户组是否logistics
+	checkLogisticsGroup = newCheckGroupsMiddleware([]string{
+		cs.UserGroupLogistics,
+	})
 
 	// 图形验证码校验
 	captchaValidate elton.Handler

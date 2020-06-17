@@ -14,8 +14,25 @@
 
 package validate
 
+import "github.com/go-playground/validator/v10"
+
 func init() {
+	// 暂时订单状态仅设置为最大10
+	AddAlias("xOrderStatus", "number,min=1,max=10")
+	// 暂时子订单状态仅设置为最大10
+	AddAlias("xSubOrderStatus", "number,min=1,max=10")
 	AddAlias("xOrderProductID", "number,min=1")
 	// 暂仅支持一次最大1000
 	AddAlias("xOrderProductCount", "number,min=1,max=1000")
+	// 订单编号
+	AddAlias("xOrderSN", "min=1")
+	// 订单金额
+	AddAlias("xOrderAmount", "number")
+	// 支付来源
+	Add("xSource", func(fl validator.FieldLevel) bool {
+		return isInString(fl, []string{
+			"wechat",
+			"alipay",
+		})
+	})
 }

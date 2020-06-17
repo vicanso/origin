@@ -75,6 +75,10 @@ type (
 	}
 	listProductParams struct {
 		listParams
+
+		Category    string `json:"category,omitempty" validate:"omitempty,xProductCategory"`
+		Status      string `json:"status,omitempty" validate:"omitempty,xStatus"`
+		Purchasable string `json:"purchasable,omitempty"`
 	}
 	addProductCategoryParams struct {
 		Name    string  `json:"name,omitempty" validate:"xProductCategoryName"`
@@ -165,7 +169,21 @@ func init() {
 }
 
 func (params listProductParams) toConditions() (conditions []interface{}) {
-	return
+	conds := queryConditions{}
+	if params.Category != "" {
+		conds.add("? = ANY(categories)", params.Category)
+	}
+	if params.Status != "" {
+		conds.add("status = ?", params.Status)
+	}
+	if params.Purchasable != "" {
+		now := time.Now()
+		conds.add("status = ?", cs.StatusEnabled)
+		conds.add("started_at < ?", now)
+		conds.add("ended_at > ?", now)
+	}
+
+	return conds.toArray()
 }
 
 func (params listProductCategoryParams) toConditions() (conditions []interface{}) {

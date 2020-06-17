@@ -73,6 +73,7 @@ const (
 	UserGroupIT        = "it"
 	UserGroupFinance   = "finance"
 	UserGroupMarketing = "marketing"
+	UserGroupLogistics = "logistics"
 )
 
 // 用户分组
@@ -81,6 +82,7 @@ var (
 		UserGroupIT,
 		UserGroupFinance,
 		UserGroupMarketing,
+		UserGroupLogistics,
 	}
 )
 

@@ -6,9 +6,21 @@
         产品
       </div>
 
-      <el-table v-loading="processing" :data="products" row-key="id" stripe>
+      <el-table
+        v-loading="processing"
+        :data="products"
+        row-key="id"
+        stripe
+        @sort-change="handleSortChange"
+      >
         <el-table-column prop="name" key="name" label="名称" width="180" />
-        <el-table-column prop="price" key="price" label="单价" width="100" />
+        <el-table-column
+          prop="price"
+          key="price"
+          label="单价"
+          width="100"
+          sortable
+        />
         <el-table-column key="unit" label="单位" width="100">
           <template slot-scope="scope">
             {{ scope.row.specs + scope.row.unit }}
@@ -21,7 +33,7 @@
           width="80"
         />
         <el-table-column prop="brandDesc" key="brand" label="品牌" />
-        <el-table-column prop="rank" key="rank" label="排序" />
+        <el-table-column prop="rank" key="rank" label="排序" sortable />
         <el-table-column
           prop="startedAtDesc"
           key="startedAtDesc"
@@ -88,7 +100,7 @@
 </template>
 <script>
 import { mapActions, mapState } from "vuex";
-import BaseTable from "@/components/BaseTable.vue";
+import BaseTable from "@/components/base/Table.vue";
 import Product from "@/components/products/Product.vue";
 
 export default {

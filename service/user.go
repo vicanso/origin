@@ -134,9 +134,11 @@ type (
 )
 
 func init() {
-	pgGetClient().AutoMigrate(&User{}).
-		AutoMigrate(&UserLoginRecord{}).
-		AutoMigrate(&UserTrackRecord{})
+	pgGetClient().AutoMigrate(
+		&User{},
+		&UserLoginRecord{},
+		&UserTrackRecord{},
+	)
 
 	userRolesMap = map[string]string{
 		cs.UserRoleNormal: "普通用户",
@@ -147,6 +149,7 @@ func init() {
 		cs.UserGroupIT:        "研发部",
 		cs.UserGroupMarketing: "市场部",
 		cs.UserGroupFinance:   "财务部",
+		cs.UserGroupLogistics: "物流部",
 	}
 }
 
@@ -270,8 +273,8 @@ func (srv *UserSrv) Login(account, password, token string) (u *User, err error) 
 }
 
 // UpdateByID update user by id
-func (srv *UserSrv) UpdateByID(id uint, value interface{}) (err error) {
-	err = pgGetClient().Model(srv.createByID(id)).Updates(value).Error
+func (srv *UserSrv) UpdateByID(id uint, user User) (err error) {
+	err = pgGetClient().Model(srv.createByID(id)).Updates(user).Error
 	return
 }
 

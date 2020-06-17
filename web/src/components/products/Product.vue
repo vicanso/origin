@@ -56,6 +56,10 @@ const fields = [
         value: "盒"
       },
       {
+        name: "份",
+        value: "份 "
+      },
+      {
         name: "克",
         value: "克"
       },

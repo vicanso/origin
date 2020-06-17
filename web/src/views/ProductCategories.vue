@@ -11,6 +11,7 @@
         :data="productCategories"
         row-key="id"
         stripe
+        @sort-change="handleSortChange"
       >
         <el-table-column prop="name" key="name" label="名称" />
         <el-table-column
@@ -19,7 +20,13 @@
           label="状态"
           width="80"
         />
-        <el-table-column prop="rank" key="rank" label="排序" width="80" />
+        <el-table-column
+          prop="rank"
+          key="rank"
+          label="排序"
+          width="80"
+          sortable
+        />
         <el-table-column prop="level" key="level" label="级别" width="80" />
         <el-table-column key="belongs" label="所属分类">
           <template slot-scope="scope">

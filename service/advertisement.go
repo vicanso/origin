@@ -97,8 +97,8 @@ func (srv *AdvertisementSrv) Add(data Advertisement) (advertisement *Advertiseme
 }
 
 // UpdateByID update advertisement
-func (srv *AdvertisementSrv) UpdateByID(id uint, attrs ...interface{}) (err error) {
-	err = pgGetClient().Model(srv.createByID(id)).Update(attrs...).Error
+func (srv *AdvertisementSrv) UpdateByID(id uint, advertisement Advertisement) (err error) {
+	err = pgGetClient().Model(srv.createByID(id)).Updates(advertisement).Error
 	return
 }
 

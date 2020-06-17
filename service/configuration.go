@@ -95,8 +95,8 @@ func (srv *ConfigurationSrv) Add(data Configuration) (conf *Configuration, err e
 }
 
 // UpdateByID update configuration by id
-func (srv *ConfigurationSrv) UpdateByID(id uint, attrs ...interface{}) (err error) {
-	err = pgGetClient().Model(srv.createByID(id)).Update(attrs...).Error
+func (srv *ConfigurationSrv) UpdateByID(id uint, conf Configuration) (err error) {
+	err = pgGetClient().Model(srv.createByID(id)).Updates(conf).Error
 	return
 }
 

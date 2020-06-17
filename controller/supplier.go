@@ -127,7 +127,7 @@ func (supplierCtrl) updateByID(c *elton.Context) (err error) {
 	if err != nil {
 		return
 	}
-	err = supplierSrv.UpdateByID(id, &service.Supplier{
+	err = supplierSrv.UpdateByID(id, service.Supplier{
 		Name:        params.Name,
 		BaseAddress: params.BaseAddress,
 		Address:     params.Address,

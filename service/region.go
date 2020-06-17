@@ -147,8 +147,8 @@ func (srv *RegionSrv) FindByCode(code string) (region *Region, err error) {
 }
 
 // UpdateByID update region by id
-func (srv *RegionSrv) UpdateByID(id uint, attrs ...interface{}) (err error) {
-	err = pgGetClient().Model(srv.createByID(id)).Update(attrs...).Error
+func (srv *RegionSrv) UpdateByID(id uint, region Region) (err error) {
+	err = pgGetClient().Model(srv.createByID(id)).Updates(region).Error
 	return
 }
 

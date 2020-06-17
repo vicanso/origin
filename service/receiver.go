@@ -53,8 +53,8 @@ func (srv *ReceiverSrv) Add(data Receiver) (receiver *Receiver, err error) {
 }
 
 // UpdateByID update receiver by id
-func (srv *ReceiverSrv) UpdateByID(id uint, attrs ...interface{}) (err error) {
-	err = pgGetClient().Model(srv.createByID(id)).Update(attrs...).Error
+func (srv *ReceiverSrv) UpdateByID(id uint, receiver Receiver) (err error) {
+	err = pgGetClient().Model(srv.createByID(id)).Updates(receiver).Error
 	return
 }
 

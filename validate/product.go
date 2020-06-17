@@ -18,7 +18,7 @@ func init() {
 	AddAlias("xProductName", "min=1,max=50")
 	AddAlias("xProductPrice", "min=0.01,max=1000")
 	AddAlias("xProductUnit", "min=1,max=2")
-	AddAlias("xProductSpecs", "number,min=1,max=1000")
+	AddAlias("xProductSpecs", "number,min=1,max=10000")
 	AddAlias("xProductCatalog", "min=1,max=1000")
 	AddAlias("xProductSN", "min=1,max=100")
 	AddAlias("xProductMainPic", "min=1,max=20")
@@ -27,6 +27,7 @@ func init() {
 	AddAlias("xProductBrand", "min=1")
 	AddAlias("xProductSupplier", "min=1")
 	AddAlias("xProductRank", "min=1,max=1000")
+	AddAlias("xProductCategory", "number")
 
 	AddAlias("xProductCategoryName", "min=1,max=10")
 	AddAlias("xProductCategoryLevel", "number,min=1,max=3")
