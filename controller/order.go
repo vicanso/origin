@@ -37,11 +37,16 @@ type (
 			Count uint `json:"count,omitempty" validate:"xOrderProductCount"`
 		} `json:"products,omitempty"`
 	}
-	// 支付金额
+	// 支付参数
 	payOrderParams struct {
 		PayAmount float64 `json:"payAmount,omitempty" validate:"xOrderAmount"`
 		Source    string  `json:"source,omitempty" validate:"xSource"`
 	}
+	// 订单待发货参数
+	toBeShippedOrderParams struct {
+		SubOrder uint `json:"subOrder,omitempty"`
+	}
+
 	listOrderParams struct {
 		listParams
 
@@ -70,6 +75,19 @@ var (
 func init() {
 	ctrl := orderCtrl{}
 	g := router.NewGroup("/orders")
+	orderUpdateLimit := elton.Compose(
+		// 错误转换
+		func(c *elton.Context) error {
+			err := c.Next()
+			if err == M.ErrSubmitTooFrequently {
+				err = errOrderSubmitTooFrequently
+			}
+			return err
+		},
+		middleware.NewConcurrentLimitWithDone([]string{
+			"p:sn",
+		}, time.Minute, ""),
+	)
 
 	// 添加订单
 	g.POST(
@@ -86,24 +104,40 @@ func init() {
 		ctrl.list,
 	)
 
+	// TODO 查订单详情是否只允许本人或管理人员查
+	g.GET(
+		"/v1/{sn}",
+		loadUserSession,
+		shouldLogined,
+		ctrl.detail,
+	)
+
 	// 支付订单
 	g.PATCH(
 		"/v1/{sn}/pay",
 		loadUserSession,
 		shouldLogined,
-		// 错误转换
-		func(c *elton.Context) error {
-			err := c.Next()
-			if err == M.ErrSubmitTooFrequently {
-				err = errOrderSubmitTooFrequently
-			}
-			return err
-		},
 		newTracker(cs.ActionOrderPay),
-		middleware.NewConcurrentLimitWithDone([]string{
-			"p:sn",
-		}, time.Minute, ""),
+		orderUpdateLimit,
 		ctrl.pay,
+	)
+	// 订单设置为待发货
+	g.PATCH(
+		"/v1/{sn}/to-be-shipped",
+		loadUserSession,
+		shouldLogined,
+		newTracker(cs.ActionOrderToBeShipped),
+		checkLogisticsGroup,
+		ctrl.toBeShipped,
+	)
+	// 订单设置为已发货
+	g.PATCH(
+		"/v1/{sn}/shipped",
+		loadUserSession,
+		shouldLogined,
+		newTracker(cs.ActionOrderShipped),
+		checkLogisticsGroup,
+		ctrl.shipped,
 	)
 
 	g.GET(
@@ -208,6 +242,27 @@ func (orderCtrl) listSubOrderStatus(c *elton.Context) (err error) {
 	return
 }
 
+// detail get the order detail
+func (orderCtrl) detail(c *elton.Context) (err error) {
+	sn := c.Param("sn")
+	order, err := orderSrv.FindBySN(sn)
+	if err != nil {
+		return
+	}
+	subOrders, err := orderSrv.FindSubOrdersByOrderID(order.ID)
+	if err != nil {
+		return
+	}
+	c.Body = &struct {
+		Order     *service.Order      `json:"order,omitempty"`
+		SubOrders []*service.SubOrder `json:"subOrders,omitempty"`
+	}{
+		order,
+		subOrders,
+	}
+	return
+}
+
 // pay pay order
 func (orderCtrl) pay(c *elton.Context) (err error) {
 	params := payOrderParams{}
@@ -232,5 +287,25 @@ func (orderCtrl) pay(c *elton.Context) (err error) {
 
 // toBeShipped set order to be shipped
 func (orderCtrl) toBeShipped(c *elton.Context) (err error) {
+	params := toBeShippedOrderParams{}
+	err = validate.Do(&params, c.RequestBody)
+	if err != nil {
+		return
+	}
+	err = orderSrv.ToBeShipped(c.Param("sn"), params.SubOrder)
+	if err != nil {
+		return
+	}
+	c.NoContent()
+	return
+}
+
+// shipped set order to shipped
+func (orderCtrl) shipped(c *elton.Context) (err error) {
+	err = orderSrv.Shipped(c.Param("sn"))
+	if err != nil {
+		return
+	}
+	c.NoContent()
 	return
 }

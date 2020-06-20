@@ -75,16 +75,18 @@ func createConcurrentLimitLock(prefix string, ttl time.Duration, withDone bool) 
 // NewConcurrentLimit create a concurrent limit
 func NewConcurrentLimit(keys []string, ttl time.Duration, prefix string) elton.Handler {
 	return middleware.NewConcurrentLimiter(middleware.ConcurrentLimiterConfig{
-		Lock: createConcurrentLimitLock(prefix, ttl, false),
-		Keys: keys,
+		NotAllowEmpty: true,
+		Lock:          createConcurrentLimitLock(prefix, ttl, false),
+		Keys:          keys,
 	})
 }
 
 // NewConcurrentLimitWithDone create a concurrent limit and with done
 func NewConcurrentLimitWithDone(keys []string, ttl time.Duration, prefix string) elton.Handler {
 	return middleware.NewConcurrentLimiter(middleware.ConcurrentLimiterConfig{
-		Lock: createConcurrentLimitLock(prefix, ttl, true),
-		Keys: keys,
+		NotAllowEmpty: true,
+		Lock:          createConcurrentLimitLock(prefix, ttl, true),
+		Keys:          keys,
 	})
 }
 

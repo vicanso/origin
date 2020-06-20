@@ -39,7 +39,7 @@ var (
 	errLoginAlready = hes.New("login already, please logout first")
 	errForbidden    = &hes.Error{
 		StatusCode: http.StatusForbidden,
-		Message:    "acccess forbidden",
+		Message:    "禁止使用该功能",
 	}
 )
 

@@ -58,6 +58,10 @@ const (
 	ActionOrderAdd = "add-order"
 	// ActionOrderPay pay order
 	ActionOrderPay = "pay-order"
+	// ActionOrderToBeShipped to be shipped order
+	ActionOrderToBeShipped = "be-shipped-order"
+	// ActionOrderShipped shipped order
+	ActionOrderShipped = "shipped-order"
 
 	// ActionSupplierAdd add supplier
 	ActionSupplierAdd = "add-supplier"

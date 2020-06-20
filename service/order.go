@@ -15,6 +15,7 @@
 package service
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"sort"
@@ -59,8 +60,11 @@ type (
 	}
 	OrderStatusTimeline []OrderStatusTimelineItem
 
+	// 订单记录
 	Order struct {
 		helper.Model
+
+		Tx *gorm.DB `json:"-" gorm:"-"`
 
 		// 编号
 		SN string `json:"sn,omitempty" gorm:"not null;unique_index:idx_order_sn"`
@@ -74,10 +78,10 @@ type (
 		Status     OrderStatus `json:"status,omitempty" gorm:"index:idx_order_status"`
 		StatusDesc string      `json:"statusDesc,omitempty" gorm:"-"`
 
-		// 物流单号
-		DeliverySN string `json:"deliverySN,omitempty" gorm:"index:idx_order_delivery_sn"`
-		// 物流公司
-		DeliveryCompany string `json:"deliveryCompany,omitempty"`
+		// // 物流单号
+		// DeliverySN string `json:"deliverySN,omitempty" gorm:"index:idx_order_delivery_sn"`
+		// // 物流公司
+		// DeliveryCompany string `json:"deliveryCompany,omitempty"`
 
 		// 收货人
 		ReceiverName   string `json:"receiverName,omitempty"`
@@ -92,10 +96,14 @@ type (
 		ReceivedAt *time.Time `json:"receivedAt,omitempty"`
 
 		// 状态时间线
-		StatusTimeline OrderStatusTimeline `json:"statusTimeline,omitempty" grom:"type:json"`
+		StatusTimeline    OrderStatusTimeline `json:"statusTimeline,omitempty" grom:"-"`
+		StatusTimelineRaw string              `json:"-"`
 	}
+	// 子订单记录
 	SubOrder struct {
 		helper.Model
+
+		Tx *gorm.DB `json:"-" gorm:"-"`
 
 		MainOrder    uint    `json:"mainOrder,omitempty" gorm:"index:idx_sub_order_main_order"`
 		Product      uint    `json:"product,omitempty" gorm:"not null"`
@@ -116,19 +124,26 @@ type (
 		// 状态描述
 		StatusDesc string `json:"statusDesc,omitempty" gorm:"-"`
 	}
+	// 支付流水记录
 	OrderPayment struct {
 		helper.Model
 
 		// 订单ID
-		MainOrder uint `json:"mainOrder,omitempty" gorm:"unique_index:idx_payment_order_main_order"`
-		// 用户ID
-		UserID uint `json:"userID,omitempty" gorm:"index:idx_payment_order_user;not null"`
+		MainOrder uint `json:"mainOrder,omitempty" gorm:"unique_index:idx_order_payment_main_order"`
+		// 用户ID（方便用户查询支付流水）
+		UserID uint `json:"userID,omitempty" gorm:"index:idx_order_payment_user;not null"`
 		// 支付渠道
 		Source string `json:"source,omitempty" gorm:"not null"`
 		// 支付金额
 		PayAmount float64            `json:"payAmount,omitempty" gorm:"not null"`
 		Status    OrderPaymentStatus `json:"status,omitempty"`
 		Message   string             `json:"message,omitempty"`
+	}
+	// 订单派送记录
+	OrderDelivery struct {
+		helper.Model
+
+		MainOrder uint `json:"mainOrder,omitempty" gorm:"unique_index:idx_order_delivery_main_order"`
 	}
 	OrderSrv struct{}
 )
@@ -164,13 +179,15 @@ const (
 	// 待发货
 	SubOrderStatusToBeShipped
 	// 已发货
-	SubOrderStatusShippe
+	SubOrderStatusShipped
 	// 申请取消
 	SubOrderStatusApplyCanceled
 	// 取消
 	SubOrderStatusCanceled
+	// 申请退款
+	SubOrderStatusApplyRefunds
 	// 退款中
-	SubOrderStatusRefunds
+	SubOrderStatusRefunding
 	// 完成
 	SubOrderStatusDone
 	// 已关闭
@@ -202,10 +219,11 @@ var (
 	subOrderStatusDict = map[SubOrderStatus]string{
 		SubOrderStatusInited:        "初始化",
 		SubOrderStatusToBeShipped:   "待发货",
-		SubOrderStatusShippe:        "已发货",
+		SubOrderStatusShipped:       "已发货",
 		SubOrderStatusApplyCanceled: "申请取消",
 		SubOrderStatusCanceled:      "已取消",
-		SubOrderStatusRefunds:       "退款中",
+		SubOrderStatusApplyRefunds:  "申请退款",
+		SubOrderStatusRefunding:     "退款中",
 		SubOrderStatusDone:          "完成",
 		SubOrderStatusClosed:        "已关闭",
 	}
@@ -235,6 +253,11 @@ var (
 	}
 	errOrderIsInvalid = &hes.Error{
 		Message:    "订单异常",
+		StatusCode: http.StatusBadRequest,
+		Category:   errOrderCategory,
+	}
+	errCanChangeToBeShipped = &hes.Error{
+		Message:    "订单对应的子订单未处理完成，不可更新为待发货",
 		StatusCode: http.StatusBadRequest,
 		Category:   errOrderCategory,
 	}
@@ -270,7 +293,7 @@ func init() {
 	})
 }
 
-func createStatusTransferError(currentStatus, nextStatus OrderStatus) error {
+func createOrderStatusTransferError(currentStatus, nextStatus OrderStatus) error {
 	he := &hes.Error{
 		Message:    fmt.Sprintf("订单状态不能由%s至%s", currentStatus.String(), nextStatus.String()),
 		Category:   errOrderCategory,
@@ -288,6 +311,31 @@ func containsOrderStatus(arr []OrderStatus, status OrderStatus) bool {
 		}
 	}
 	return found
+}
+
+func createSubOrderStatusTransferError(currentStatus, nextStatus SubOrderStatus) error {
+	he := &hes.Error{
+		Message:    fmt.Sprintf("子订单状态不能由%s至%s", currentStatus.String(), nextStatus.String()),
+		Category:   errOrderCategory,
+		StatusCode: http.StatusBadRequest,
+	}
+	return he
+}
+
+func containsSubOrderStatus(arr []SubOrderStatus, status SubOrderStatus) bool {
+	found := false
+	for _, item := range arr {
+		if item == status {
+			found = true
+			break
+		}
+	}
+	return found
+}
+
+func (timeline OrderStatusTimeline) String() string {
+	buf, _ := json.Marshal(timeline)
+	return string(buf)
 }
 
 func (status OrderStatus) String() string {
@@ -308,6 +356,14 @@ func (status SubOrderStatus) String() string {
 
 // ValidateNext validate the status to next status
 func (status OrderStatus) ValidateNext(nextStatus OrderStatus) (err error) {
+	if status == nextStatus {
+		err = &hes.Error{
+			Message:    fmt.Sprintf("当前订单状态已是%s", status.String()),
+			StatusCode: http.StatusBadRequest,
+			Category:   errOrderCategory,
+		}
+		return
+	}
 	var allowStatuses []OrderStatus
 	switch status {
 	// 初始化成功的订单只能转向待支付
@@ -315,13 +371,13 @@ func (status OrderStatus) ValidateNext(nextStatus OrderStatus) (err error) {
 		allowStatuses = []OrderStatus{
 			OrderStatusPendingPayment,
 		}
-		// 待支付 --> 正在支付|已关闭
+		// 待支付 --> 支付中|已关闭
 	case OrderStatusPendingPayment:
 		allowStatuses = []OrderStatus{
 			OrderStatusPaymenting,
 			OrderStatusClosed,
 		}
-		// 正在支付 --> 已支付|已关闭
+		// 支付中 --> 已支付|已关闭
 	case OrderStatusPaymenting:
 		allowStatuses = []OrderStatus{
 			OrderStatusPaid,
@@ -337,8 +393,13 @@ func (status OrderStatus) ValidateNext(nextStatus OrderStatus) (err error) {
 		allowStatuses = []OrderStatus{
 			OrderStatusClosed,
 		}
-		// 已发货 --> 已完成
+		// 待发货 --> 已发货
 	case OrderStatusToBeShipped:
+		allowStatuses = []OrderStatus{
+			OrderStatusShipped,
+		}
+		// 已发货 --> 已完成
+	case OrderStatusShipped:
 		allowStatuses = []OrderStatus{
 			OrderStatusDone,
 		}
@@ -358,7 +419,77 @@ func (status OrderStatus) ValidateNext(nextStatus OrderStatus) (err error) {
 
 	// 如果下一状态非允许状态
 	if !containsOrderStatus(allowStatuses, nextStatus) {
-		err = createStatusTransferError(status, nextStatus)
+		err = createOrderStatusTransferError(status, nextStatus)
+		return
+	}
+	return
+}
+
+// ValidateNext sub order validate next status
+func (status SubOrderStatus) ValidateNext(nextStatus SubOrderStatus) (err error) {
+	if status == nextStatus {
+		err = &hes.Error{
+			Message:    fmt.Sprintf("当前子订单状态已是%s", status.String()),
+			StatusCode: http.StatusBadRequest,
+			Category:   errOrderCategory,
+		}
+		return
+	}
+	var allowStatuses []SubOrderStatus
+	switch status {
+	// 初始化 --> 待发货|申请取消
+	case SubOrderStatusInited:
+		allowStatuses = []SubOrderStatus{
+			SubOrderStatusToBeShipped,
+			SubOrderStatusApplyCanceled,
+		}
+	// 待发货 --> 已发货
+	case SubOrderStatusToBeShipped:
+		allowStatuses = []SubOrderStatus{
+			SubOrderStatusShipped,
+		}
+		// 已发货 --> 完成
+	case SubOrderStatusShipped:
+		allowStatuses = []SubOrderStatus{
+			SubOrderStatusDone,
+		}
+		// 申请取消 --> 已取消
+	case SubOrderStatusApplyCanceled:
+		allowStatuses = []SubOrderStatus{
+			SubOrderStatusCanceled,
+		}
+		// 已取消 --> 完成
+	case SubOrderStatusCanceled:
+		allowStatuses = []SubOrderStatus{
+			SubOrderStatusDone,
+		}
+		// 申请退款 --> 退款中
+	case SubOrderStatusApplyRefunds:
+		allowStatuses = []SubOrderStatus{
+			SubOrderStatusRefunding,
+		}
+		// 退款中 --> 完成
+	case SubOrderStatusRefunding:
+		allowStatuses = []SubOrderStatus{
+			SubOrderStatusDone,
+		}
+		// 完成 --> 已关闭
+	case SubOrderStatusDone:
+		allowStatuses = []SubOrderStatus{
+			SubOrderStatusClosed,
+		}
+
+	default:
+		err = &hes.Error{
+			Message:    fmt.Sprintf("异常状态[%d]", status),
+			Category:   errOrderCategory,
+			StatusCode: http.StatusBadRequest,
+		}
+		return
+	}
+
+	if !containsSubOrderStatus(allowStatuses, nextStatus) {
+		err = createSubOrderStatusTransferError(status, nextStatus)
 		return
 	}
 	return
@@ -387,6 +518,34 @@ func (subOrder *SubOrder) BeforeCreate() error {
 	return nil
 }
 
+// UpdateStatus update sub order status
+func (subOrder *SubOrder) UpdateStatus(status SubOrderStatus) (err error) {
+	err = subOrder.Status.ValidateNext(status)
+	if err != nil {
+		return
+	}
+	db := subOrder.Tx
+	if db == nil {
+		db = pgGetClient()
+	}
+
+	// 保证当前的状态一致
+	db = db.Model(subOrder).Where("status = ?", subOrder.Status).Update(SubOrder{
+		Status: status,
+	})
+	err = db.Error
+	if err != nil {
+		return
+	}
+	if db.RowsAffected != 1 {
+		err = hes.New("更新子订单状态失败，该子订单当前状态已变化")
+		return
+	}
+	subOrder.Status = status
+	subOrder.StatusDesc = status.String()
+	return
+}
+
 // TODO 针对子订单的状态
 func (subOrder *SubOrder) AfterFind() (err error) {
 	subOrder.StatusDesc = subOrder.Status.String()
@@ -402,10 +561,14 @@ func (order *Order) BeforeCreate() (err error) {
 		CreatedAt: time.Now(),
 	})
 	order.StatusTimeline = timeline
+	order.StatusTimelineRaw = timeline.String()
 	return
 }
 
 func (order *Order) AfterFind() (err error) {
+	timeline := make(OrderStatusTimeline, 0)
+	_ = json.Unmarshal([]byte(order.StatusTimelineRaw), &timeline)
+	order.StatusTimeline = timeline
 	order.StatusDesc = order.Status.String()
 	return
 }
@@ -416,9 +579,23 @@ func (order *Order) UpdateStatus(status OrderStatus) (err error) {
 	if err != nil {
 		return
 	}
+	db := order.Tx
+	if db == nil {
+		db = pgGetClient()
+	}
+
+	timeline := OrderStatusTimeline{
+		OrderStatusTimelineItem{
+			Status:    status,
+			CreatedAt: time.Now(),
+		},
+	}
+	timeline = append(timeline, order.StatusTimeline...)
+
 	// 保证当前的状态一致
-	db := pgGetClient().Model(order).Where("status = ?", order.Status).Update(Order{
-		Status: status,
+	db = db.Model(order).Where("status = ?", order.Status).Update(Order{
+		Status:            status,
+		StatusTimelineRaw: timeline.String(),
 	})
 	err = db.Error
 	if err != nil {
@@ -428,7 +605,7 @@ func (order *Order) UpdateStatus(status OrderStatus) (err error) {
 		err = hes.New("更新订单状态失败，该订单当前状态已变化")
 		return
 	}
-	fmt.Println(db.RowsAffected)
+	order.StatusTimeline = timeline
 	order.Status = status
 	order.StatusDesc = status.String()
 	return
@@ -461,15 +638,12 @@ func (srv *OrderSrv) ListSubOrderStatus() SubOrderStatusInfoList {
 }
 
 // CreateWithSubOrders create order with sub orders
-func (srv *OrderSrv) CreateWithSubOrders(user uint, data []SubOrder) (order *Order, err error) {
+func (srv *OrderSrv) CreateWithSubOrders(user uint, subOrders []SubOrder) (order *Order, err error) {
 	order = &Order{
 		SN:     srv.genSN(),
 		UserID: user,
 	}
-	subOrders := make([]*SubOrder, len(data))
-	for i, order := range data {
-		subOrders[i] = &order
-	}
+
 	ids := make([]string, 0)
 	for _, subOrder := range subOrders {
 		id := strconv.Itoa(int(subOrder.Product))
@@ -509,12 +683,14 @@ func (srv *OrderSrv) CreateWithSubOrders(user uint, data []SubOrder) (order *Ord
 					subOrder.ProductSpecsCount = p.Specs * subOrder.ProductCount
 					subOrder.ProductUnit = p.Unit
 					subOrder.MainOrder = order.ID
-					err = tx.Create(subOrder).Error
+					err = tx.Create(&subOrder).Error
 					if err != nil {
 						return
 					}
 					amount += subOrder.ProductAmount
 					payAmount += subOrder.ProductPayAmount
+					// 已成功处理添加子订单，跳出循环
+					break
 				}
 			}
 			if !found {
@@ -565,10 +741,24 @@ func (srv *OrderSrv) UpdateByID(id uint, order Order) (err error) {
 	return
 }
 
+// FindSubOrdersByOrderID find sub orders by order id
+func (srv *OrderSrv) FindSubOrdersByOrderID(orderID uint) (subOrders []*SubOrder, err error) {
+	subOrders = make([]*SubOrder, 0)
+	err = pgGetClient().Find(&subOrders, "main_order = ?", orderID).Error
+	return
+}
+
 // FindPaymentByOrderID find payment by order id
 func (srv *OrderSrv) FindPaymentByOrderID(orderID uint) (orderPayment *OrderPayment, err error) {
 	orderPayment = new(OrderPayment)
 	err = pgGetClient().First(orderPayment, "main_order = ?", orderID).Error
+	return
+}
+
+// FindSubOrderByID find sub order by id
+func (srv *OrderSrv) FindSubOrderByID(subOrderID uint) (subOrder *SubOrder, err error) {
+	subOrder = new(SubOrder)
+	err = pgGetClient().First(subOrder, "id = ?", subOrderID).Error
 	return
 }
 
@@ -646,8 +836,72 @@ func (srv *OrderSrv) Pay(params PayParams) (order *Order, err error) {
 	return
 }
 
-func (srv *OrderSrv) ToBeShipped(sn string) (order *Order, err error) {
-	order, err = srv.FindBySN(sn)
+// ToBeShipped order to be shipped
+func (srv *OrderSrv) ToBeShipped(sn string, subOrderID uint) (err error) {
+	order, err := srv.FindBySN(sn)
+	if err != nil {
+		return
+	}
+	err = order.Status.ValidateNext(OrderStatusToBeShipped)
+	if err != nil {
+		return
+	}
+	// 如果没有指定子订单，则表示整个订单
+	if subOrderID == 0 {
+		subOrders, e := srv.FindSubOrdersByOrderID(order.ID)
+		if e != nil {
+			err = e
+			return
+		}
+		// 必须所有子订单都是待发货或已取消
+		for _, item := range subOrders {
+			if !containsSubOrderStatus([]SubOrderStatus{
+				SubOrderStatusToBeShipped,
+				SubOrderStatusCanceled,
+			}, item.Status) {
+				return errCanChangeToBeShipped
+			}
+		}
+		err = order.UpdateStatus(OrderStatusToBeShipped)
+		if err != nil {
+			return
+		}
+		return
+	}
+	subOrder, err := srv.FindSubOrderByID(subOrderID)
+	if err != nil {
+		return
+	}
+	err = subOrder.UpdateStatus(SubOrderStatusToBeShipped)
+	if err != nil {
+		return
+	}
+	return
+}
+
+func (srv *OrderSrv) Shipped(sn string) (err error) {
+	order, err := srv.FindBySN(sn)
+	if err != nil {
+		return
+	}
+	err = order.Status.ValidateNext(OrderStatusShipped)
+	if err != nil {
+		return
+	}
+	err = pgGetClient().Transaction(func(tx *gorm.DB) (err error) {
+		order.Tx = tx
+		err = tx.Model(&SubOrder{}).Where("main_order = ?", order.ID).Updates(SubOrder{
+			Status: SubOrderStatusShipped,
+		}).Error
+		if err != nil {
+			return
+		}
+		err = order.UpdateStatus(OrderStatusShipped)
+		if err != nil {
+			return
+		}
+		return
+	})
 	if err != nil {
 		return
 	}
