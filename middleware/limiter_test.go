@@ -33,7 +33,7 @@ func TestNewConcurrentLimit(t *testing.T) {
 	fn := NewConcurrentLimit([]string{
 		"q:type",
 	}, ttl, "lock-")
-	req := httptest.NewRequest("GET", "/", nil)
+	req := httptest.NewRequest("GET", "/?type=1", nil)
 	resp := httptest.NewRecorder()
 	c := elton.NewContext(resp, req)
 	c.Next = func() error {
