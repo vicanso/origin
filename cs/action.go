@@ -62,6 +62,8 @@ const (
 	ActionOrderToBeShipped = "be-shipped-order"
 	// ActionOrderShipped shipped order
 	ActionOrderShipped = "shipped-order"
+	// ActionOrderChangeCourier change order courier
+	ActionOrderChangeCourier = "change-order-courier"
 
 	// ActionSupplierAdd add supplier
 	ActionSupplierAdd = "add-supplier"

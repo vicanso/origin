@@ -28,7 +28,7 @@ type (
 	addSupplierParams struct {
 		Name        string `json:"name,omitempty" validate:"xSupplierName"`
 		BaseAddress string `json:"baseAddress,omitempty" validate:"xBaseAddress"`
-		Address     string `json:"address,omitempty" validate:"xBaseAddress"`
+		Address     string `json:"address,omitempty" validate:"xAddress"`
 		Mobile      string `json:"mobile,omitempty" validate:"xMobile"`
 		Contact     string `json:"contact,omitempty" validate:"xSupplierContact"`
 		Status      int    `json:"status,omitempty" validate:"xStatus"`
@@ -36,7 +36,7 @@ type (
 	updateSupplierParms struct {
 		Name        string `json:"name,omitempty" validate:"omitempty,xSupplierName"`
 		BaseAddress string `json:"baseAddress,omitempty" validate:"omitempty,xBaseAddress"`
-		Address     string `json:"address,omitempty" validate:"omitempty,xBaseAddress"`
+		Address     string `json:"address,omitempty" validate:"omitempty,xAddress"`
 		Mobile      string `json:"mobile,omitempty" validate:"omitempty,xMobile"`
 		Contact     string `json:"contact,omitempty" validate:"omitempty,xSupplierContact"`
 		Status      int    `json:"status,omitempty" validate:"omitempty,xStatus"`

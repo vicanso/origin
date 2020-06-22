@@ -16,6 +16,7 @@ package controller
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/vicanso/elton"
@@ -25,6 +26,7 @@ import (
 	"github.com/vicanso/origin/middleware"
 	"github.com/vicanso/origin/router"
 	"github.com/vicanso/origin/service"
+	"github.com/vicanso/origin/util"
 	"github.com/vicanso/origin/validate"
 )
 
@@ -46,12 +48,24 @@ type (
 	toBeShippedOrderParams struct {
 		SubOrder uint `json:"subOrder,omitempty"`
 	}
+	// 订单发货参数
+	shippedOrderParams struct {
+		DeliverySN      string `json:"deliverySN,omitempty" validate:"xOrderDeliverySN"`
+		DeliveryCompany string `json:"deliveryCompany,omitempty" validate:"xOrderDeliveryCompnay"`
+	}
+	// 修改送货人参数
+	changeOrderCourierParams struct {
+		Courier uint `json:"courier,omitempty" validate:"xOrderCourier"`
+	}
 
 	listOrderParams struct {
 		listParams
 
-		Status string `json:"status,omitempty" validate:"omitempty,xOrderStatus"`
-		SN     string `json:"sn,omitempty" validate:"omitempty,xOrderSN"`
+		Status string    `json:"status,omitempty" validate:"omitempty,xOrderStatus"`
+		SN     string    `json:"sn,omitempty" validate:"omitempty,xOrderSN"`
+		Begin  time.Time `json:"begin,omitempty"`
+		End    time.Time `json:"end,omitempty"`
+		User   string    `json:"user,omitempty" validate:"omitempty,xOrderUser"`
 	}
 )
 
@@ -67,6 +81,11 @@ var (
 	}
 	errOrderSubmitTooFrequently = &hes.Error{
 		Message:    "请勿重复提交订单",
+		StatusCode: http.StatusBadRequest,
+		Category:   errOrderCtrlCategory,
+	}
+	errOrderCourierInvalid = &hes.Error{
+		Message:    "该订单不属于你的配送订单或未分派配送员",
 		StatusCode: http.StatusBadRequest,
 		Category:   errOrderCtrlCategory,
 	}
@@ -121,6 +140,16 @@ func init() {
 		orderUpdateLimit,
 		ctrl.pay,
 	)
+	// 分派送货员
+	g.PATCH(
+		"/v1/{sn}/assign-courier",
+		loadUserSession,
+		shouldLogined,
+		newTracker(cs.ActionOrderChangeCourier),
+		checkMarketingGroup,
+		orderUpdateLimit,
+		ctrl.changeCourier,
+	)
 	// 订单设置为待发货
 	g.PATCH(
 		"/v1/{sn}/to-be-shipped",
@@ -128,6 +157,8 @@ func init() {
 		shouldLogined,
 		newTracker(cs.ActionOrderToBeShipped),
 		checkLogisticsGroup,
+		ctrl.validateCourier,
+		orderUpdateLimit,
 		ctrl.toBeShipped,
 	)
 	// 订单设置为已发货
@@ -137,6 +168,8 @@ func init() {
 		shouldLogined,
 		newTracker(cs.ActionOrderShipped),
 		checkLogisticsGroup,
+		ctrl.validateCourier,
+		orderUpdateLimit,
 		ctrl.shipped,
 	)
 
@@ -157,6 +190,17 @@ func (params listOrderParams) toConditions() (conditions []interface{}) {
 	}
 	if params.SN != "" {
 		conds.add("sn = ?", params.SN)
+	}
+
+	if !params.Begin.IsZero() {
+		conds.add("created_at >= ?", util.FormatTime(params.Begin))
+	}
+	if !params.End.IsZero() {
+		conds.add("created_at <= ?", util.FormatTime(params.End))
+	}
+	if params.User != "" {
+		id, _ := strconv.Atoi(params.User)
+		conds.add("user_id = ?", id)
 	}
 
 	return conds.toArray()
@@ -285,6 +329,36 @@ func (orderCtrl) pay(c *elton.Context) (err error) {
 	return
 }
 
+func (orderCtrl) validateCourier(c *elton.Context) (err error) {
+	sn := c.Param("sn")
+	order, err := orderSrv.FindBySN(sn)
+	if err != nil {
+		return
+	}
+	us := getUserSession(c)
+	if order.Courier != us.GetID() {
+		err = errOrderCourierInvalid
+		return
+	}
+
+	return c.Next()
+}
+
+// changeCourier change courier
+func (orderCtrl) changeCourier(c *elton.Context) (err error) {
+	params := changeOrderCourierParams{}
+	err = validate.Do(&params, c.RequestBody)
+	if err != nil {
+		return
+	}
+	err = orderSrv.ChangeCourier(c.Param("sn"), params.Courier)
+	if err != nil {
+		return
+	}
+	c.NoContent()
+	return
+}
+
 // toBeShipped set order to be shipped
 func (orderCtrl) toBeShipped(c *elton.Context) (err error) {
 	params := toBeShippedOrderParams{}
@@ -302,10 +376,21 @@ func (orderCtrl) toBeShipped(c *elton.Context) (err error) {
 
 // shipped set order to shipped
 func (orderCtrl) shipped(c *elton.Context) (err error) {
-	err = orderSrv.Shipped(c.Param("sn"))
+	params := shippedOrderParams{}
+	err = validate.Do(&params, c.RequestBody)
 	if err != nil {
 		return
 	}
-	c.NoContent()
+
+	us := getUserSession(c)
+	delivery, err := orderSrv.Shipped(c.Param("sn"), service.OrderDelivery{
+		UserID:  us.GetID(),
+		SN:      params.DeliverySN,
+		Company: params.DeliveryCompany,
+	})
+	if err != nil {
+		return
+	}
+	c.Body = delivery
 	return
 }

@@ -97,6 +97,7 @@ type (
 		Status int      `json:"status,omitempty" validate:"omitempty,xStatus"`
 	}
 	updateMeParams struct {
+		Name        string `json:"name,omitempty" validate:"omitempty,xUserName"`
 		Email       string `json:"email,omitempty" validate:"omitempty,xUserEmail"`
 		Mobile      string `json:"mobile,omitempty" validate:"omitempty,xMobile"`
 		Password    string `json:"password,omitempty" validate:"omitempty,xUserPassword"`
@@ -534,6 +535,7 @@ func (ctrl userCtrl) updateMe(c *elton.Context) (err error) {
 	}
 
 	err = userSrv.UpdateByAccount(account, &service.User{
+		Name:     params.Name,
 		Email:    params.Email,
 		Mobile:   params.Mobile,
 		Password: params.NewPassword,

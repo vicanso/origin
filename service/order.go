@@ -55,8 +55,9 @@ type (
 	}
 	// 订单状态时间线
 	OrderStatusTimelineItem struct {
-		CreatedAt time.Time   `json:"createdAt,omitempty"`
-		Status    OrderStatus `json:"status,omitempty"`
+		CreatedAt  time.Time   `json:"createdAt,omitempty"`
+		Status     OrderStatus `json:"status,omitempty"`
+		StatusDesc string      `json:"statusDesc,omitempty"`
 	}
 	OrderStatusTimeline []OrderStatusTimelineItem
 
@@ -77,11 +78,9 @@ type (
 		// 状态
 		Status     OrderStatus `json:"status,omitempty" gorm:"index:idx_order_status"`
 		StatusDesc string      `json:"statusDesc,omitempty" gorm:"-"`
-
-		// // 物流单号
-		// DeliverySN string `json:"deliverySN,omitempty" gorm:"index:idx_order_delivery_sn"`
-		// // 物流公司
-		// DeliveryCompany string `json:"deliveryCompany,omitempty"`
+		// 送货员
+		Courier     uint   `json:"courier,omitempty" gorm:"index:idx_order_courier"`
+		CourierName string `json:"courierName,omitempty" gorm:"-"`
 
 		// 收货人
 		ReceiverName   string `json:"receiverName,omitempty"`
@@ -143,7 +142,10 @@ type (
 	OrderDelivery struct {
 		helper.Model
 
-		MainOrder uint `json:"mainOrder,omitempty" gorm:"unique_index:idx_order_delivery_main_order"`
+		MainOrder uint   `json:"mainOrder,omitempty" gorm:"unique_index:idx_order_delivery_main_order"`
+		UserID    uint   `json:"userID,omitempty" gorm:"index:idx_order_delivery_user;not null"`
+		SN        string `json:"sn,omitempty"`
+		Company   string `json:"company,omitempty"`
 	}
 	OrderSrv struct{}
 )
@@ -268,6 +270,7 @@ func init() {
 		&Order{},
 		&SubOrder{},
 		&OrderPayment{},
+		&OrderDelivery{},
 	)
 
 	orderStatusList = make(OrderStatusInfoList, 0)
@@ -336,6 +339,16 @@ func containsSubOrderStatus(arr []SubOrderStatus, status SubOrderStatus) bool {
 func (timeline OrderStatusTimeline) String() string {
 	buf, _ := json.Marshal(timeline)
 	return string(buf)
+}
+
+// Add add status to timeline
+func (timeline OrderStatusTimeline) Add(status OrderStatus) OrderStatusTimeline {
+	timeline = append(timeline, OrderStatusTimelineItem{
+		CreatedAt:  time.Now(),
+		Status:     status,
+		StatusDesc: status.String(),
+	})
+	return timeline
 }
 
 func (status OrderStatus) String() string {
@@ -556,10 +569,7 @@ func (order *Order) BeforeCreate() (err error) {
 	// 设置状态
 	order.Status = OrderStatusInited
 	timeline := make(OrderStatusTimeline, 0)
-	timeline = append(timeline, OrderStatusTimelineItem{
-		Status:    OrderStatusInited,
-		CreatedAt: time.Now(),
-	})
+	timeline = timeline.Add(OrderStatusInited)
 	order.StatusTimeline = timeline
 	order.StatusTimelineRaw = timeline.String()
 	return
@@ -570,6 +580,7 @@ func (order *Order) AfterFind() (err error) {
 	_ = json.Unmarshal([]byte(order.StatusTimelineRaw), &timeline)
 	order.StatusTimeline = timeline
 	order.StatusDesc = order.Status.String()
+	order.CourierName, _ = userSrv.GetNameFromCache(order.Courier)
 	return
 }
 
@@ -584,13 +595,7 @@ func (order *Order) UpdateStatus(status OrderStatus) (err error) {
 		db = pgGetClient()
 	}
 
-	timeline := OrderStatusTimeline{
-		OrderStatusTimelineItem{
-			Status:    status,
-			CreatedAt: time.Now(),
-		},
-	}
-	timeline = append(timeline, order.StatusTimeline...)
+	timeline := order.StatusTimeline.Add(status)
 
 	// 保证当前的状态一致
 	db = db.Model(order).Where("status = ?", order.Status).Update(Order{
@@ -836,6 +841,21 @@ func (srv *OrderSrv) Pay(params PayParams) (order *Order, err error) {
 	return
 }
 
+// ChangeCourier change order's courier
+func (srv *OrderSrv) ChangeCourier(sn string, courier uint) (err error) {
+	order, err := srv.FindBySN(sn)
+	if err != nil {
+		return
+	}
+	err = srv.UpdateByID(order.ID, Order{
+		Courier: courier,
+	})
+	if err != nil {
+		return
+	}
+	return
+}
+
 // ToBeShipped order to be shipped
 func (srv *OrderSrv) ToBeShipped(sn string, subOrderID uint) (err error) {
 	order, err := srv.FindBySN(sn)
@@ -879,7 +899,7 @@ func (srv *OrderSrv) ToBeShipped(sn string, subOrderID uint) (err error) {
 	return
 }
 
-func (srv *OrderSrv) Shipped(sn string) (err error) {
+func (srv *OrderSrv) Shipped(sn string, params OrderDelivery) (delivery *OrderDelivery, err error) {
 	order, err := srv.FindBySN(sn)
 	if err != nil {
 		return
@@ -888,7 +908,12 @@ func (srv *OrderSrv) Shipped(sn string) (err error) {
 	if err != nil {
 		return
 	}
+	params.MainOrder = order.ID
 	err = pgGetClient().Transaction(func(tx *gorm.DB) (err error) {
+		err = tx.Create(&params).Error
+		if err != nil {
+			return
+		}
 		order.Tx = tx
 		err = tx.Model(&SubOrder{}).Where("main_order = ?", order.ID).Updates(SubOrder{
 			Status: SubOrderStatusShipped,
@@ -905,5 +930,6 @@ func (srv *OrderSrv) Shipped(sn string) (err error) {
 	if err != nil {
 		return
 	}
+	delivery = &params
 	return
 }

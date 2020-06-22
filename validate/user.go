@@ -26,6 +26,8 @@ func init() {
 
 	AddAlias("xUserPassword", "ascii,len=44")
 
+	AddAlias("xUserName", "min=1,max=20")
+
 	Add("xUserRole", func(fl validator.FieldLevel) bool {
 		return isInString(fl, cs.UserRoles)
 	})

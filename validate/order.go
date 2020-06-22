@@ -28,6 +28,15 @@ func init() {
 	AddAlias("xOrderSN", "min=1")
 	// 订单金额
 	AddAlias("xOrderAmount", "number")
+	// 订单客户id
+	AddAlias("xOrderUser", "number")
+	// 订单运输单编号
+	AddAlias("xOrderDeliverySN", "min=10,max=20")
+	// 订单运输公司
+	AddAlias("xOrderDeliveryCompnay", "min=1,max=10")
+	// 订单送货人
+	AddAlias("xOrderCourier", "number,min=1")
+
 	// 支付来源
 	Add("xSource", func(fl validator.FieldLevel) bool {
 		return isInString(fl, []string{

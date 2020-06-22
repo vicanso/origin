@@ -18,12 +18,14 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/jinzhu/gorm"
 	"github.com/lib/pq"
 	"github.com/vicanso/elton"
 	session "github.com/vicanso/elton-session"
 	"github.com/vicanso/hes"
+	lruTTL "github.com/vicanso/lru-ttl"
 	"github.com/vicanso/origin/cs"
 	"github.com/vicanso/origin/helper"
 	"github.com/vicanso/origin/util"
@@ -53,6 +55,9 @@ var (
 	userRolesMap map[string]string
 	// 用户分组
 	userGroupsMap map[string]string
+
+	// userNameCache 用户名字缓存
+	userNameCache *lruTTL.Cache
 )
 
 type (
@@ -74,7 +79,8 @@ type (
 		helper.Model
 
 		Account  string `json:"account,omitempty" gorm:"type:varchar(20);not null;unique_index:idx_users_account"`
-		Password string `json:"-,omitempty" gorm:"type:varchar(128);not null"`
+		Password string `json:"-" gorm:"type:varchar(128);not null"`
+		Name     string `json:"name,omitempty"`
 
 		// 用户角色
 		Roles pq.StringArray `json:"roles,omitempty" gorm:"type:text[]"`
@@ -151,6 +157,13 @@ func init() {
 		cs.UserGroupFinance:   "财务部",
 		cs.UserGroupLogistics: "物流部",
 	}
+
+	ttl := 300 * time.Second
+	// 本地开发环境，设置缓存为1秒
+	if util.IsDevelopment() {
+		ttl = time.Second
+	}
+	userNameCache = lruTTL.New(100, ttl)
 }
 
 // AfterCreate after create hook
@@ -378,6 +391,24 @@ func (srv *UserSrv) ListLoginRecord(params PGQueryParams, args ...interface{}) (
 // CountLoginRecord count login record
 func (srv *UserSrv) CountLoginRecord(args ...interface{}) (count int, err error) {
 	return pgCount(&UserLoginRecord{}, args...)
+}
+
+// GetNameFromCache get user's name from cache
+func (srv *UserSrv) GetNameFromCache(id uint) (name string, err error) {
+	if id == 0 {
+		return
+	}
+	value, ok := userNameCache.Get(id)
+	if ok {
+		return value.(string), nil
+	}
+	user, err := srv.FindByID(id)
+	if err != nil {
+		return
+	}
+	name = user.Name
+	userNameCache.Add(id, name)
+	return
 }
 
 // GetUesrInfo get user info

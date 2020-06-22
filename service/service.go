@@ -44,6 +44,7 @@ var (
 	productSrv = new(ProductSrv)
 	regionSrv  = new(RegionSrv)
 	brandSrv   = new(BrandSrv)
+	userSrv    = new(UserSrv)
 
 	statusInfoList StatusInfoList
 	statusMap      map[int]string

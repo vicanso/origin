@@ -33,12 +33,17 @@
           </el-form-item>
         </el-col>
 
-        <el-col :span="12">
+        <el-col :span="8">
+          <el-form-item label="名称：">
+            <el-input placeholder="请输入您的名称" v-model="name" clearable />
+          </el-form-item>
+        </el-col>
+        <el-col :span="8">
           <el-form-item label="手机：">
             <el-input placeholder="请输入手机号码" v-model="mobile" clearable />
           </el-form-item>
         </el-col>
-        <el-col :span="12">
+        <el-col :span="8">
           <el-form-item label="邮箱：">
             <el-input placeholder="请输入邮箱地址" v-model="email" clearable />
           </el-form-item>
@@ -94,7 +99,8 @@ export default {
       password: "",
       newPassword: "",
       email: "",
-      mobile: ""
+      mobile: "",
+      name: ""
     };
   },
   computed: mapState({
@@ -110,6 +116,7 @@ export default {
         profile,
         password,
         newPassword,
+        name,
         enableUpdatePassword
       } = this;
       if ((profile.mobile && !mobile) || (profile.email && !email)) {
@@ -134,6 +141,9 @@ export default {
       }
       if (profile.email != email) {
         update.email = email;
+      }
+      if (profile.name != name) {
+        update.name = name;
       }
       if (Object.keys(update).length === 0) {
         this.$message.warning("请修改信息后再更新");
@@ -164,9 +174,10 @@ export default {
   async beforeMount() {
     try {
       await this.getUserProfile();
-      const { email, mobile } = this.profile;
+      const { email, mobile, name } = this.profile;
       this.email = email;
       this.mobile = mobile;
+      this.name = name
     } catch (err) {
       this.$message.error(err.message);
     }
