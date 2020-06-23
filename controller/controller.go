@@ -81,9 +81,9 @@ var (
 	// 加载用户session
 	loadUserSession = middleware.NewSession()
 	// 判断用户是否登录
-	shouldLogined = checkLogin
+	shouldBeLogined = checkLogin
 	// 判断用户是否未登录
-	shouldAnonymous = checkAnonymous
+	shouldBeAnonymous = checkAnonymous
 	// 判断用户是否admin权限
 	shouldBeAdmin = newCheckRolesMiddleware([]string{
 		cs.UserRoleSu,

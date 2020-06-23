@@ -177,7 +177,7 @@ export default {
       const { email, mobile, name } = this.profile;
       this.email = email;
       this.mobile = mobile;
-      this.name = name
+      this.name = name;
     } catch (err) {
       this.$message.error(err.message);
     }

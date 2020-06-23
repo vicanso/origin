@@ -53,6 +53,14 @@ type (
 		SN        string
 		Source    string
 	}
+	// 创建订单参数
+	CreateOrderParams struct {
+		SubOrders           []SubOrder
+		ReceiverName        string
+		ReceiverMobile      string
+		ReceiverBaseAddress string
+		ReceiverAddress     string
+	}
 	// 订单状态时间线
 	OrderStatusTimelineItem struct {
 		CreatedAt  time.Time   `json:"createdAt,omitempty"`
@@ -83,11 +91,12 @@ type (
 		CourierName string `json:"courierName,omitempty" gorm:"-"`
 
 		// 收货人
-		ReceiverName   string `json:"receiverName,omitempty"`
-		ReceiverMobile string `json:"receiverMobile,omitempty"`
+		ReceiverName   string `json:"receiverName,omitempty" gorm:"not null"`
+		ReceiverMobile string `json:"receiverMobile,omitempty" gorm:"not null"`
 		// 收货人地址（地址编码）
-		ReceiverBaseAddress string `json:"receiverBaseAddress,omitempty"`
-		ReceiverAddress     string `json:"receiverAddress,omitempty"`
+		ReceiverBaseAddress     string `json:"receiverBaseAddress,omitempty" gorm:"not null"`
+		ReceiverBaseAddressDesc string `json:"receiverBaseAddressDesc,omitempty" grom:"-"`
+		ReceiverAddress         string `json:"receiverAddress,omitempty" gorm:"not null"`
 
 		// 时间
 		PaidAt     *time.Time `json:"paidAt,omitempty"`
@@ -253,13 +262,23 @@ var (
 		StatusCode: http.StatusBadRequest,
 		Category:   errOrderCategory,
 	}
-	errOrderIsInvalid = &hes.Error{
-		Message:    "订单异常",
+	errOrderOwnerInvalid = &hes.Error{
+		Message:    "订单用户异常",
 		StatusCode: http.StatusBadRequest,
 		Category:   errOrderCategory,
 	}
 	errCanChangeToBeShipped = &hes.Error{
 		Message:    "订单对应的子订单未处理完成，不可更新为待发货",
+		StatusCode: http.StatusBadRequest,
+		Category:   errOrderCategory,
+	}
+	errOrderCourierInvalid = &hes.Error{
+		Message:    "该订单不属于你的配送订单或未分派配送员",
+		StatusCode: http.StatusBadRequest,
+		Category:   errOrderCategory,
+	}
+	errSubOrderNotMatch = &hes.Error{
+		Message:    "子订单与订单不匹配",
 		StatusCode: http.StatusBadRequest,
 		Category:   errOrderCategory,
 	}
@@ -421,9 +440,12 @@ func (status OrderStatus) ValidateNext(nextStatus OrderStatus) (err error) {
 		allowStatuses = []OrderStatus{
 			OrderStatusClosed,
 		}
+		// 已关闭订单不可更换状态
+	case OrderStatusClosed:
+		allowStatuses = []OrderStatus{}
 	default:
 		err = &hes.Error{
-			Message:    fmt.Sprintf("异常状态[%d]", status),
+			Message:    fmt.Sprintf("异常状态[%s]", status.String()),
 			Category:   errOrderCategory,
 			StatusCode: http.StatusBadRequest,
 		}
@@ -581,6 +603,9 @@ func (order *Order) AfterFind() (err error) {
 	order.StatusTimeline = timeline
 	order.StatusDesc = order.Status.String()
 	order.CourierName, _ = userSrv.GetNameFromCache(order.Courier)
+
+	// 收货地址不展示国家
+	order.ReceiverBaseAddressDesc, _ = regionSrv.GetNameFromCache(order.ReceiverBaseAddress, 1)
 	return
 }
 
@@ -596,12 +621,22 @@ func (order *Order) UpdateStatus(status OrderStatus) (err error) {
 	}
 
 	timeline := order.StatusTimeline.Add(status)
-
-	// 保证当前的状态一致
-	db = db.Model(order).Where("status = ?", order.Status).Update(Order{
+	updateData := Order{
 		Status:            status,
 		StatusTimelineRaw: timeline.String(),
-	})
+	}
+	now := time.Now()
+	switch status {
+	case OrderStatusPaid:
+		updateData.PaidAt = &now
+	case OrderStatusShipped:
+		updateData.DeliveryAt = &now
+	case OrderStatusDone:
+		updateData.ReceivedAt = &now
+	}
+
+	// 保证当前的状态一致
+	db = db.Model(order).Where("status = ?", order.Status).Update(updateData)
 	err = db.Error
 	if err != nil {
 		return
@@ -614,6 +649,22 @@ func (order *Order) UpdateStatus(status OrderStatus) (err error) {
 	order.Status = status
 	order.StatusDesc = status.String()
 	return
+}
+
+// ValidateCourier validate courier
+func (order *Order) ValidateCourier(courier uint) error {
+	if order.Courier != courier {
+		return errOrderCourierInvalid
+	}
+	return nil
+}
+
+// ValidateOwner validate owner
+func (order *Order) ValidateOwner(userID uint) error {
+	if order.UserID != userID {
+		return errOrderOwnerInvalid
+	}
+	return nil
 }
 
 func (payment *OrderPayment) BeforeCreate() (err error) {
@@ -643,14 +694,18 @@ func (srv *OrderSrv) ListSubOrderStatus() SubOrderStatusInfoList {
 }
 
 // CreateWithSubOrders create order with sub orders
-func (srv *OrderSrv) CreateWithSubOrders(user uint, subOrders []SubOrder) (order *Order, err error) {
+func (srv *OrderSrv) CreateWithSubOrders(user uint, params CreateOrderParams) (order *Order, err error) {
 	order = &Order{
-		SN:     srv.genSN(),
-		UserID: user,
+		SN:                  srv.genSN(),
+		UserID:              user,
+		ReceiverName:        params.ReceiverName,
+		ReceiverMobile:      params.ReceiverMobile,
+		ReceiverBaseAddress: params.ReceiverBaseAddress,
+		ReceiverAddress:     params.ReceiverAddress,
 	}
 
 	ids := make([]string, 0)
-	for _, subOrder := range subOrders {
+	for _, subOrder := range params.SubOrders {
 		id := strconv.Itoa(int(subOrder.Product))
 		if !util.ContainsString(ids, id) {
 			ids = append(ids, id)
@@ -677,7 +732,7 @@ func (srv *OrderSrv) CreateWithSubOrders(user uint, subOrders []SubOrder) (order
 			return
 		}
 		var amount, payAmount float64
-		for _, subOrder := range subOrders {
+		for _, subOrder := range params.SubOrders {
 			found := false
 			for _, p := range products {
 				// 订单记录产品当前信息，避免产品更新后，信息不符合
@@ -774,8 +829,8 @@ func (srv *OrderSrv) Pay(params PayParams) (order *Order, err error) {
 		return
 	}
 	// TODO 如果账户对不上，有可能是攻击（正常账户不应该对不上)，可添加监控
-	if params.UserID != order.UserID {
-		err = errOrderIsInvalid
+	err = order.ValidateOwner(params.UserID)
+	if err != nil {
 		return
 	}
 	if params.PayAmount != order.PayAmount {
@@ -786,6 +841,7 @@ func (srv *OrderSrv) Pay(params PayParams) (order *Order, err error) {
 		}
 		return
 	}
+
 	// TODO 当支付时，是否预生成支付流水（支付渠道等）
 	var orderPayment *OrderPayment
 	// 如果是待支付，增加记录当前准备支付
@@ -857,11 +913,18 @@ func (srv *OrderSrv) ChangeCourier(sn string, courier uint) (err error) {
 }
 
 // ToBeShipped order to be shipped
-func (srv *OrderSrv) ToBeShipped(sn string, subOrderID uint) (err error) {
+func (srv *OrderSrv) ToBeShipped(sn string, courier uint, subOrderID uint) (err error) {
 	order, err := srv.FindBySN(sn)
 	if err != nil {
 		return
 	}
+
+	// 非送货员不可处理订单
+	err = order.ValidateCourier(courier)
+	if err != nil {
+		return
+	}
+
 	err = order.Status.ValidateNext(OrderStatusToBeShipped)
 	if err != nil {
 		return
@@ -892,6 +955,10 @@ func (srv *OrderSrv) ToBeShipped(sn string, subOrderID uint) (err error) {
 	if err != nil {
 		return
 	}
+	if subOrder.MainOrder != order.ID {
+		err = errSubOrderNotMatch
+		return
+	}
 	err = subOrder.UpdateStatus(SubOrderStatusToBeShipped)
 	if err != nil {
 		return
@@ -899,8 +966,14 @@ func (srv *OrderSrv) ToBeShipped(sn string, subOrderID uint) (err error) {
 	return
 }
 
+// Shipped set the order to shipped
 func (srv *OrderSrv) Shipped(sn string, params OrderDelivery) (delivery *OrderDelivery, err error) {
 	order, err := srv.FindBySN(sn)
+	if err != nil {
+		return
+	}
+	// 非送货员不可处理订单
+	err = order.ValidateCourier(params.UserID)
 	if err != nil {
 		return
 	}
@@ -932,4 +1005,38 @@ func (srv *OrderSrv) Shipped(sn string, params OrderDelivery) (delivery *OrderDe
 	}
 	delivery = &params
 	return
+}
+
+// changeStaus change order status
+func (srv *OrderSrv) changeStaus(sn string, userID uint, nextStatus OrderStatus) (err error) {
+	order, err := srv.FindBySN(sn)
+	if err != nil {
+		return
+	}
+	// 校验是否所有者
+	err = order.ValidateOwner(userID)
+	if err != nil {
+		return
+	}
+	// 判断下一状态
+	err = order.Status.ValidateNext(nextStatus)
+	if err != nil {
+		return
+	}
+	// 更新订单状态
+	err = order.UpdateStatus(nextStatus)
+	if err != nil {
+		return
+	}
+	return
+}
+
+// Close close the order
+func (srv *OrderSrv) Close(sn string, userID uint) (err error) {
+	return srv.changeStaus(sn, userID, OrderStatusClosed)
+}
+
+// Finish finish the order
+func (srv *OrderSrv) Finish(sn string, userID uint) (err error) {
+	return srv.changeStaus(sn, userID, OrderStatusDone)
 }

@@ -56,7 +56,7 @@ var (
 )
 
 func init() {
-	g := router.NewGroup("/receivers", loadUserSession, shouldLogined)
+	g := router.NewGroup("/receivers", loadUserSession, shouldBeLogined)
 	ctrl := receiverCtrl{}
 
 	g.GET(

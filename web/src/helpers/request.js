@@ -6,7 +6,9 @@ const request = axios.create({
 
 request.interceptors.response.use(null, err => {
   const { response } = err;
-  if (response) {
+  if (err.code === "ECONNABORTED") {
+    err.message = "请求超时，请稍候再试";
+  } else if (response) {
     if (response.data && response.data.message) {
       err.message = response.data.message;
       err.code = response.data.code;

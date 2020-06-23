@@ -154,7 +154,7 @@ func init() {
 
 	// 获取用户信息
 	g.GET("/v1/me", ctrl.me)
-	g.GET("/v1/me/profile", shouldLogined, ctrl.profile)
+	g.GET("/v1/me/profile", shouldBeLogined, ctrl.profile)
 
 	// 用户注册
 	g.POST(
@@ -163,7 +163,7 @@ func init() {
 		captchaValidate,
 		// 限制相同IP在60秒之内只能调用5次
 		newIPLimit(5, 60*time.Second, cs.ActionLogin),
-		shouldAnonymous,
+		shouldBeAnonymous,
 		ctrl.register,
 	)
 	// 刷新user session的ttl
@@ -176,7 +176,7 @@ func init() {
 	// 获取登录token
 	g.GET(
 		"/v1/me/login",
-		shouldAnonymous,
+		shouldBeAnonymous,
 		ctrl.getLoginToken,
 	)
 
@@ -190,7 +190,7 @@ func init() {
 		middleware.WaitFor(time.Second, true),
 		newTracker(cs.ActionLogin),
 		captchaValidate,
-		shouldAnonymous,
+		shouldBeAnonymous,
 		loginLimit,
 		// 限制相同IP在60秒之内只能调用10次
 		newIPLimit(10, 60*time.Second, cs.ActionLogin),
@@ -204,7 +204,7 @@ func init() {
 	g.DELETE(
 		"/v1/me",
 		newTracker(cs.ActionLogout),
-		shouldLogined,
+		shouldBeLogined,
 		ctrl.logout,
 	)
 

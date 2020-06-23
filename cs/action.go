@@ -58,6 +58,10 @@ const (
 	ActionOrderAdd = "add-order"
 	// ActionOrderPay pay order
 	ActionOrderPay = "pay-order"
+	// ActionOrderClose close order
+	ActionOrderClose = "close-order"
+	// ActionOrderFinish finish order
+	ActionOrderFinish = "finish-order"
 	// ActionOrderToBeShipped to be shipped order
 	ActionOrderToBeShipped = "be-shipped-order"
 	// ActionOrderShipped shipped order

@@ -17,6 +17,7 @@ package controller
 import (
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/vicanso/elton"
@@ -38,6 +39,10 @@ type (
 			ID    uint `json:"id,omitempty" validate:"xOrderProductID"`
 			Count uint `json:"count,omitempty" validate:"xOrderProductCount"`
 		} `json:"products,omitempty"`
+		ReceiverName        string `json:"receiverName,omitempty"`
+		ReceiverMobile      string `json:"receiverMobile,omitempty" validate:"xMobile"`
+		ReceiverBaseAddress string `json:"receiverBaseAddress,omitempty" validate:"xBaseAddress"`
+		ReceiverAddress     string `json:"receiverAddress,omitempty" validate:"xAddress"`
 	}
 	// 支付参数
 	payOrderParams struct {
@@ -61,11 +66,18 @@ type (
 	listOrderParams struct {
 		listParams
 
-		Status string    `json:"status,omitempty" validate:"omitempty,xOrderStatus"`
-		SN     string    `json:"sn,omitempty" validate:"omitempty,xOrderSN"`
-		Begin  time.Time `json:"begin,omitempty"`
-		End    time.Time `json:"end,omitempty"`
-		User   string    `json:"user,omitempty" validate:"omitempty,xOrderUser"`
+		Status   string    `json:"status,omitempty" validate:"omitempty,xOrderStatus"`
+		Statuses string    `json:"statuses,omitempty"`
+		SN       string    `json:"sn,omitempty" validate:"omitempty,xOrderSN"`
+		Begin    time.Time `json:"begin,omitempty"`
+		End      time.Time `json:"end,omitempty"`
+		User     string    `json:"user,omitempty" validate:"omitempty,xOrderUser"`
+		Courier  string    `json:"courier,omitempty" validate:"omitempty,xOrderCourier"`
+	}
+	// listOrderResp 订单列表响应
+	listOrderResp struct {
+		Orders []*service.Order `json:"orders,omitempty"`
+		Count  int              `json:"count,omitempty"`
 	}
 )
 
@@ -81,11 +93,6 @@ var (
 	}
 	errOrderSubmitTooFrequently = &hes.Error{
 		Message:    "请勿重复提交订单",
-		StatusCode: http.StatusBadRequest,
-		Category:   errOrderCtrlCategory,
-	}
-	errOrderCourierInvalid = &hes.Error{
-		Message:    "该订单不属于你的配送订单或未分派配送员",
 		StatusCode: http.StatusBadRequest,
 		Category:   errOrderCtrlCategory,
 	}
@@ -112,7 +119,7 @@ func init() {
 	g.POST(
 		"/v1",
 		loadUserSession,
-		shouldLogined,
+		shouldBeLogined,
 		newTracker(cs.ActionOrderAdd),
 		ctrl.add,
 	)
@@ -120,14 +127,25 @@ func init() {
 	// 查看订单
 	g.GET(
 		"/v1",
+		loadUserSession,
+		shouldBeLogined,
+		checkMarketingGroup,
 		ctrl.list,
+	)
+	// 查询派送订单
+	g.GET(
+		"/v1/my-deliveries",
+		loadUserSession,
+		shouldBeLogined,
+		checkLogisticsGroup,
+		ctrl.listDeliveryOrder,
 	)
 
 	// TODO 查订单详情是否只允许本人或管理人员查
 	g.GET(
 		"/v1/{sn}",
 		loadUserSession,
-		shouldLogined,
+		shouldBeLogined,
 		ctrl.detail,
 	)
 
@@ -135,16 +153,35 @@ func init() {
 	g.PATCH(
 		"/v1/{sn}/pay",
 		loadUserSession,
-		shouldLogined,
+		shouldBeLogined,
 		newTracker(cs.ActionOrderPay),
 		orderUpdateLimit,
 		ctrl.pay,
 	)
+	// 关闭订单
+	g.PATCH(
+		"/v1/{sn}/close",
+		loadUserSession,
+		shouldBeLogined,
+		newTracker(cs.ActionOrderClose),
+		orderUpdateLimit,
+		ctrl.close,
+	)
+	// 结束订单
+	g.PATCH(
+		"/v1/{sn}/finish",
+		loadUserSession,
+		shouldBeLogined,
+		newTracker(cs.ActionOrderFinish),
+		orderUpdateLimit,
+		ctrl.finish,
+	)
+
 	// 分派送货员
 	g.PATCH(
 		"/v1/{sn}/assign-courier",
 		loadUserSession,
-		shouldLogined,
+		shouldBeLogined,
 		newTracker(cs.ActionOrderChangeCourier),
 		checkMarketingGroup,
 		orderUpdateLimit,
@@ -154,10 +191,9 @@ func init() {
 	g.PATCH(
 		"/v1/{sn}/to-be-shipped",
 		loadUserSession,
-		shouldLogined,
+		shouldBeLogined,
 		newTracker(cs.ActionOrderToBeShipped),
 		checkLogisticsGroup,
-		ctrl.validateCourier,
 		orderUpdateLimit,
 		ctrl.toBeShipped,
 	)
@@ -165,10 +201,9 @@ func init() {
 	g.PATCH(
 		"/v1/{sn}/shipped",
 		loadUserSession,
-		shouldLogined,
+		shouldBeLogined,
 		newTracker(cs.ActionOrderShipped),
 		checkLogisticsGroup,
-		ctrl.validateCourier,
 		orderUpdateLimit,
 		ctrl.shipped,
 	)
@@ -203,6 +238,14 @@ func (params listOrderParams) toConditions() (conditions []interface{}) {
 		conds.add("user_id = ?", id)
 	}
 
+	if params.Courier != "" {
+		id, _ := strconv.Atoi(params.Courier)
+		conds.add("courier = ?", id)
+	}
+	if params.Statuses != "" {
+		conds.add("status in (?)", strings.Split(params.Statuses, ","))
+	}
+
 	return conds.toArray()
 }
 
@@ -225,7 +268,13 @@ func (orderCtrl) add(c *elton.Context) (err error) {
 			ProductCount: prod.Count,
 		}
 	}
-	order, err := orderSrv.CreateWithSubOrders(us.GetID(), subOrders)
+	order, err := orderSrv.CreateWithSubOrders(us.GetID(), service.CreateOrderParams{
+		SubOrders:           subOrders,
+		ReceiverName:        params.ReceiverName,
+		ReceiverMobile:      params.ReceiverMobile,
+		ReceiverBaseAddress: params.ReceiverBaseAddress,
+		ReceiverAddress:     params.ReceiverAddress,
+	})
 	if err != nil {
 		return
 	}
@@ -233,13 +282,7 @@ func (orderCtrl) add(c *elton.Context) (err error) {
 	return
 }
 
-// list list order
-func (orderCtrl) list(c *elton.Context) (err error) {
-	params := listOrderParams{}
-	err = validate.Do(&params, c.Query())
-	if err != nil {
-		return
-	}
+func (orderCtrl) listOrder(params listOrderParams) (resp *listOrderResp, err error) {
 	count := -1
 	args := params.toConditions()
 	queryParams := params.toPGQueryParams()
@@ -253,14 +296,25 @@ func (orderCtrl) list(c *elton.Context) (err error) {
 	if err != nil {
 		return
 	}
-	c.CacheMaxAge("1m")
-	c.Body = &struct {
-		Order []*service.Order `json:"order,omitempty"`
-		Count int              `json:"count,omitempty"`
-	}{
-		result,
-		count,
+	resp = &listOrderResp{
+		Orders: result,
+		Count:  count,
 	}
+	return
+}
+
+// list list order
+func (ctrl orderCtrl) list(c *elton.Context) (err error) {
+	params := listOrderParams{}
+	err = validate.Do(&params, c.Query())
+	if err != nil {
+		return
+	}
+	resp, err := ctrl.listOrder(params)
+	if err != nil {
+		return
+	}
+	c.Body = resp
 	return
 }
 
@@ -329,21 +383,6 @@ func (orderCtrl) pay(c *elton.Context) (err error) {
 	return
 }
 
-func (orderCtrl) validateCourier(c *elton.Context) (err error) {
-	sn := c.Param("sn")
-	order, err := orderSrv.FindBySN(sn)
-	if err != nil {
-		return
-	}
-	us := getUserSession(c)
-	if order.Courier != us.GetID() {
-		err = errOrderCourierInvalid
-		return
-	}
-
-	return c.Next()
-}
-
 // changeCourier change courier
 func (orderCtrl) changeCourier(c *elton.Context) (err error) {
 	params := changeOrderCourierParams{}
@@ -366,7 +405,8 @@ func (orderCtrl) toBeShipped(c *elton.Context) (err error) {
 	if err != nil {
 		return
 	}
-	err = orderSrv.ToBeShipped(c.Param("sn"), params.SubOrder)
+	us := getUserSession(c)
+	err = orderSrv.ToBeShipped(c.Param("sn"), us.GetID(), params.SubOrder)
 	if err != nil {
 		return
 	}
@@ -392,5 +432,44 @@ func (orderCtrl) shipped(c *elton.Context) (err error) {
 		return
 	}
 	c.Body = delivery
+	return
+}
+
+// close set the order to closed
+func (orderCtrl) close(c *elton.Context) (err error) {
+	us := getUserSession(c)
+	err = orderSrv.Close(c.Param("sn"), us.GetID())
+	if err != nil {
+		return
+	}
+	c.NoContent()
+	return
+}
+
+// finish set the order to done
+func (orderCtrl) finish(c *elton.Context) (err error) {
+	us := getUserSession(c)
+	err = orderSrv.Finish(c.Param("sn"), us.GetID())
+	if err != nil {
+		return
+	}
+	c.NoContent()
+	return
+}
+
+// listDeliveryOrder list the delivery order
+func (ctrl orderCtrl) listDeliveryOrder(c *elton.Context) (err error) {
+	params := listOrderParams{}
+	err = validate.Do(&params, c.Query())
+	if err != nil {
+		return
+	}
+	us := getUserSession(c)
+	params.Courier = strconv.Itoa(int(us.GetID()))
+	resp, err := ctrl.listOrder(params)
+	if err != nil {
+		return
+	}
+	c.Body = resp
 	return
 }
