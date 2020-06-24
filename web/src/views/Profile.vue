@@ -104,11 +104,11 @@ export default {
     };
   },
   computed: mapState({
-    profile: state => state.user.profile,
+    profile: state => state.user.info,
     processing: state => state.user.profileProcessing
   }),
   methods: {
-    ...mapActions(["getUserProfile", "updateMe", "logout"]),
+    ...mapActions(["fetchUserInfo", "updateMe", "logout"]),
     async onSubmit() {
       const {
         email,
@@ -173,7 +173,7 @@ export default {
   },
   async beforeMount() {
     try {
-      await this.getUserProfile();
+      await this.fetchUserInfo();
       const { email, mobile, name } = this.profile;
       this.email = email;
       this.mobile = mobile;

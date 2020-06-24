@@ -39,15 +39,6 @@ type (
 		// 是否匿名
 		// Example: true
 		Anonymous bool `json:"anonymous,omitempty"`
-		// 账号
-		// Example: vicanso
-		Account string `json:"account,omitempty"`
-		// 角色
-		// Example: ["su", "admin"]
-		Roles []string `json:"roles,omitempty"`
-		// 分组
-		// Example: ["su", "admin"]
-		Groups []string `json:"groups,omitempty"`
 		// 系统时间
 		// Example: 2019-10-26T10:11:25+08:00
 		Date string `json:"date,omitempty"`
@@ -63,6 +54,7 @@ type (
 		// 登录时间
 		// Example: 2019-10-26T10:11:25+08:00
 		LoginedAt string `json:"loginedAt,omitempty"`
+		service.User
 	}
 	loginTokenResp struct {
 		// 登录Token
@@ -117,7 +109,11 @@ const (
 )
 
 var (
-	errLoginTokenNil     = hes.New("login token is nil")
+	errLoginTokenNil = &hes.Error{
+		Message:    "登录令牌不能为空",
+		StatusCode: http.StatusBadRequest,
+		Category:   errUserCategory,
+	}
 	errUserStatusInvalid = &hes.Error{
 		Message:    "该账户不允许登录",
 		StatusCode: http.StatusBadRequest,
@@ -154,7 +150,6 @@ func init() {
 
 	// 获取用户信息
 	g.GET("/v1/me", ctrl.me)
-	g.GET("/v1/me/profile", shouldBeLogined, ctrl.profile)
 
 	// 用户注册
 	g.POST(
@@ -268,7 +263,7 @@ func (params listUserLoginRecordParams) toConditions() (conditions []interface{}
 }
 
 // get user info from session
-func pickUserInfo(c *elton.Context) (userInfo *userInfoResp) {
+func pickUserInfo(c *elton.Context) (userInfo *userInfoResp, err error) {
 	us := getUserSession(c)
 	userInfo = &userInfoResp{
 		Anonymous: true,
@@ -277,11 +272,14 @@ func pickUserInfo(c *elton.Context) (userInfo *userInfoResp) {
 		TrackID:   getTrackID(c),
 	}
 	if us.IsLogined() {
-		userInfo.Account = us.GetAccount()
-		userInfo.Roles = us.GetRoles()
-		userInfo.Groups = us.GetGroups()
 		userInfo.Anonymous = false
 		userInfo.LoginedAt = us.GetLoginedAt()
+		user, err := userSrv.FindOneByAccount(us.GetAccount())
+		if err != nil {
+			return nil, err
+		}
+		user.Password = ""
+		userInfo.User = *user
 	}
 	return
 }
@@ -320,17 +318,11 @@ func (ctrl userCtrl) me(c *elton.Context) (err error) {
 		}
 		_ = userSrv.AddTrackRecord(trackRecord, c)
 	}
-	c.Body = pickUserInfo(c)
-	return
-}
-
-func (ctrl userCtrl) profile(c *elton.Context) (err error) {
-	us := getUserSession(c)
-	user, err := userSrv.FindOneByAccount(us.GetAccount())
+	userInfo, err := pickUserInfo(c)
 	if err != nil {
 		return
 	}
-	c.Body = user
+	c.Body = userInfo
 	return
 }
 

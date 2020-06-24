@@ -4,7 +4,6 @@ import {
   USERS_LOGIN,
   USERS,
   USERS_ID,
-  USERS_ME_PROFILE,
   USERS_ROLE,
   USERS_GROUPS,
   USERS_LOGINS
@@ -83,12 +82,15 @@ const state = {
 };
 
 function commitUserInfo(commit, data) {
-  commit(mutationUserInfo, {
-    account: data.account || "",
-    trackID: data.trackID || "",
-    roles: data.roles || [],
-    groups: data.groups || []
-  });
+  commit(
+    mutationUserInfo,
+    Object.assign(data, {
+      roles: data.roles || [],
+      groups: data.groups || [],
+      groupsDesc: data.groupsDesc || [],
+      rolesDesc: data.rolesDesc || []
+    })
+  );
 }
 function updateUserDesc(user) {
   user.updatedAtDesc = formatDate(user.updatedAt);
@@ -189,7 +191,7 @@ export default {
       state.profile = profile;
     },
     [mutationUserProfileUpdate](state, data) {
-      Object.assign(state.profile, data);
+      Object.assign(state.info, data);
     },
     [mutationUserListLoginProcessing](state, processing) {
       state.loginListProcessing = processing;
@@ -328,20 +330,6 @@ export default {
     async getUserByID(_, id) {
       const { data } = await request.get(USERS_ID.replace(":id", id));
       return data;
-    },
-    // getUserProfile 获取用户详细信息
-    async getUserProfile({ commit }) {
-      if (state.profile) {
-        return state.profile;
-      }
-      commit(mutationUserProfileProcessing, true);
-      try {
-        const { data } = await request.get(USERS_ME_PROFILE);
-        commit(mutationUserProfile, data);
-        return data;
-      } finally {
-        commit(mutationUserProfileProcessing, false);
-      }
     },
     // listUserLogins 获取用户登录记录
     async listUserLogins({ commit }, params) {
