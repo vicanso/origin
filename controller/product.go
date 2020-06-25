@@ -15,6 +15,7 @@
 package controller
 
 import (
+	"strings"
 	"time"
 
 	"github.com/vicanso/elton"
@@ -76,6 +77,7 @@ type (
 	listProductParams struct {
 		listParams
 
+		IDS         string `json:"ids,omitempty"`
 		Category    string `json:"category,omitempty" validate:"omitempty,xProductCategory"`
 		Status      string `json:"status,omitempty" validate:"omitempty,xStatus"`
 		Purchasable string `json:"purchasable,omitempty"`
@@ -170,6 +172,9 @@ func init() {
 
 func (params listProductParams) toConditions() (conditions []interface{}) {
 	conds := queryConditions{}
+	if params.IDS != "" {
+		conds.add("id IN (?)", strings.Split(params.IDS, ","))
+	}
 	if params.Category != "" {
 		conds.add("? = ANY(categories)", params.Category)
 	}
