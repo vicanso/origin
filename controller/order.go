@@ -39,10 +39,11 @@ type (
 			ID    uint `json:"id,omitempty" validate:"xOrderProductID"`
 			Count uint `json:"count,omitempty" validate:"xOrderProductCount"`
 		} `json:"products,omitempty"`
-		ReceiverName        string `json:"receiverName,omitempty"`
-		ReceiverMobile      string `json:"receiverMobile,omitempty" validate:"xMobile"`
-		ReceiverBaseAddress string `json:"receiverBaseAddress,omitempty" validate:"xBaseAddress"`
-		ReceiverAddress     string `json:"receiverAddress,omitempty" validate:"xAddress"`
+		Amount              float64 `json:"amount,omitempty" validate:"required"`
+		ReceiverName        string  `json:"receiverName,omitempty"`
+		ReceiverMobile      string  `json:"receiverMobile,omitempty" validate:"xMobile"`
+		ReceiverBaseAddress string  `json:"receiverBaseAddress,omitempty" validate:"xBaseAddress"`
+		ReceiverAddress     string  `json:"receiverAddress,omitempty" validate:"xAddress"`
 	}
 	// 支付参数
 	payOrderParams struct {
@@ -269,6 +270,7 @@ func (orderCtrl) add(c *elton.Context) (err error) {
 		}
 	}
 	order, err := orderSrv.CreateWithSubOrders(us.GetID(), service.CreateOrderParams{
+		Amount:              params.Amount,
 		SubOrders:           subOrders,
 		ReceiverName:        params.ReceiverName,
 		ReceiverMobile:      params.ReceiverMobile,

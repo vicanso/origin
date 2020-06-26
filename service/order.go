@@ -55,7 +55,9 @@ type (
 	}
 	// 创建订单参数
 	CreateOrderParams struct {
-		SubOrders           []SubOrder
+		SubOrders []SubOrder
+		// 订单总金额
+		Amount              float64
 		ReceiverName        string
 		ReceiverMobile      string
 		ReceiverBaseAddress string
@@ -253,7 +255,7 @@ var (
 		Category:   errOrderCategory,
 	}
 	errOrderAmountInValid = &hes.Error{
-		Message:    "订单金额异常",
+		Message:    "订单金额异常，请重新刷新订单后再提交",
 		StatusCode: http.StatusBadRequest,
 		Category:   errOrderCategory,
 	}
@@ -712,8 +714,7 @@ func (srv *OrderSrv) CreateWithSubOrders(user uint, params CreateOrderParams) (o
 		}
 	}
 	products, err := productSrv.List(PGQueryParams{
-		Limit:  len(ids),
-		Fields: "-catalog,categories",
+		Limit: len(ids),
 	}, "id IN (?)", ids)
 	if err != nil {
 		return
@@ -758,7 +759,8 @@ func (srv *OrderSrv) CreateWithSubOrders(user uint, params CreateOrderParams) (o
 				return
 			}
 		}
-		if amount == 0 || payAmount == 0 {
+		// 如果应支付金额为0或者再客户端提交的金额不一致
+		if payAmount == 0 || (payAmount != params.Amount) {
 			err = errOrderAmountInValid
 			return
 		}
