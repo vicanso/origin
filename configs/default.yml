@@ -46,7 +46,7 @@ influxdb:
 session:
   path: /
   key: origin
-  ttl: 24h
+  ttl: 240h
 
 # key for sign cookie
 keys:
