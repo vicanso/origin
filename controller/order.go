@@ -36,8 +36,8 @@ type (
 
 	addOrderParams struct {
 		Products []struct {
-			ID    uint `json:"id,omitempty" validate:"xOrderProductID"`
-			Count uint `json:"count,omitempty" validate:"xOrderProductCount"`
+			ProductID uint `json:"productID,omitempty" validate:"xOrderProductID"`
+			Count     uint `json:"count,omitempty" validate:"xOrderProductCount"`
 		} `json:"products,omitempty"`
 		Amount              float64 `json:"amount,omitempty" validate:"required"`
 		ReceiverName        string  `json:"receiverName,omitempty"`
@@ -121,6 +121,7 @@ func init() {
 		"/v1",
 		loadUserSession,
 		shouldBeLogined,
+		// TODO 添加限制重复提交订单
 		newTracker(cs.ActionOrderAdd),
 		ctrl.add,
 	)
@@ -265,7 +266,7 @@ func (orderCtrl) add(c *elton.Context) (err error) {
 	subOrders := make([]service.SubOrder, len(params.Products))
 	for index, prod := range params.Products {
 		subOrders[index] = service.SubOrder{
-			Product:      prod.ID,
+			Product:      prod.ProductID,
 			ProductCount: prod.Count,
 		}
 	}

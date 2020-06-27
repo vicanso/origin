@@ -71,6 +71,9 @@ type (
 		Supplier uint `json:"supplier,omitempty"`
 		// 供应商说明
 		SupplierDesc string `json:"supplierDesc,omitempty" gorm:"-"`
+
+		// 是否有效(是否可购买)
+		Available bool `json:"available,omitempty" gorm:"-"`
 	}
 	// ProductCategory product category
 	ProductCategory struct {
@@ -98,12 +101,7 @@ const (
 
 var (
 	errProductUnavailable = &hes.Error{
-		Message:    "产品状态非可销售状态",
-		StatusCode: http.StatusBadRequest,
-		Category:   errProductCategory,
-	}
-	errProductOutOfDate = &hes.Error{
-		Message:    "非产品销售期",
+		Message:    "产品状态非可销售状态或过已销售期",
 		StatusCode: http.StatusBadRequest,
 		Category:   errProductCategory,
 	}
@@ -147,6 +145,7 @@ func (p *Product) AfterFind() (err error) {
 
 	// 如果获取失败，忽略出错
 	p.BrandDesc, _ = brandSrv.GetNameFromCache(p.Brand)
+	p.Available = p.IsAvailable()
 
 	return
 }
@@ -182,13 +181,18 @@ func (srv *ProductSrv) createByID(id uint) *Product {
 	return p
 }
 
+// Available 是否可购买
+func (product *Product) IsAvailable() bool {
+	if product.Status != cs.StatusEnabled {
+		return false
+	}
+	return util.IsBetween(product.StartedAt, product.EndedAt)
+}
+
 // CheckAvailable check product is available
 func (product *Product) CheckAvailable() error {
-	if product.Status != cs.StatusEnabled {
+	if !product.IsAvailable() {
 		return errProductUnavailable
-	}
-	if !util.IsBetween(product.StartedAt, product.EndedAt) {
-		return errProductOutOfDate
 	}
 	return nil
 }

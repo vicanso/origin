@@ -708,7 +708,12 @@ func (srv *OrderSrv) CreateWithSubOrders(user uint, params CreateOrderParams) (o
 
 	ids := make([]string, 0)
 	for _, subOrder := range params.SubOrders {
+		if subOrder.Product == 0 {
+			err = errOrderProductInvalid
+			return
+		}
 		id := strconv.Itoa(int(subOrder.Product))
+
 		if !util.ContainsString(ids, id) {
 			ids = append(ids, id)
 		}
