@@ -780,6 +780,9 @@ func (srv *OrderSrv) CreateWithSubOrders(user uint, params CreateOrderParams) (o
 		}
 		return
 	})
+	order.StatusDesc = order.Status.String()
+	// 收货地址不展示国家
+	order.ReceiverBaseAddressDesc, _ = regionSrv.GetNameFromCache(order.ReceiverBaseAddress, 1)
 	return
 }
 
