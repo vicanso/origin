@@ -23,6 +23,7 @@ import (
 	"github.com/vicanso/origin/cs"
 	"github.com/vicanso/origin/helper"
 	"github.com/vicanso/origin/util"
+	"gorm.io/gorm"
 )
 
 const (
@@ -63,11 +64,14 @@ type (
 )
 
 func init() {
-	pgGetClient().AutoMigrate(&Configuration{})
+	err := pgGetClient().AutoMigrate(&Configuration{})
+	if err != nil {
+		panic(err)
+	}
 	signedKeys.SetKeys(config.GetSignedKeys())
 }
 
-func (c *Configuration) AfterFind() (err error) {
+func (c *Configuration) AfterFind(_ *gorm.DB) (err error) {
 	c.StatusDesc = getStatusDesc(c.Status)
 	return
 }

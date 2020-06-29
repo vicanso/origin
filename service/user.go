@@ -20,7 +20,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/jinzhu/gorm"
 	"github.com/lib/pq"
 	"github.com/vicanso/elton"
 	session "github.com/vicanso/elton-session"
@@ -29,6 +28,7 @@ import (
 	"github.com/vicanso/origin/cs"
 	"github.com/vicanso/origin/helper"
 	"github.com/vicanso/origin/util"
+	"gorm.io/gorm"
 
 	"go.uber.org/zap"
 )
@@ -74,6 +74,7 @@ type (
 		se   *session.Session
 		info *UserSessionInfo
 	}
+	Users []*User
 	// User user
 	User struct {
 		helper.Model
@@ -140,11 +141,14 @@ type (
 )
 
 func init() {
-	pgGetClient().AutoMigrate(
+	err := pgGetClient().AutoMigrate(
 		&User{},
 		&UserLoginRecord{},
 		&UserTrackRecord{},
 	)
+	if err != nil {
+		panic(err)
+	}
 
 	userRolesMap = map[string]string{
 		cs.UserRoleNormal: "普通用户",
@@ -167,10 +171,10 @@ func init() {
 }
 
 // AfterCreate after create hook
-func (u *User) AfterCreate(scope *gorm.Scope) (err error) {
+func (u *User) AfterCreate(tx *gorm.DB) (err error) {
 	// 首次创建账号，设置su权限
 	if u.ID == 1 {
-		scope.DB().Model(u).Update(User{
+		tx.Model(u).Updates(User{
 			Roles: []string{
 				cs.UserRoleSu,
 			},
@@ -180,7 +184,7 @@ func (u *User) AfterCreate(scope *gorm.Scope) (err error) {
 }
 
 // BeforeCreate before create hook
-func (u *User) BeforeCreate() (err error) {
+func (u *User) BeforeCreate(_ *gorm.DB) (err error) {
 	if len(u.Roles) == 0 {
 		// 自动添加用户角色
 		u.Roles = []string{
@@ -190,7 +194,7 @@ func (u *User) BeforeCreate() (err error) {
 	return
 }
 
-func (u *User) AfterFind() (err error) {
+func (u *User) AfterFind(_ *gorm.DB) (err error) {
 	u.StatusDesc = getStatusDesc(u.Status)
 
 	userRolesDesc := make([]string, 0)
@@ -211,6 +215,16 @@ func (u *User) AfterFind() (err error) {
 	}
 	u.GroupsDesc = userGroupsDesc
 
+	return
+}
+
+func (us Users) AfterFind(tx *gorm.DB) (err error) {
+	for _, u := range us {
+		err = u.AfterFind(tx)
+		if err != nil {
+			return
+		}
+	}
 	return
 }
 
@@ -268,7 +282,7 @@ func (srv *UserSrv) Login(account, password, token string) (u *User, err error) 
 	u = &User{}
 	err = pgGetClient().Where("account = ?", account).First(u).Error
 	if err != nil {
-		if gorm.IsRecordNotFoundError(err) {
+		if err == gorm.ErrRecordNotFound {
 			err = errAccountOrPasswordInvalid
 		}
 		return
@@ -370,14 +384,17 @@ func (srv *UserSrv) AddTrackRecord(r *UserTrackRecord, c *elton.Context) (err er
 }
 
 // List list users
-func (srv *UserSrv) List(params PGQueryParams, args ...interface{}) (result []*User, err error) {
-	result = make([]*User, 0)
+func (srv *UserSrv) List(params PGQueryParams, args ...interface{}) (result Users, err error) {
+	result = make(Users, 0)
 	err = pgQuery(params, args...).Find(&result).Error
+	if err != nil {
+		return
+	}
 	return
 }
 
 // Count count the users
-func (srv *UserSrv) Count(args ...interface{}) (count int, err error) {
+func (srv *UserSrv) Count(args ...interface{}) (count int64, err error) {
 	return pgCount(&User{}, args...)
 }
 
@@ -389,7 +406,7 @@ func (srv *UserSrv) ListLoginRecord(params PGQueryParams, args ...interface{}) (
 }
 
 // CountLoginRecord count login record
-func (srv *UserSrv) CountLoginRecord(args ...interface{}) (count int, err error) {
+func (srv *UserSrv) CountLoginRecord(args ...interface{}) (count int64, err error) {
 	return pgCount(&UserLoginRecord{}, args...)
 }
 

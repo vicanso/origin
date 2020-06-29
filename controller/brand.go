@@ -119,7 +119,7 @@ func (ctrl brandCtrl) list(c *elton.Context) (err error) {
 	if err != nil {
 		return
 	}
-	count := -1
+	count := int64(-1)
 	args := params.toConditions()
 	queryParams := params.toPGQueryParams()
 	if queryParams.Offset == 0 {
@@ -135,7 +135,7 @@ func (ctrl brandCtrl) list(c *elton.Context) (err error) {
 	c.CacheMaxAge("1m")
 	c.Body = &struct {
 		Brands []*service.Brand `json:"brands"`
-		Count  int              `json:"count"`
+		Count  int64            `json:"count"`
 	}{
 		result,
 		count,

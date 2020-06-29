@@ -22,6 +22,7 @@ import (
 	"github.com/vicanso/origin/cs"
 	"github.com/vicanso/origin/helper"
 	"github.com/vicanso/origin/util"
+	"gorm.io/gorm"
 )
 
 type (
@@ -56,15 +57,18 @@ func init() {
 		ttl = time.Second
 	}
 	regionNameCache = lruTTL.New(200, ttl)
-	pgGetClient().AutoMigrate(&Region{})
+	err := pgGetClient().AutoMigrate(&Region{})
+	if err != nil {
+		panic(err)
+	}
 }
 
-func (r *Region) AfterFind() (err error) {
+func (r *Region) AfterFind(_ *gorm.DB) (err error) {
 	r.StatusDesc = getStatusDesc(r.Status)
 	return
 }
 
-func (r *Region) BeforeCreate() (err error) {
+func (r *Region) BeforeCreate(_ *gorm.DB) (err error) {
 	if r.Priority == 0 {
 		r.Priority = 1
 	}
@@ -128,7 +132,7 @@ func (srv *RegionSrv) List(params PGQueryParams, args ...interface{}) (result []
 }
 
 // Count count region
-func (srv *RegionSrv) Count(args ...interface{}) (count int, err error) {
+func (srv *RegionSrv) Count(args ...interface{}) (count int64, err error) {
 	return pgCount(&Region{}, args...)
 }
 

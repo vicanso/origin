@@ -154,7 +154,7 @@ export default {
       if (count >= 0) {
         state.list.count = count;
       }
-      users.forEach(attachStatusDesc);
+      users.forEach(updateUserDesc);
       state.list.data = users;
     },
     [mutationUserListRoleProcessing](state, processing) {

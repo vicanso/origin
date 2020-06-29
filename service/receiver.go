@@ -14,7 +14,10 @@
 
 package service
 
-import "github.com/vicanso/origin/helper"
+import (
+	"github.com/vicanso/origin/helper"
+	"gorm.io/gorm"
+)
 
 type (
 	Receiver struct {
@@ -31,10 +34,13 @@ type (
 )
 
 func init() {
-	pgGetClient().AutoMigrate(&Receiver{})
+	err := pgGetClient().AutoMigrate(&Receiver{})
+	if err != nil {
+		panic(err)
+	}
 }
 
-func (r *Receiver) AfterFind() (err error) {
+func (r *Receiver) AfterFind(_ *gorm.DB) (err error) {
 	r.BaseAddressDesc, _ = regionSrv.GetNameFromCache(r.BaseAddress, 1)
 	return
 }
@@ -73,6 +79,6 @@ func (srv *ReceiverSrv) List(params PGQueryParams, args ...interface{}) (result 
 }
 
 // Count count the receiver
-func (srv *ReceiverSrv) Count(args ...interface{}) (count int, err error) {
+func (srv *ReceiverSrv) Count(args ...interface{}) (count int64, err error) {
 	return pgCount(&Receiver{}, args...)
 }

@@ -24,6 +24,7 @@ import (
 	"github.com/vicanso/origin/cs"
 	"github.com/vicanso/origin/helper"
 	"github.com/vicanso/origin/util"
+	"gorm.io/gorm"
 )
 
 type (
@@ -120,13 +121,16 @@ func init() {
 	}
 	productCategoryNameCache = lruTTL.New(1000, ttl)
 
-	pgGetClient().AutoMigrate(
+	err := pgGetClient().AutoMigrate(
 		&Product{},
 		&ProductCategory{},
 	)
+	if err != nil {
+		panic(err)
+	}
 }
 
-func (p *Product) AfterFind() (err error) {
+func (p *Product) AfterFind(_ *gorm.DB) (err error) {
 	p.StatusDesc = getStatusDesc(p.Status)
 
 	// 根据产品分类转换对应分类名称
@@ -150,7 +154,7 @@ func (p *Product) AfterFind() (err error) {
 	return
 }
 
-func (pc *ProductCategory) AfterFind() (err error) {
+func (pc *ProductCategory) AfterFind(_ *gorm.DB) (err error) {
 	pc.StatusDesc = getStatusDesc(pc.Status)
 
 	// 生成上级分类描述
@@ -167,7 +171,7 @@ func (pc *ProductCategory) AfterFind() (err error) {
 	return
 }
 
-func (pc *ProductCategory) BeforeCreate() (err error) {
+func (pc *ProductCategory) BeforeCreate(_ *gorm.DB) (err error) {
 	// 排序默认设置为1
 	if pc.Rank == 0 {
 		pc.Rank = 1
@@ -225,7 +229,7 @@ func (srv *ProductSrv) List(params PGQueryParams, args ...interface{}) (result [
 }
 
 // Count count the product
-func (srv *ProductSrv) Count(args ...interface{}) (count int, err error) {
+func (srv *ProductSrv) Count(args ...interface{}) (count int64, err error) {
 	return pgCount(&Product{}, args...)
 }
 
@@ -243,8 +247,8 @@ func (srv *ProductSrv) AddCategory(data ProductCategory) (cat *ProductCategory, 
 }
 
 // UpdateCategoryByID update category by id
-func (srv *ProductSrv) UpdateCategoryByID(id uint, attrs ...interface{}) (err error) {
-	err = pgGetClient().Model(srv.createCategoryByID(id)).Update(attrs...).Error
+func (srv *ProductSrv) UpdateCategoryByID(id uint, value interface{}) (err error) {
+	err = pgGetClient().Model(srv.createCategoryByID(id)).Updates(value).Error
 	return
 }
 
@@ -263,7 +267,7 @@ func (srv *ProductSrv) ListCategory(params PGQueryParams, args ...interface{}) (
 }
 
 // CountCategory count category
-func (srv *ProductSrv) CountCategory(args ...interface{}) (count int, err error) {
+func (srv *ProductSrv) CountCategory(args ...interface{}) (count int64, err error) {
 	return pgCount(&ProductCategory{}, args...)
 }
 

@@ -546,7 +546,7 @@ func (ctrl userCtrl) list(c *elton.Context) (err error) {
 	if err != nil {
 		return
 	}
-	count := -1
+	count := int64(-1)
 	args := params.toConditions()
 	queryParams := params.toPGQueryParams()
 	if queryParams.Offset == 0 {
@@ -560,7 +560,7 @@ func (ctrl userCtrl) list(c *elton.Context) (err error) {
 		return
 	}
 	c.Body = &struct {
-		Count int             `json:"count"`
+		Count int64           `json:"count"`
 		Users []*service.User `json:"users"`
 	}{
 		count,
@@ -628,7 +628,7 @@ func (ctrl userCtrl) listLoginRecord(c *elton.Context) (err error) {
 		return
 	}
 	queryParams := params.toPGQueryParams()
-	count := -1
+	count := int64(-1)
 	args := params.toConditions()
 	if queryParams.Offset == 0 {
 		count, err = userSrv.CountLoginRecord(args...)
@@ -643,7 +643,7 @@ func (ctrl userCtrl) listLoginRecord(c *elton.Context) (err error) {
 
 	c.Body = struct {
 		Logins []*service.UserLoginRecord `json:"logins"`
-		Count  int                        `json:"count"`
+		Count  int64                      `json:"count"`
 	}{
 		result,
 		count,

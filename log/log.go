@@ -30,11 +30,11 @@ type (
 	}
 )
 
-func (l *pgLogger) Print(v ...interface{}) {
+func (l *pgLogger) Printf(layout string, v ...interface{}) {
 	// TODO 如果信息中带有error字段，则输出告警
 	// "msg":"pg log","message":"error/Users/xieshuzhou/github/origin/service/receiver.go:33pq: column \"user_id\" contains null values"
 	Default().Info("pg log",
-		zap.String("message", fmt.Sprint(v...)),
+		zap.String("message", fmt.Sprintf(layout, v...)),
 	)
 }
 

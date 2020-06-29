@@ -22,13 +22,14 @@ import (
 	"time"
 
 	"github.com/iancoleman/strcase"
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/vicanso/hes"
 	"github.com/vicanso/origin/config"
 	"github.com/vicanso/origin/cs"
 	"github.com/vicanso/origin/log"
 	"go.uber.org/zap"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+	gormLogger "gorm.io/gorm/logger"
 )
 
 var (
@@ -86,29 +87,29 @@ func (ps *pgStats) getProcessingAndTotal() (uint32, uint32, uint64) {
 }
 
 // Before before pg sql handle
-func (ps *pgStats) Before(category string) (callback func(scope *gorm.Scope)) {
-	return func(scope *gorm.Scope) {
+func (ps *pgStats) Before(category string) (callback func(tx *gorm.DB)) {
+	return func(tx *gorm.DB) {
 		atomic.AddUint64(&ps.total, 1)
 
 		switch category {
 		case queryCMD:
 			v := atomic.AddUint32(&ps.queryProcessing, 1)
 			if v > ps.maxQueryProcessing {
-				_ = scope.Err(ErrPGTooManyQueryProcessing)
+				_ = tx.AddError(ErrPGTooManyQueryProcessing)
 			}
 		case updateCMD:
 			v := atomic.AddUint32(&ps.updateProcessing, 1)
 			if v > ps.maxUpdateProcessing {
-				_ = scope.Err(ErrPGTooManyUpdateProcessing)
+				_ = tx.AddError(ErrPGTooManyUpdateProcessing)
 			}
 		}
-		scope.InstanceSet(string(startedAtKey), time.Now())
+		tx.InstanceSet(string(startedAtKey), time.Now())
 	}
 }
 
 // After after pg sql handle
-func (ps *pgStats) After(category string) func(*gorm.Scope) {
-	return func(scope *gorm.Scope) {
+func (ps *pgStats) After(category string) func(*gorm.DB) {
+	return func(tx *gorm.DB) {
 		switch category {
 		case queryCMD:
 			atomic.AddUint32(&ps.queryProcessing, ^uint32(0))
@@ -116,7 +117,7 @@ func (ps *pgStats) After(category string) func(*gorm.Scope) {
 			atomic.AddUint32(&ps.updateProcessing, ^uint32(0))
 		}
 
-		value, ok := scope.InstanceGet(string(startedAtKey))
+		value, ok := tx.InstanceGet(string(startedAtKey))
 		if !ok {
 			return
 		}
@@ -125,27 +126,28 @@ func (ps *pgStats) After(category string) func(*gorm.Scope) {
 			return
 		}
 		use := time.Since(startedAt)
-		db := scope.DB()
-		if time.Since(startedAt) > ps.slow || db.Error != nil {
+		// db := tx.DB()
+		if time.Since(startedAt) > ps.slow || tx.Error != nil {
 			message := ""
-			if db.Error != nil {
-				message = db.Error.Error()
+			if tx.Error != nil {
+				message = tx.Error.Error()
 			}
+			statement := tx.Statement
 			logger.Info("pg process slow or error",
-				zap.String("table", scope.TableName()),
+				zap.String("table", statement.Table),
 				zap.String("category", category),
-				zap.String("sql", scope.SQL),
+				zap.String("sql", statement.SQL.String()),
 				zap.String("use", use.String()),
-				zap.Int64("rowsAffected", db.RowsAffected),
+				zap.Int64("rowsAffected", tx.RowsAffected),
 				zap.String("error", message),
 			)
 			tags := map[string]string{
-				"table":    scope.TableName(),
+				"table":    statement.Table,
 				"category": category,
 			}
 			fields := map[string]interface{}{
 				"use":          use.Milliseconds(),
-				"rowsAffected": db.RowsAffected,
+				"rowsAffected": tx.RowsAffected,
 				"error":        message,
 			}
 			GetInfluxSrv().Write(cs.MeasurementPG, fields, tags)
@@ -161,7 +163,9 @@ func init() {
 	logger.Info("connect to pg",
 		zap.String("args", maskStr),
 	)
-	db, err := gorm.Open("postgres", str)
+	db, err := gorm.Open(postgres.Open(str), &gorm.Config{
+		Logger: gormLogger.New(log.PGLogger(), gormLogger.Config{}),
+	})
 	if err != nil {
 		panic(err)
 	}
@@ -171,11 +175,23 @@ func init() {
 		maxUpdateProcessing: pgConfig.MaxUpdateProcessing,
 	}
 
-	db.SetLogger(log.PGLogger())
-	db.Callback().Query().Before("gorm:query").Register("stats:beforeQuery", pgStatsHook.Before(queryCMD))
-	db.Callback().Query().After("gorm:query").Register("stats:afterQuery", pgStatsHook.After(queryCMD))
-	db.Callback().Update().Before("gorm:update").Register("stats:beforeUpdate", pgStatsHook.Before(updateCMD))
-	db.Callback().Update().After("gorm:update").Register("stats:afterUpdate", pgStatsHook.After(updateCMD))
+	err = db.Callback().Query().Before("gorm:query").Register("stats:beforeQuery", pgStatsHook.Before(queryCMD))
+	if err != nil {
+		panic(err)
+	}
+	err = db.Callback().Query().After("gorm:query").Register("stats:afterQuery", pgStatsHook.After(queryCMD))
+	if err != nil {
+		panic(err)
+	}
+	err = db.Callback().Update().Before("gorm:update").Register("stats:beforeUpdate", pgStatsHook.Before(updateCMD))
+	if err != nil {
+		panic(err)
+	}
+
+	err = db.Callback().Update().After("gorm:update").Register("stats:afterUpdate", pgStatsHook.After(updateCMD))
+	if err != nil {
+		panic(err)
+	}
 
 	pgClient = db
 }
@@ -253,15 +269,12 @@ func PGQuery(params PGQueryParams, args ...interface{}) *gorm.DB {
 }
 
 // PGCount pg count
-func PGCount(model interface{}, args ...interface{}) (count int, err error) {
+func PGCount(model interface{}, args ...interface{}) (count int64, err error) {
 	db := pgClient.Model(model)
 	if len(args) > 1 {
 		db = db.Where(args[0], args[1:]...)
 	} else if len(args) == 1 {
 		db = db.Where(args[0])
-	} else {
-		scope := db.NewScope(model)
-		db = pgClient.Table(scope.TableName())
 	}
 	err = db.Count(&count).Error
 	return

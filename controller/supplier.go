@@ -163,7 +163,7 @@ func (supplierCtrl) list(c *elton.Context) (err error) {
 	if err != nil {
 		return
 	}
-	count := -1
+	count := int64(-1)
 	args := params.toConditions()
 	queryParams := params.toPGQueryParams()
 	if queryParams.Offset == 0 {
@@ -178,7 +178,7 @@ func (supplierCtrl) list(c *elton.Context) (err error) {
 	}
 	c.Body = &struct {
 		Suppliers []*service.Supplier `json:"suppliers,omitempty"`
-		Count     int                 `json:"count,omitempty"`
+		Count     int64               `json:"count,omitempty"`
 	}{
 		result,
 		count,

@@ -17,10 +17,10 @@ package service
 import (
 	"time"
 
-	"github.com/jinzhu/gorm"
 	lruTTL "github.com/vicanso/lru-ttl"
 	"github.com/vicanso/origin/helper"
 	"github.com/vicanso/origin/util"
+	"gorm.io/gorm"
 )
 
 type (
@@ -49,15 +49,18 @@ func init() {
 		ttl = time.Second
 	}
 	brandNameCache = lruTTL.New(500, ttl)
-	pgGetClient().AutoMigrate(&Brand{})
+	err := pgGetClient().AutoMigrate(&Brand{})
+	if err != nil {
+		panic(err)
+	}
 }
 
-func (u *Brand) AfterFind() (err error) {
+func (u *Brand) AfterFind(_ *gorm.DB) (err error) {
 	u.StatusDesc = getStatusDesc(u.Status)
 	return
 }
 
-func (b *Brand) BeforeCreate() (err error) {
+func (b *Brand) BeforeCreate(_ *gorm.DB) (err error) {
 	// 自动生成拼音首字母
 	if b.Name != "" {
 		b.FirstLetter = util.GetFirstLetter(b.Name)
@@ -69,7 +72,7 @@ func (b *Brand) AfterUpdate(tx *gorm.DB) (err error) {
 		letter := util.GetFirstLetter(b.Name)
 		// 自动更新拼音首字母
 		if b.FirstLetter != letter {
-			tx.Model(b).Update(Brand{
+			tx.Model(b).Updates(Brand{
 				FirstLetter: letter,
 			})
 		}
@@ -111,7 +114,7 @@ func (srv *BrandSrv) List(params PGQueryParams, args ...interface{}) (result []*
 }
 
 // Count count the brand
-func (srv *BrandSrv) Count(args ...interface{}) (count int, err error) {
+func (srv *BrandSrv) Count(args ...interface{}) (count int64, err error) {
 	return pgCount(&Brand{}, args...)
 }
 

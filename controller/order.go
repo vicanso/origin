@@ -78,7 +78,7 @@ type (
 	// listOrderResp 订单列表响应
 	listOrderResp struct {
 		Orders []*service.Order `json:"orders,omitempty"`
-		Count  int              `json:"count,omitempty"`
+		Count  int64            `json:"count,omitempty"`
 	}
 )
 
@@ -286,7 +286,7 @@ func (orderCtrl) add(c *elton.Context) (err error) {
 }
 
 func (orderCtrl) listOrder(params listOrderParams) (resp *listOrderResp, err error) {
-	count := -1
+	count := int64(-1)
 	args := params.toConditions()
 	queryParams := params.toPGQueryParams()
 	if queryParams.Offset == 0 {

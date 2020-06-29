@@ -182,7 +182,7 @@ func (ctrl regionCtrl) listRegion(c *elton.Context) (err error) {
 	}
 	queryParams := params.toPGQueryParams()
 	args := params.toConditions()
-	count := -1
+	count := int64(-1)
 	if queryParams.Offset == 0 {
 		count, err = regionSrv.Count(args...)
 		if err != nil {
@@ -193,9 +193,12 @@ func (ctrl regionCtrl) listRegion(c *elton.Context) (err error) {
 	if err != nil {
 		return
 	}
-	c.Body = map[string]interface{}{
-		"count":   count,
-		"regions": result,
+	c.Body = &struct {
+		Count   int64             `json:"count,omitempty"`
+		Regions []*service.Region `json:"regions,omitempty"`
+	}{
+		count,
+		result,
 	}
 	return
 }

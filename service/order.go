@@ -22,10 +22,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/jinzhu/gorm"
 	"github.com/vicanso/hes"
 	"github.com/vicanso/origin/helper"
 	"github.com/vicanso/origin/util"
+	"gorm.io/gorm"
 )
 
 type (
@@ -106,8 +106,8 @@ type (
 		ReceivedAt *time.Time `json:"receivedAt,omitempty"`
 
 		// 状态时间线
-		StatusTimeline    OrderStatusTimeline `json:"statusTimeline,omitempty" grom:"-"`
-		StatusTimelineRaw string              `json:"-"`
+		// StatusTimeline    OrderStatusTimeline `json:"statusTimeline,omitempty" grom:"-"`
+		// StatusTimelineRaw string              `json:"-"`
 	}
 	// 子订单记录
 	SubOrder struct {
@@ -287,12 +287,15 @@ var (
 )
 
 func init() {
-	pgGetClient().AutoMigrate(
+	err := pgGetClient().AutoMigrate(
 		&Order{},
 		&SubOrder{},
 		&OrderPayment{},
 		&OrderDelivery{},
 	)
+	if err != nil {
+		panic(err)
+	}
 
 	orderStatusList = make(OrderStatusInfoList, 0)
 	for k, v := range orderStatusDict {
@@ -543,7 +546,7 @@ func (subOrder *SubOrder) CheckValid() error {
 	return nil
 }
 
-func (subOrder *SubOrder) BeforeCreate() error {
+func (subOrder *SubOrder) BeforeCreate(_ *gorm.DB) error {
 	err := subOrder.CheckValid()
 	if err != nil {
 		return err
@@ -567,7 +570,7 @@ func (subOrder *SubOrder) UpdateStatus(status SubOrderStatus) (err error) {
 	}
 
 	// 保证当前的状态一致
-	db = db.Model(subOrder).Where("status = ?", subOrder.Status).Update(SubOrder{
+	db = db.Model(subOrder).Where("status = ?", subOrder.Status).Updates(SubOrder{
 		Status: status,
 	})
 	err = db.Error
@@ -584,25 +587,25 @@ func (subOrder *SubOrder) UpdateStatus(status SubOrderStatus) (err error) {
 }
 
 // TODO 针对子订单的状态
-func (subOrder *SubOrder) AfterFind() (err error) {
+func (subOrder *SubOrder) AfterFind(_ *gorm.DB) (err error) {
 	subOrder.StatusDesc = subOrder.Status.String()
 	return
 }
 
-func (order *Order) BeforeCreate() (err error) {
+func (order *Order) BeforeCreate(_ *gorm.DB) (err error) {
 	// 设置状态
 	order.Status = OrderStatusInited
 	timeline := make(OrderStatusTimeline, 0)
 	timeline = timeline.Add(OrderStatusInited)
-	order.StatusTimeline = timeline
-	order.StatusTimelineRaw = timeline.String()
+	// order.StatusTimeline = timeline
+	// order.StatusTimelineRaw = timeline.String()
 	return
 }
 
-func (order *Order) AfterFind() (err error) {
-	timeline := make(OrderStatusTimeline, 0)
-	_ = json.Unmarshal([]byte(order.StatusTimelineRaw), &timeline)
-	order.StatusTimeline = timeline
+func (order *Order) AfterFind(_ *gorm.DB) (err error) {
+	// timeline := make(OrderStatusTimeline, 0)
+	// _ = json.Unmarshal([]byte(order.StatusTimelineRaw), &timeline)
+	// order.StatusTimeline = timeline
 	order.StatusDesc = order.Status.String()
 	order.CourierName, _ = userSrv.GetNameFromCache(order.Courier)
 
@@ -622,10 +625,10 @@ func (order *Order) UpdateStatus(status OrderStatus) (err error) {
 		db = pgGetClient()
 	}
 
-	timeline := order.StatusTimeline.Add(status)
+	// timeline := order.StatusTimeline.Add(status)
 	updateData := Order{
-		Status:            status,
-		StatusTimelineRaw: timeline.String(),
+		Status: status,
+		// StatusTimelineRaw: timeline.String(),
 	}
 	now := time.Now()
 	switch status {
@@ -638,7 +641,7 @@ func (order *Order) UpdateStatus(status OrderStatus) (err error) {
 	}
 
 	// 保证当前的状态一致
-	db = db.Model(order).Where("status = ?", order.Status).Update(updateData)
+	db = db.Model(order).Where("status = ?", order.Status).Updates(updateData)
 	err = db.Error
 	if err != nil {
 		return
@@ -647,7 +650,7 @@ func (order *Order) UpdateStatus(status OrderStatus) (err error) {
 		err = hes.New("更新订单状态失败，该订单当前状态已变化")
 		return
 	}
-	order.StatusTimeline = timeline
+	// order.StatusTimeline = timeline
 	order.Status = status
 	order.StatusDesc = status.String()
 	return
@@ -669,7 +672,7 @@ func (order *Order) ValidateOwner(userID uint) error {
 	return nil
 }
 
-func (payment *OrderPayment) BeforeCreate() (err error) {
+func (payment *OrderPayment) BeforeCreate(_ *gorm.DB) (err error) {
 	// 设置初始化状态
 	payment.Status = OrderPaymentStatusInited
 	return
@@ -770,7 +773,7 @@ func (srv *OrderSrv) CreateWithSubOrders(user uint, params CreateOrderParams) (o
 			return
 		}
 
-		err = tx.Model(order).Update(&Order{
+		err = tx.Model(order).Updates(Order{
 			Status:    OrderStatusPendingPayment,
 			Amount:    amount,
 			PayAmount: payAmount,
@@ -794,7 +797,7 @@ func (srv *OrderSrv) List(params PGQueryParams, args ...interface{}) (result []*
 }
 
 // COunt count order
-func (srv *OrderSrv) Count(args ...interface{}) (count int, err error) {
+func (srv *OrderSrv) Count(args ...interface{}) (count int64, err error) {
 	return pgCount(&Order{}, args...)
 }
 

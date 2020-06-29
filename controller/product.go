@@ -245,7 +245,7 @@ func (ctrl productCtrl) list(c *elton.Context) (err error) {
 	if err != nil {
 		return
 	}
-	count := -1
+	count := int64(-1)
 	args := params.toConditions()
 	queryParams := params.toPGQueryParams()
 	if queryParams.Offset == 0 {
@@ -262,7 +262,7 @@ func (ctrl productCtrl) list(c *elton.Context) (err error) {
 	c.CacheMaxAge("1m")
 	c.Body = struct {
 		Products []*service.Product `json:"products"`
-		Count    int                `json:"count"`
+		Count    int64              `json:"count"`
 	}{
 		result,
 		count,
@@ -352,7 +352,7 @@ func (ctrl productCtrl) listCategory(c *elton.Context) (err error) {
 	if err != nil {
 		return
 	}
-	count := -1
+	count := int64(-1)
 	args := params.toConditions()
 	queryParams := params.toPGQueryParams()
 	if queryParams.Offset == 0 {
@@ -369,7 +369,7 @@ func (ctrl productCtrl) listCategory(c *elton.Context) (err error) {
 	c.CacheMaxAge("1m")
 	c.Body = &struct {
 		ProductCategories []*service.ProductCategory `json:"productCategories,omitempty"`
-		Count             int                        `json:"count,omitempty"`
+		Count             int64                      `json:"count,omitempty"`
 	}{
 		result,
 		count,

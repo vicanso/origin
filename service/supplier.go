@@ -14,7 +14,10 @@
 
 package service
 
-import "github.com/vicanso/origin/helper"
+import (
+	"github.com/vicanso/origin/helper"
+	"gorm.io/gorm"
+)
 
 type (
 	Supplier struct {
@@ -36,10 +39,13 @@ type (
 )
 
 func init() {
-	pgGetClient().AutoMigrate(&Supplier{})
+	err := pgGetClient().AutoMigrate(&Supplier{})
+	if err != nil {
+		panic(err)
+	}
 }
 
-func (s *Supplier) AfterFind() (err error) {
+func (s *Supplier) AfterFind(_ *gorm.DB) (err error) {
 	s.StatusDesc = getStatusDesc(s.Status)
 	s.BaseAddressDesc, _ = regionSrv.GetNameFromCache(s.BaseAddress, 0)
 	return
@@ -79,6 +85,6 @@ func (srv *SupplierSrv) List(params PGQueryParams, args ...interface{}) (result 
 }
 
 // Count count the supplier
-func (srv *SupplierSrv) Count(args ...interface{}) (count int, err error) {
+func (srv *SupplierSrv) Count(args ...interface{}) (count int64, err error) {
 	return pgCount(&Supplier{}, args...)
 }

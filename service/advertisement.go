@@ -19,6 +19,7 @@ import (
 
 	"github.com/vicanso/origin/cs"
 	"github.com/vicanso/origin/helper"
+	"gorm.io/gorm"
 )
 
 var (
@@ -62,10 +63,13 @@ func init() {
 		cs.AdvertisementHome:     "首页",
 		cs.AdvertisementCategory: "分类页",
 	}
-	pgGetClient().AutoMigrate(&Advertisement{})
+	err := pgGetClient().AutoMigrate(&Advertisement{})
+	if err != nil {
+		panic(err)
+	}
 }
 
-func (a *Advertisement) AfterFind() (err error) {
+func (a *Advertisement) AfterFind(_ *gorm.DB) (err error) {
 	a.StatusDesc = getStatusDesc(a.Status)
 	a.CategoryDesc = advertisementCategoriesMap[a.Category]
 	return
@@ -117,6 +121,6 @@ func (srv *AdvertisementSrv) List(params PGQueryParams, args ...interface{}) (re
 }
 
 // Count count the advertisement
-func (srv *AdvertisementSrv) Count(args ...interface{}) (count int, err error) {
+func (srv *AdvertisementSrv) Count(args ...interface{}) (count int64, err error) {
 	return pgCount(&Advertisement{}, args...)
 }
