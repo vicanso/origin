@@ -143,7 +143,7 @@ func (receiverCtrl) list(c *elton.Context) (err error) {
 		return
 	}
 	c.Body = &struct {
-		Receivers []*service.Receiver `json:"receivers,omitempty"`
+		Receivers service.Receivers `json:"receivers,omitempty"`
 	}{
 		result,
 	}

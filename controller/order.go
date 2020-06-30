@@ -77,8 +77,8 @@ type (
 	}
 	// listOrderResp 订单列表响应
 	listOrderResp struct {
-		Orders []*service.Order `json:"orders,omitempty"`
-		Count  int64            `json:"count,omitempty"`
+		Orders service.Orders `json:"orders,omitempty"`
+		Count  int64          `json:"count,omitempty"`
 	}
 )
 
@@ -355,8 +355,8 @@ func (orderCtrl) detail(c *elton.Context) (err error) {
 		return
 	}
 	c.Body = &struct {
-		Order     *service.Order      `json:"order,omitempty"`
-		SubOrders []*service.SubOrder `json:"subOrders,omitempty"`
+		Order     *service.Order    `json:"order,omitempty"`
+		SubOrders service.SubOrders `json:"subOrders,omitempty"`
 	}{
 		order,
 		subOrders,

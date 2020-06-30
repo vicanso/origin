@@ -109,6 +109,8 @@ type (
 		Name  string `json:"name,omitempty"`
 		Value string `json:"value,omitempty"`
 	}
+
+	UserLoginRecords []*UserLoginRecord
 	// UserLoginRecord user login
 	UserLoginRecord struct {
 		helper.Model
@@ -399,8 +401,8 @@ func (srv *UserSrv) Count(args ...interface{}) (count int64, err error) {
 }
 
 // ListLoginRecord list login record
-func (srv *UserSrv) ListLoginRecord(params PGQueryParams, args ...interface{}) (result []*UserLoginRecord, err error) {
-	result = make([]*UserLoginRecord, 0)
+func (srv *UserSrv) ListLoginRecord(params PGQueryParams, args ...interface{}) (result UserLoginRecords, err error) {
+	result = make(UserLoginRecords, 0)
 	err = pgQuery(params, args...).Find(&result).Error
 	return
 }

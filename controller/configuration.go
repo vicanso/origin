@@ -113,8 +113,10 @@ func (ctrl configurationCtrl) list(c *elton.Context) (err error) {
 	if err != nil {
 		return
 	}
-	c.Body = map[string]interface{}{
-		"configs": result,
+	c.Body = &struct {
+		Configs service.Configurations `json:"configs,omitempty"`
+	}{
+		result,
 	}
 	return
 }

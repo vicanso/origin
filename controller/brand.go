@@ -134,8 +134,8 @@ func (ctrl brandCtrl) list(c *elton.Context) (err error) {
 	}
 	c.CacheMaxAge("1m")
 	c.Body = &struct {
-		Brands []*service.Brand `json:"brands"`
-		Count  int64            `json:"count"`
+		Brands service.Brands `json:"brands"`
+		Count  int64          `json:"count"`
 	}{
 		result,
 		count,

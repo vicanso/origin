@@ -560,8 +560,8 @@ func (ctrl userCtrl) list(c *elton.Context) (err error) {
 		return
 	}
 	c.Body = &struct {
-		Count int64           `json:"count"`
-		Users []*service.User `json:"users"`
+		Count int64         `json:"count"`
+		Users service.Users `json:"users"`
 	}{
 		count,
 		users,
@@ -642,8 +642,8 @@ func (ctrl userCtrl) listLoginRecord(c *elton.Context) (err error) {
 	}
 
 	c.Body = struct {
-		Logins []*service.UserLoginRecord `json:"logins"`
-		Count  int64                      `json:"count"`
+		Logins service.UserLoginRecords `json:"logins"`
+		Count  int64                    `json:"count"`
 	}{
 		result,
 		count,

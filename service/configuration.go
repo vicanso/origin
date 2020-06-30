@@ -39,6 +39,7 @@ var (
 )
 
 type (
+	Configurations []*Configuration
 	// Configuration configuration of application
 	Configuration struct {
 		helper.Model
@@ -69,6 +70,16 @@ func init() {
 		panic(err)
 	}
 	signedKeys.SetKeys(config.GetSignedKeys())
+}
+
+func (cs Configurations) AfterFind(tx *gorm.DB) (err error) {
+	for _, c := range cs {
+		err = c.AfterFind(tx)
+		if err != nil {
+			return
+		}
+	}
+	return
 }
 
 func (c *Configuration) AfterFind(_ *gorm.DB) (err error) {
@@ -184,8 +195,8 @@ func GetSignedKeys() elton.SignedKeysGenerator {
 }
 
 // List list configurations
-func (srv *ConfigurationSrv) List(params PGQueryParams, args ...interface{}) (result []*Configuration, err error) {
-	result = make([]*Configuration, 0)
+func (srv *ConfigurationSrv) List(params PGQueryParams, args ...interface{}) (result Configurations, err error) {
+	result = make(Configurations, 0)
 	err = pgQuery(params, args...).Find(&result).Error
 	return
 }

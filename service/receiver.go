@@ -20,7 +20,8 @@ import (
 )
 
 type (
-	Receiver struct {
+	Receivers []*Receiver
+	Receiver  struct {
 		helper.Model
 
 		UserID          uint   `json:"userID,omitempty" gorm:"index:idx_receiver_user;not null"`
@@ -42,6 +43,16 @@ func init() {
 
 func (r *Receiver) AfterFind(_ *gorm.DB) (err error) {
 	r.BaseAddressDesc, _ = regionSrv.GetNameFromCache(r.BaseAddress, 1)
+	return
+}
+
+func (rs Receivers) AfterFind(tx *gorm.DB) (err error) {
+	for _, r := range rs {
+		err = r.AfterFind(tx)
+		if err != nil {
+			return
+		}
+	}
 	return
 }
 
@@ -72,8 +83,8 @@ func (srv *ReceiverSrv) FindByID(id uint) (receiver *Receiver, err error) {
 }
 
 // List list receiver
-func (srv *ReceiverSrv) List(params PGQueryParams, args ...interface{}) (result []*Receiver, err error) {
-	result = make([]*Receiver, 0)
+func (srv *ReceiverSrv) List(params PGQueryParams, args ...interface{}) (result Receivers, err error) {
+	result = make(Receivers, 0)
 	err = pgQuery(params, args...).Find(&result).Error
 	return
 }

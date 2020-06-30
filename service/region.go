@@ -26,7 +26,8 @@ import (
 )
 
 type (
-	Region struct {
+	Regions []*Region
+	Region  struct {
 		helper.Model
 
 		Category   int    `json:"category,omitempty" gorm:"not null;index:idx_region_category_name"`
@@ -71,6 +72,16 @@ func (r *Region) AfterFind(_ *gorm.DB) (err error) {
 func (r *Region) BeforeCreate(_ *gorm.DB) (err error) {
 	if r.Priority == 0 {
 		r.Priority = 1
+	}
+	return
+}
+
+func (rs Regions) AfterFind(tx *gorm.DB) (err error) {
+	for _, r := range rs {
+		err = r.AfterFind(tx)
+		if err != nil {
+			return
+		}
 	}
 	return
 }
@@ -125,8 +136,8 @@ func (srv *RegionSrv) Add(data Region) (region *Region, err error) {
 }
 
 // List list region
-func (srv *RegionSrv) List(params PGQueryParams, args ...interface{}) (result []*Region, err error) {
-	result = make([]*Region, 0)
+func (srv *RegionSrv) List(params PGQueryParams, args ...interface{}) (result Regions, err error) {
+	result = make(Regions, 0)
 	err = pgQuery(params, args...).Find(&result).Error
 	return
 }

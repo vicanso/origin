@@ -24,7 +24,8 @@ import (
 )
 
 type (
-	Brand struct {
+	Brands []*Brand
+	Brand  struct {
 		helper.Model
 
 		Name        string `json:"name,omitempty" gorm:"type:varchar(100);not null;unique_index:idx_brand_name"`
@@ -55,8 +56,18 @@ func init() {
 	}
 }
 
-func (u *Brand) AfterFind(_ *gorm.DB) (err error) {
-	u.StatusDesc = getStatusDesc(u.Status)
+func (bs Brands) AfterFind(tx *gorm.DB) (err error) {
+	for _, b := range bs {
+		err = b.AfterFind(tx)
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
+func (b *Brand) AfterFind(_ *gorm.DB) (err error) {
+	b.StatusDesc = getStatusDesc(b.Status)
 	return
 }
 
@@ -107,8 +118,8 @@ func (srv *BrandSrv) FindByID(id uint) (brand *Brand, err error) {
 }
 
 // List list brands
-func (srv *BrandSrv) List(params PGQueryParams, args ...interface{}) (result []*Brand, err error) {
-	result = make([]*Brand, 0)
+func (srv *BrandSrv) List(params PGQueryParams, args ...interface{}) (result Brands, err error) {
+	result = make(Brands, 0)
 	err = pgQuery(params, args...).Find(&result).Error
 	return
 }

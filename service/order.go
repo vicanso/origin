@@ -15,6 +15,7 @@
 package service
 
 import (
+	"database/sql/driver"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -71,6 +72,7 @@ type (
 	}
 	OrderStatusTimeline []OrderStatusTimelineItem
 
+	Orders []*Order
 	// 订单记录
 	Order struct {
 		helper.Model
@@ -106,9 +108,9 @@ type (
 		ReceivedAt *time.Time `json:"receivedAt,omitempty"`
 
 		// 状态时间线
-		// StatusTimeline    OrderStatusTimeline `json:"statusTimeline,omitempty" grom:"-"`
-		// StatusTimelineRaw string              `json:"-"`
+		StatusTimeline OrderStatusTimeline `json:"statusTimeline,omitempty"`
 	}
+	SubOrders []*SubOrder
 	// 子订单记录
 	SubOrder struct {
 		helper.Model
@@ -360,9 +362,24 @@ func containsSubOrderStatus(arr []SubOrderStatus, status SubOrderStatus) bool {
 	return found
 }
 
-func (timeline OrderStatusTimeline) String() string {
-	buf, _ := json.Marshal(timeline)
-	return string(buf)
+func (timeline OrderStatusTimeline) Value() (driver.Value, error) {
+	buf, err := json.Marshal(timeline)
+	return string(buf), err
+}
+
+func (timeline *OrderStatusTimeline) Scan(input interface{}) error {
+	switch value := input.(type) {
+	case string:
+		return json.Unmarshal([]byte(value), timeline)
+	case []byte:
+		return json.Unmarshal(value, timeline)
+	default:
+		return &hes.Error{
+			Message:    "不支持的时间轴类型",
+			Category:   errOrderCategory,
+			StatusCode: http.StatusBadRequest,
+		}
+	}
 }
 
 // Add add status to timeline
@@ -586,9 +603,29 @@ func (subOrder *SubOrder) UpdateStatus(status SubOrderStatus) (err error) {
 	return
 }
 
+func (subOrders SubOrders) AfterFind(tx *gorm.DB) (err error) {
+	for _, subOrder := range subOrders {
+		err = subOrder.AfterFind(tx)
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
 // TODO 针对子订单的状态
 func (subOrder *SubOrder) AfterFind(_ *gorm.DB) (err error) {
 	subOrder.StatusDesc = subOrder.Status.String()
+	return
+}
+
+func (orders Orders) AfterFind(tx *gorm.DB) (err error) {
+	for _, order := range orders {
+		err = order.AfterFind(tx)
+		if err != nil {
+			return
+		}
+	}
 	return
 }
 
@@ -597,15 +634,12 @@ func (order *Order) BeforeCreate(_ *gorm.DB) (err error) {
 	order.Status = OrderStatusInited
 	timeline := make(OrderStatusTimeline, 0)
 	timeline = timeline.Add(OrderStatusInited)
-	// order.StatusTimeline = timeline
+	order.StatusTimeline = timeline
 	// order.StatusTimelineRaw = timeline.String()
 	return
 }
 
 func (order *Order) AfterFind(_ *gorm.DB) (err error) {
-	// timeline := make(OrderStatusTimeline, 0)
-	// _ = json.Unmarshal([]byte(order.StatusTimelineRaw), &timeline)
-	// order.StatusTimeline = timeline
 	order.StatusDesc = order.Status.String()
 	order.CourierName, _ = userSrv.GetNameFromCache(order.Courier)
 
@@ -625,10 +659,10 @@ func (order *Order) UpdateStatus(status OrderStatus) (err error) {
 		db = pgGetClient()
 	}
 
-	// timeline := order.StatusTimeline.Add(status)
+	timeline := order.StatusTimeline.Add(status)
 	updateData := Order{
-		Status: status,
-		// StatusTimelineRaw: timeline.String(),
+		Status:         status,
+		StatusTimeline: timeline,
 	}
 	now := time.Now()
 	switch status {
@@ -650,7 +684,7 @@ func (order *Order) UpdateStatus(status OrderStatus) (err error) {
 		err = hes.New("更新订单状态失败，该订单当前状态已变化")
 		return
 	}
-	// order.StatusTimeline = timeline
+	order.StatusTimeline = timeline
 	order.Status = status
 	order.StatusDesc = status.String()
 	return
@@ -790,8 +824,8 @@ func (srv *OrderSrv) CreateWithSubOrders(user uint, params CreateOrderParams) (o
 }
 
 // List list order
-func (srv *OrderSrv) List(params PGQueryParams, args ...interface{}) (result []*Order, err error) {
-	result = make([]*Order, 0)
+func (srv *OrderSrv) List(params PGQueryParams, args ...interface{}) (result Orders, err error) {
+	result = make(Orders, 0)
 	err = pgQuery(params, args...).Find(&result).Error
 	return
 }
@@ -815,8 +849,8 @@ func (srv *OrderSrv) UpdateByID(id uint, order Order) (err error) {
 }
 
 // FindSubOrdersByOrderID find sub orders by order id
-func (srv *OrderSrv) FindSubOrdersByOrderID(orderID uint) (subOrders []*SubOrder, err error) {
-	subOrders = make([]*SubOrder, 0)
+func (srv *OrderSrv) FindSubOrdersByOrderID(orderID uint) (subOrders SubOrders, err error) {
+	subOrders = make(SubOrders, 0)
 	err = pgGetClient().Find(&subOrders, "main_order = ?", orderID).Error
 	return
 }

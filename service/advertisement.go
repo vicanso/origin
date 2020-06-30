@@ -28,6 +28,7 @@ var (
 )
 
 type (
+	Advertisements []*Advertisement
 	// Advertisement 广告
 	Advertisement struct {
 		helper.Model
@@ -67,6 +68,16 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func (as Advertisements) AfterFind(tx *gorm.DB) (err error) {
+	for _, a := range as {
+		err = a.AfterFind(tx)
+		if err != nil {
+			return
+		}
+	}
+	return
 }
 
 func (a *Advertisement) AfterFind(_ *gorm.DB) (err error) {
@@ -114,8 +125,8 @@ func (srv *AdvertisementSrv) FindByID(id uint) (advertisement *Advertisement, er
 }
 
 // List list advertisement
-func (srv *AdvertisementSrv) List(params PGQueryParams, args ...interface{}) (result []*Advertisement, err error) {
-	result = make([]*Advertisement, 0)
+func (srv *AdvertisementSrv) List(params PGQueryParams, args ...interface{}) (result Advertisements, err error) {
+	result = make(Advertisements, 0)
 	err = pgQuery(params, args...).Find(&result).Error
 	return
 }

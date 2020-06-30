@@ -261,8 +261,8 @@ func (ctrl productCtrl) list(c *elton.Context) (err error) {
 	}
 	c.CacheMaxAge("1m")
 	c.Body = struct {
-		Products []*service.Product `json:"products"`
-		Count    int64              `json:"count"`
+		Products service.Products `json:"products"`
+		Count    int64            `json:"count"`
 	}{
 		result,
 		count,
@@ -368,8 +368,8 @@ func (ctrl productCtrl) listCategory(c *elton.Context) (err error) {
 
 	c.CacheMaxAge("1m")
 	c.Body = &struct {
-		ProductCategories []*service.ProductCategory `json:"productCategories,omitempty"`
-		Count             int64                      `json:"count,omitempty"`
+		ProductCategories service.ProductCategories `json:"productCategories,omitempty"`
+		Count             int64                     `json:"count,omitempty"`
 	}{
 		result,
 		count,

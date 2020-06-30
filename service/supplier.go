@@ -20,7 +20,8 @@ import (
 )
 
 type (
-	Supplier struct {
+	Suppliers []*Supplier
+	Supplier  struct {
 		helper.Model
 
 		Name            string `json:"name,omitempty" gorm:"type:varchar(50);not null;index:idx_supplier_name"`
@@ -48,6 +49,16 @@ func init() {
 func (s *Supplier) AfterFind(_ *gorm.DB) (err error) {
 	s.StatusDesc = getStatusDesc(s.Status)
 	s.BaseAddressDesc, _ = regionSrv.GetNameFromCache(s.BaseAddress, 0)
+	return
+}
+
+func (suppliers Suppliers) AfterFind(tx *gorm.DB) (err error) {
+	for _, s := range suppliers {
+		err = s.AfterFind(tx)
+		if err != nil {
+			return
+		}
+	}
 	return
 }
 

@@ -38,11 +38,12 @@ const (
 type (
 	// CaptchaInfo captcha info
 	CaptchaInfo struct {
-		Data []byte `json:"data"`
+		ExpiredAt time.Time `json:"expiredAt,omitempty"`
+		Data      []byte    `json:"data,omitempty"`
 		// json输出时，忽略此字段
 		Value string `json:"-"`
-		ID    string `json:"id"`
-		Type  string `json:"type"`
+		ID    string `json:"id,omitempty"`
+		Type  string `json:"type,omitempty"`
 	}
 )
 
@@ -143,15 +144,17 @@ func GetCaptcha(fontColor, bgColor string) (info *CaptchaInfo, err error) {
 		return
 	}
 	id := util.GenUlid()
-	err = redisSrv.Set(captchaKeyPrefix+id, value, 2*time.Minute)
+	ttl := 5 * time.Minute
+	err = redisSrv.Set(captchaKeyPrefix+id, value, ttl+time.Minute)
 	if err != nil {
 		return
 	}
 	info = &CaptchaInfo{
-		Data:  buffer.Bytes(),
-		Value: value,
-		ID:    id,
-		Type:  "jpeg",
+		ExpiredAt: time.Now().Add(ttl),
+		Data:      buffer.Bytes(),
+		Value:     value,
+		ID:        id,
+		Type:      "jpeg",
 	}
 	return
 }

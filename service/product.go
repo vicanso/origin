@@ -15,6 +15,7 @@
 package service
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -28,7 +29,8 @@ import (
 )
 
 type (
-	Product struct {
+	Products []*Product
+	Product  struct {
 		helper.Model
 
 		Name string `json:"name,omitempty" gorm:"type:varchar(30);not null;index:idx_product_name"`
@@ -76,6 +78,7 @@ type (
 		// 是否有效(是否可购买)
 		Available bool `json:"available,omitempty" gorm:"-"`
 	}
+	ProductCategories []*ProductCategory
 	// ProductCategory product category
 	ProductCategory struct {
 		helper.Model
@@ -102,7 +105,7 @@ const (
 
 var (
 	errProductUnavailable = &hes.Error{
-		Message:    "产品状态非可销售状态或过已销售期",
+		Message:    "%s:状态非可销售状态或过已销售期",
 		StatusCode: http.StatusBadRequest,
 		Category:   errProductCategory,
 	}
@@ -154,6 +157,16 @@ func (p *Product) AfterFind(_ *gorm.DB) (err error) {
 	return
 }
 
+func (ps Products) AfterFind(tx *gorm.DB) (err error) {
+	for _, p := range ps {
+		err = p.AfterFind(tx)
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
 func (pc *ProductCategory) AfterFind(_ *gorm.DB) (err error) {
 	pc.StatusDesc = getStatusDesc(pc.Status)
 
@@ -179,6 +192,16 @@ func (pc *ProductCategory) BeforeCreate(_ *gorm.DB) (err error) {
 	return
 }
 
+func (pcs ProductCategories) AfterFind(tx *gorm.DB) (err error) {
+	for _, pc := range pcs {
+		err = pc.AfterFind(tx)
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
 func (srv *ProductSrv) createByID(id uint) *Product {
 	p := &Product{}
 	p.Model.ID = id
@@ -196,7 +219,8 @@ func (product *Product) IsAvailable() bool {
 // CheckAvailable check product is available
 func (product *Product) CheckAvailable() error {
 	if !product.IsAvailable() {
-		return errProductUnavailable
+		
+		return errProductUnavailable.CloneWithMessage(fmt.Sprintf(errProductUnavailable.Message, product.Name))
 	}
 	return nil
 }
@@ -222,8 +246,8 @@ func (srv *ProductSrv) FindByID(id uint) (product *Product, err error) {
 }
 
 // List list product
-func (srv *ProductSrv) List(params PGQueryParams, args ...interface{}) (result []*Product, err error) {
-	result = make([]*Product, 0)
+func (srv *ProductSrv) List(params PGQueryParams, args ...interface{}) (result Products, err error) {
+	result = make(Products, 0)
 	err = pgQuery(params, args...).Find(&result).Error
 	return
 }
@@ -260,8 +284,8 @@ func (srv *ProductSrv) FindCategoryByID(id uint) (cat *ProductCategory, err erro
 }
 
 // ListCategory list category
-func (srv *ProductSrv) ListCategory(params PGQueryParams, args ...interface{}) (result []*ProductCategory, err error) {
-	result = make([]*ProductCategory, 0)
+func (srv *ProductSrv) ListCategory(params PGQueryParams, args ...interface{}) (result ProductCategories, err error) {
+	result = make(ProductCategories, 0)
 	err = pgQuery(params, args...).Find(&result).Error
 	return
 }

@@ -177,8 +177,8 @@ func (supplierCtrl) list(c *elton.Context) (err error) {
 		return
 	}
 	c.Body = &struct {
-		Suppliers []*service.Supplier `json:"suppliers,omitempty"`
-		Count     int64               `json:"count,omitempty"`
+		Suppliers service.Suppliers `json:"suppliers,omitempty"`
+		Count     int64             `json:"count,omitempty"`
 	}{
 		result,
 		count,

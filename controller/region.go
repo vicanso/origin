@@ -194,8 +194,8 @@ func (ctrl regionCtrl) listRegion(c *elton.Context) (err error) {
 		return
 	}
 	c.Body = &struct {
-		Count   int64             `json:"count,omitempty"`
-		Regions []*service.Region `json:"regions,omitempty"`
+		Count   int64           `json:"count,omitempty"`
+		Regions service.Regions `json:"regions,omitempty"`
 	}{
 		count,
 		result,

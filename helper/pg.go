@@ -126,7 +126,6 @@ func (ps *pgStats) After(category string) func(*gorm.DB) {
 			return
 		}
 		use := time.Since(startedAt)
-		// db := tx.DB()
 		if time.Since(startedAt) > ps.slow || tx.Error != nil {
 			message := ""
 			if tx.Error != nil {
@@ -252,7 +251,11 @@ func PGQuery(params PGQueryParams, args ...interface{}) *gorm.DB {
 		db = db.Offset(params.Offset)
 	}
 	if params.Fields != "" {
-		db = db.Select(PGFormatSelect(params.Fields))
+		if params.Fields[0] == '-' {
+			db = db.Omit(strings.Split(PGFormatSelect(params.Fields[1:]), ",")...)
+		} else {
+			db = db.Select(PGFormatSelect(params.Fields))
+		}
 	}
 	if params.Order != "" {
 		db = db.Order(PGFormatOrder(params.Order))
