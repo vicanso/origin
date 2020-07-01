@@ -134,6 +134,13 @@ func init() {
 		checkMarketingGroup,
 		ctrl.list,
 	)
+	// 查看我的订单
+	g.GET(
+		"/v1/mine",
+		loadUserSession,
+		shouldBeLogined,
+		ctrl.listMine,
+	)
 	// 查询派送订单
 	g.GET(
 		"/v1/my-deliveries",
@@ -468,7 +475,26 @@ func (ctrl orderCtrl) listDeliveryOrder(c *elton.Context) (err error) {
 		return
 	}
 	us := getUserSession(c)
+	// 避免通过user参数查询
+	params.User = ""
 	params.Courier = strconv.Itoa(int(us.GetID()))
+	resp, err := ctrl.listOrder(params)
+	if err != nil {
+		return
+	}
+	c.Body = resp
+	return
+}
+
+// listMine list my orders
+func (ctrl orderCtrl) listMine(c *elton.Context) (err error) {
+	params := listOrderParams{}
+	err = validate.Do(&params, c.Query())
+	if err != nil {
+		return
+	}
+	us := getUserSession(c)
+	params.User = strconv.FormatInt(int64(us.GetID()), 10)
 	resp, err := ctrl.listOrder(params)
 	if err != nil {
 		return

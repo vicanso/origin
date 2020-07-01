@@ -181,6 +181,7 @@ func main() {
 		ip := elton.GetClientIP(req)
 		logger.Info("404",
 			zap.String("ip", ip),
+			zap.String("method", req.Method),
 			zap.String("uri", req.RequestURI),
 		)
 		resp.Header().Set(elton.HeaderContentType, elton.MIMEApplicationJSON)

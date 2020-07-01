@@ -77,7 +77,7 @@ type (
 	Order struct {
 		helper.Model
 
-		Tx *gorm.DB `json:"-" gorm:"-"`
+		Tx *gorm.DB `json:"-,omitempty" gorm:"-"`
 
 		// 编号
 		SN string `json:"sn,omitempty" gorm:"not null;unique_index:idx_order_sn"`
@@ -106,6 +106,10 @@ type (
 		PaidAt     *time.Time `json:"paidAt,omitempty"`
 		DeliveryAt *time.Time `json:"deliveryAt,omitempty"`
 		ReceivedAt *time.Time `json:"receivedAt,omitempty"`
+
+		// TODO 添加source
+		// 支付渠道
+		Source string `json:"source,omitempty"`
 
 		// 状态时间线
 		StatusTimeline OrderStatusTimeline `json:"statusTimeline,omitempty"`
@@ -902,6 +906,13 @@ func (srv *OrderSrv) Pay(params PayParams) (order *Order, err error) {
 			}
 			// TODO 添加支付流水
 			err = tx.Create(orderPayment).Error
+			if err != nil {
+				return
+			}
+			// 	更新父订单的支付渠道
+			err = tx.Model(order).Updates(Order{
+				Source: params.Source,
+			}).Error
 			if err != nil {
 				return
 			}

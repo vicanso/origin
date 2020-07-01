@@ -20,6 +20,7 @@ import (
 
 	"github.com/vicanso/origin/service"
 	"github.com/vicanso/origin/util"
+	"github.com/vicanso/origin/validate"
 
 	"github.com/vicanso/elton"
 	"github.com/vicanso/origin/router"
@@ -27,6 +28,11 @@ import (
 
 type (
 	commonCtrl struct{}
+
+	qrcodeParams struct {
+		Value string `json:"value,omitempty" validate:"required"`
+		Size  string `json:"size,omitempty" validate:"number,max=500"`
+	}
 )
 
 func init() {
@@ -46,6 +52,8 @@ func init() {
 	g.GET("/commons/performance", ctrl.getPerformance)
 
 	g.GET("/commons/statuses", ctrl.listStatus)
+
+	g.GET("/commons/qrcode", ctrl.qrcode)
 }
 
 // 服务检测ping的响应
@@ -152,5 +160,24 @@ func (ctrl commonCtrl) listStatus(c *elton.Context) (err error) {
 	c.Body = map[string][]*service.StatusInfo{
 		"statuses": service.GetStatusList(),
 	}
+	return
+}
+
+// qrcode get qrcode
+func (ctrl commonCtrl) qrcode(c *elton.Context) (err error) {
+	params := qrcodeParams{}
+	err = validate.Do(&params, c.Query())
+	if err != nil {
+		return
+	}
+	size, _ := strconv.Atoi(params.Size)
+	info, err := service.GetQRCode(params.Value, size)
+	if err != nil {
+		return
+	}
+	c.CacheMaxAge("240h", "5m")
+	c.SetContentTypeByExt(".png")
+	c.BodyBuffer = bytes.NewBuffer(info.Data)
+
 	return
 }
