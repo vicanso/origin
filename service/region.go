@@ -135,6 +135,12 @@ func (srv *RegionSrv) Add(data Region) (region *Region, err error) {
 	return
 }
 
+// BatchAdd batch add regions
+func (srv *RegionSrv) BatchAdd(data Regions) (regions Regions, err error) {
+	err = pgCreate(data)
+	return
+}
+
 // List list region
 func (srv *RegionSrv) List(params PGQueryParams, args ...interface{}) (result Regions, err error) {
 	result = make(Regions, 0)

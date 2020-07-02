@@ -31,7 +31,7 @@ type (
 
 	qrcodeParams struct {
 		Value string `json:"value,omitempty" validate:"required"`
-		Size  string `json:"size,omitempty" validate:"number,max=500"`
+		Size  string `json:"size,omitempty" validate:"omitempty,number,max=500"`
 	}
 )
 
@@ -171,6 +171,9 @@ func (ctrl commonCtrl) qrcode(c *elton.Context) (err error) {
 		return
 	}
 	size, _ := strconv.Atoi(params.Size)
+	if size <= 0 {
+		size = 128
+	}
 	info, err := service.GetQRCode(params.Value, size)
 	if err != nil {
 		return

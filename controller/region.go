@@ -143,8 +143,9 @@ func (ctrl regionCtrl) importFromFile(c *elton.Context) (err error) {
 	if err != nil {
 		return
 	}
-
-	for _, item := range arr {
+	regions := make(service.Regions, 0)
+	batchSize := 20
+	for index, item := range arr {
 		region := service.Region{
 			Category: categoryIndex,
 			Name:     item["name"],
@@ -164,7 +165,17 @@ func (ctrl regionCtrl) importFromFile(c *elton.Context) (err error) {
 			err = hes.New("category is invalid")
 			return
 		}
-		_, err = regionSrv.Add(region)
+		regions = append(regions, &region)
+		if index != 0 && index%batchSize == 0 {
+			_, err = regionSrv.BatchAdd(regions)
+			if err != nil {
+				return
+			}
+			regions = regions[0:0]
+		}
+	}
+	if len(regions) != 0 {
+		_, err = regionSrv.BatchAdd(regions)
 		if err != nil {
 			return
 		}

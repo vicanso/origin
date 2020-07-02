@@ -164,6 +164,12 @@ type (
 		SN        string `json:"sn,omitempty"`
 		Company   string `json:"company,omitempty"`
 	}
+	// OrderStatusSummary 订单状态概要
+	OrderStatusSummary struct {
+		Status     OrderStatus `json:"status,omitempty"`
+		StatusDesc string      `json:"statusDesc,omitempty"`
+		Count      int         `json:"count,omitempty"`
+	}
 	OrderSrv struct{}
 )
 
@@ -653,7 +659,7 @@ func (order *Order) AfterFind(_ *gorm.DB) (err error) {
 }
 
 // UpdateStatus update order status
-func (order *Order) UpdateStatus(status OrderStatus) (err error) {
+func (order *Order) UpdateStatus(status OrderStatus, updateDatas ...Order) (err error) {
 	err = order.Status.ValidateNext(status)
 	if err != nil {
 		return
@@ -664,10 +670,12 @@ func (order *Order) UpdateStatus(status OrderStatus) (err error) {
 	}
 
 	timeline := order.StatusTimeline.Add(status)
-	updateData := Order{
-		Status:         status,
-		StatusTimeline: timeline,
+	updateData := Order{}
+	if len(updateDatas) != 0 {
+		updateData = updateDatas[0]
 	}
+	updateData.Status = status
+	updateData.StatusTimeline = timeline
 	now := time.Now()
 	switch status {
 	case OrderStatusPaid:
@@ -909,14 +917,10 @@ func (srv *OrderSrv) Pay(params PayParams) (order *Order, err error) {
 			if err != nil {
 				return
 			}
-			// 	更新父订单的支付渠道
-			err = tx.Model(order).Updates(Order{
+			// 同时更新父订单的支付渠道
+			err = order.UpdateStatus(OrderStatusPaymenting, Order{
 				Source: params.Source,
-			}).Error
-			if err != nil {
-				return
-			}
-			err = order.UpdateStatus(OrderStatusPaymenting)
+			})
 			if err != nil {
 				return
 			}
@@ -939,8 +943,20 @@ func (srv *OrderSrv) Pay(params PayParams) (order *Order, err error) {
 	}
 
 	// TODO 根据orderPayment去支付
-	// MOCK 设置为支付成功
-	orderPayment.Status = OrderPaymentStatusSuccess
+	// 如果支付成功，则设置为成功
+	// MOCK 设置为支付成功，失败则设置为失败
+
+	paymentNextStatus := OrderPaymentStatusSuccess
+
+	err = pgGetClient().Model(orderPayment).Updates(OrderPayment{
+		Status: paymentNextStatus,
+	}).Error
+	// TODO 如果更新payment时失败，是否需要人手干预
+	if err != nil {
+		return
+	}
+
+	orderPayment.Status = paymentNextStatus
 	nextStatus := OrderStatusPayFail
 	if orderPayment.Status == OrderPaymentStatusSuccess {
 		nextStatus = OrderStatusPaid
@@ -1097,4 +1113,42 @@ func (srv *OrderSrv) Close(sn string, userID uint) (err error) {
 // Finish finish the order
 func (srv *OrderSrv) Finish(sn string, userID uint) (err error) {
 	return srv.changeStaus(sn, userID, OrderStatusDone)
+}
+
+// ListStatusSummary list order status summary
+func (srv *OrderSrv) ListStatusSummary(args ...interface{}) (summaryList []*OrderStatusSummary, err error) {
+	db := pgGetClient().Model(&Order{})
+	argsLen := len(args)
+	if argsLen != 0 {
+		if argsLen == 1 {
+			db = db.Where(args[0])
+		} else {
+			db = db.Where(args[0], args[1:]...)
+		}
+	}
+	orders := make(Orders, 0)
+	err = db.Select("status").Find(&orders).Error
+	if err != nil {
+		return
+	}
+	summaryList = make([]*OrderStatusSummary, 0)
+	for _, order := range orders {
+		var found *OrderStatusSummary
+		for _, summary := range summaryList {
+			if summary.Status == order.Status {
+				found = summary
+				break
+			}
+		}
+		if found != nil {
+			found.Count++
+		} else {
+			summaryList = append(summaryList, &OrderStatusSummary{
+				Status:     order.Status,
+				StatusDesc: order.StatusDesc,
+				Count:      1,
+			})
+		}
+	}
+	return
 }

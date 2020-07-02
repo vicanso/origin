@@ -29,6 +29,7 @@ import (
 	"github.com/vicanso/origin/service"
 	"github.com/vicanso/origin/util"
 	"github.com/vicanso/origin/validate"
+	"gorm.io/gorm"
 )
 
 type (
@@ -140,6 +141,13 @@ func init() {
 		loadUserSession,
 		shouldBeLogined,
 		ctrl.listMine,
+	)
+	// 我的订单概要
+	g.GET(
+		"/v1/mine/summary",
+		loadUserSession,
+		shouldBeLogined,
+		ctrl.listMineSummary,
 	)
 	// 查询派送订单
 	g.GET(
@@ -361,12 +369,31 @@ func (orderCtrl) detail(c *elton.Context) (err error) {
 	if err != nil {
 		return
 	}
+	var payment *service.OrderPayment
+	// 初始化订单或待支付的则不需要查询payment记录
+	if order.Status != service.OrderStatusInited &&
+		order.Status != service.OrderStatusPendingPayment {
+		payment, err = orderSrv.FindPaymentByOrderID(order.ID)
+		if err == gorm.ErrRecordNotFound {
+			payment = nil
+			err = nil
+		}
+		if err != nil {
+			return
+		}
+	}
+
+	if err != nil {
+		return
+	}
 	c.Body = &struct {
-		Order     *service.Order    `json:"order,omitempty"`
-		SubOrders service.SubOrders `json:"subOrders,omitempty"`
+		Order     *service.Order        `json:"order,omitempty"`
+		SubOrders service.SubOrders     `json:"subOrders,omitempty"`
+		Payment   *service.OrderPayment `json:"payment,omitempty"`
 	}{
 		order,
 		subOrders,
+		payment,
 	}
 	return
 }
@@ -500,5 +527,26 @@ func (ctrl orderCtrl) listMine(c *elton.Context) (err error) {
 		return
 	}
 	c.Body = resp
+	return
+}
+
+// listMineSummary
+func (ctrl orderCtrl) listMineSummary(c *elton.Context) (err error) {
+	params := listOrderParams{}
+	us := getUserSession(c)
+	params.User = strconv.FormatInt(int64(us.GetID()), 10)
+	// 如果未指定则查最近一个月的订单状态
+	if params.Begin.IsZero() {
+		params.Begin = time.Now().AddDate(0, -1, 0)
+	}
+	summaryList, err := orderSrv.ListStatusSummary(params.toConditions()...)
+	if err != nil {
+		return
+	}
+	c.Body = &struct {
+		OrderStatusSummaries []*service.OrderStatusSummary `json:"orderStatusSummaries,omitempty"`
+	}{
+		summaryList,
+	}
 	return
 }
