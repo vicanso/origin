@@ -112,6 +112,15 @@ func main() {
 	logger := log.Default()
 	e := elton.New()
 
+	// 启用耗时跟踪
+	if util.IsDevelopment() {
+		e.EnableTrace = true
+	}
+	e.OnTrace(func(c *elton.Context, infos elton.TraceInfos) {
+		// 设置server timing
+		c.ServerTiming(infos, "origni-")
+	})
+
 	// 非开发环境，监听信号退出
 	if !util.IsDevelopment() {
 
@@ -198,12 +207,16 @@ func main() {
 	}
 
 	// 捕捉panic异常，避免程序崩溃
-	e.Use(M.NewRecover())
+	fn := M.NewRecover()
+	e.SetFunctionName(fn, "recover")
+	e.Use(fn)
 
-	e.Use(middleware.NewEntry())
+	fn = middleware.NewEntry()
+	e.SetFunctionName(fn, "entry")
+	e.Use(fn)
 
 	// 接口相关统计信息
-	e.Use(M.NewStats(M.StatsConfig{
+	fn = M.NewStats(M.StatsConfig{
 		OnStats: func(info *M.StatsInfo, c *elton.Context) {
 			// ping 的日志忽略
 			if info.URI == "/ping" {
@@ -238,33 +251,51 @@ func main() {
 			}
 			helper.GetInfluxSrv().Write(cs.MeasurementHTTP, fields, tags)
 		},
-	}))
+	})
+	e.SetFunctionName(fn, "stats")
+	e.Use(fn)
 
 	// 错误处理，将错误转换为json响应
-	e.Use(M.NewError(M.ErrorConfig{
+	fn = M.NewError(M.ErrorConfig{
 		ResponseType: "json",
-	}))
+	})
+	e.SetFunctionName(fn, "error")
+	e.Use(fn)
 
 	// IP限制
-	e.Use(middleware.NewIPBlock())
+	fn = middleware.NewIPBlocker()
+	e.SetFunctionName(fn, "ip-blocker")
+	e.Use(fn)
 
 	// 根据配置对路由mock返回
-	e.Use(middleware.NewRouterMocker())
+	fn = middleware.NewRouterMocker()
+	e.SetFunctionName(fn, "router-mocker")
+	e.Use(fn)
 
 	// 路由并发限制
-	e.Use(M.NewRCL(M.RCLConfig{
+	fn = M.NewRCL(M.RCLConfig{
 		Limiter: service.GetRouterConcurrencyLimiter(),
-	}))
+	})
+	e.SetFunctionName(fn, "rcl")
+	e.Use(fn)
 
 	// etag与fresh的处理
-	e.Use(M.NewDefaultFresh())
-	e.Use(M.NewDefaultETag())
+	fn = M.NewDefaultFresh()
+	e.SetFunctionName(fn, "fresh")
+	e.Use(fn)
+	fn = M.NewDefaultETag()
+	e.SetFunctionName(fn, "etag")
+	e.Use(fn)
 
 	// 对响应数据 c.Body 转换为相应的json响应
-	e.Use(M.NewDefaultResponder())
+	fn = M.NewDefaultResponder()
+	e.SetFunctionName(fn, "responder")
+	e.Use(fn)
 
 	// 读取读取body的数的，转换为json bytes
-	e.Use(M.NewDefaultBodyParser())
+	fn = M.NewDefaultBodyParser()
+	e.SetFunctionName(fn, "body-parser")
+	e.Use(fn)
 
 	// 初始化路由
 	for _, g := range router.GetGroups() {
