@@ -24,10 +24,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewIPBlock(t *testing.T) {
+func TestNewIPBlocker(t *testing.T) {
 	assert := assert.New(t)
 
-	fn := NewIPBlock()
+	fn := NewIPBlocker()
 	req := httptest.NewRequest("GET", "/", nil)
 	req.Header.Set(elton.HeaderXForwardedFor, "1.1.1.1")
 	resp := httptest.NewRecorder()
