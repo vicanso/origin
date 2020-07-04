@@ -68,18 +68,20 @@ type (
 	listOrderParams struct {
 		listParams
 
-		Status   string    `json:"status,omitempty" validate:"omitempty,xOrderStatus"`
-		Statuses string    `json:"statuses,omitempty"`
-		SN       string    `json:"sn,omitempty" validate:"omitempty,xOrderSN"`
-		Begin    time.Time `json:"begin,omitempty"`
-		End      time.Time `json:"end,omitempty"`
-		User     string    `json:"user,omitempty" validate:"omitempty,xOrderUser"`
-		Courier  string    `json:"courier,omitempty" validate:"omitempty,xOrderCourier"`
+		Status            string    `json:"status,omitempty" validate:"omitempty,xOrderStatus"`
+		Statuses          string    `json:"statuses,omitempty"`
+		SN                string    `json:"sn,omitempty" validate:"omitempty,xOrderSN"`
+		Begin             time.Time `json:"begin,omitempty"`
+		End               time.Time `json:"end,omitempty"`
+		User              string    `json:"user,omitempty" validate:"omitempty,xOrderUser"`
+		Courier           string    `json:"courier,omitempty" validate:"omitempty,xOrderCourier"`
+		IncludingSubOrder string    `json:"includingSubOrder,omitempty"`
 	}
 	// listOrderResp 订单列表响应
 	listOrderResp struct {
-		Orders service.Orders `json:"orders,omitempty"`
-		Count  int64          `json:"count,omitempty"`
+		Orders    service.Orders    `json:"orders,omitempty"`
+		SubOrders service.SubOrders `json:"subOrders,omitempty"`
+		Count     int64             `json:"count,omitempty"`
 	}
 )
 
@@ -310,13 +312,25 @@ func (orderCtrl) listOrder(params listOrderParams) (resp *listOrderResp, err err
 			return
 		}
 	}
-	result, err := orderSrv.List(queryParams, args...)
+	orders, err := orderSrv.List(queryParams, args...)
 	if err != nil {
 		return
 	}
+	var subOrders service.SubOrders
+	if params.IncludingSubOrder == "true" {
+		idList := make([]uint, len(orders))
+		for index, order := range orders {
+			idList[index] = order.ID
+		}
+		subOrders, err = orderSrv.FindSubOrdersByOrderIDList(idList)
+		if err != nil {
+			return
+		}
+	}
 	resp = &listOrderResp{
-		Orders: result,
-		Count:  count,
+		Orders:    orders,
+		SubOrders: subOrders,
+		Count:     count,
 	}
 	return
 }

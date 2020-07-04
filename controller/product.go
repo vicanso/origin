@@ -15,6 +15,7 @@
 package controller
 
 import (
+	"bytes"
 	"strings"
 	"time"
 
@@ -159,6 +160,11 @@ func init() {
 		"/v1/{id}",
 		noCacheIfSetNoCache,
 		ctrl.findByID,
+	)
+	// 获取产品主图
+	g.GET(
+		"/v1/{id}/cover",
+		ctrl.getMainImage,
 	)
 	// 更新产品
 	g.PATCH(
@@ -416,5 +422,35 @@ func (ctrl productCtrl) findCategoryByID(c *elton.Context) (err error) {
 	}
 	c.CacheMaxAge("1m")
 	c.Body = data
+	return
+}
+
+// getMainImage get main image of product
+func (ctrl productCtrl) getMainImage(c *elton.Context) (err error) {
+	id, err := getIDFromParams(c)
+	if err != nil {
+		return
+	}
+	product, err := productSrv.FindByID(id)
+	if err != nil {
+		return
+	}
+	file := product.Pics[0]
+	if product.MainPic < len(product.Pics) {
+		file = product.Pics[product.MainPic]
+	}
+	arr := strings.Split(file, "/")
+	data, header, err := fileSrv.GetData(arr[len(arr)-2], arr[len(arr)-1])
+	if err != nil {
+		return
+	}
+	// 客户端缓存一周，缓存服务器缓存10分钟
+	c.CacheMaxAge("168h", "10m")
+	for k, values := range header {
+		for _, v := range values {
+			c.AddHeader(k, v)
+		}
+	}
+	c.BodyBuffer = bytes.NewBuffer(data)
 	return
 }

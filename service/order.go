@@ -867,6 +867,13 @@ func (srv *OrderSrv) FindSubOrdersByOrderID(orderID uint) (subOrders SubOrders, 
 	return
 }
 
+// FindSubOrdersByOrderIDList find sub order by order id list
+func (srv *OrderSrv) FindSubOrdersByOrderIDList(orderIDList []uint) (subOrders SubOrders, err error) {
+	subOrders = make(SubOrders, 0)
+	err = pgGetClient().Find(&subOrders, "main_order IN (?)", orderIDList).Error
+	return
+}
+
 // FindPaymentByOrderID find payment by order id
 func (srv *OrderSrv) FindPaymentByOrderID(orderID uint) (orderPayment *OrderPayment, err error) {
 	orderPayment = new(OrderPayment)
