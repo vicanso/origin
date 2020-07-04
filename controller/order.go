@@ -317,7 +317,7 @@ func (orderCtrl) listOrder(params listOrderParams) (resp *listOrderResp, err err
 		return
 	}
 	var subOrders service.SubOrders
-	if params.IncludingSubOrder == "true" {
+	if params.IncludingSubOrder == "true" && len(orders) != 0 {
 		idList := make([]uint, len(orders))
 		for index, order := range orders {
 			idList[index] = order.ID
