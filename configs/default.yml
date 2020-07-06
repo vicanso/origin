@@ -74,3 +74,8 @@ minio:
   accessKeyID: origin
   secretAccessKey: test123456
   ssl: false
+
+# tiny服务的配置
+tiny:
+  host: 127.0.0.1
+  port: 6002

@@ -69,6 +69,8 @@ var (
 	receiverSrv = new(service.ReceiverSrv)
 	// 广告服务
 	advertisementSrv = new(service.AdvertisementSrv)
+	// 图片服务
+	imageSrv = new(service.ImageSrv)
 
 	// 创建新的并发控制中间件
 	newConcurrentLimit = middleware.NewConcurrentLimit

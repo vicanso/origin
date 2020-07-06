@@ -126,7 +126,10 @@ func (ctrl fileCtrl) uploadImage(c *elton.Context) (err error) {
 func (ctrl fileCtrl) preview(c *elton.Context) (err error) {
 	bucket := c.Param("bucket")
 	filename := c.Param("filename")
-	data, header, err := fileSrv.GetData(bucket, filename)
+	data, header, err := imageSrv.GetImageFromBucket(bucket, filename, service.ImageOptimParams{
+		Type:    "webp",
+		Quality: 70,
+	})
 	if err != nil {
 		return
 	}

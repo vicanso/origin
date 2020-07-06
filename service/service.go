@@ -45,6 +45,7 @@ var (
 	regionSrv  = new(RegionSrv)
 	brandSrv   = new(BrandSrv)
 	userSrv    = new(UserSrv)
+	fileSrv    = new(FileSrv)
 
 	statusInfoList StatusInfoList
 	statusMap      map[int]string

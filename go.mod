@@ -28,9 +28,11 @@ require (
 	github.com/vicanso/hes v0.2.2
 	github.com/vicanso/ips v1.0.0
 	github.com/vicanso/lru-ttl v0.1.0
+	github.com/vicanso/tiny v1.0.2
 	go.uber.org/automaxprocs v1.3.0
 	go.uber.org/zap v1.15.0
 	golang.org/x/image v0.0.0-20200618115811-c13761719519
+	google.golang.org/grpc v1.30.0
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 	gorm.io/driver/postgres v0.2.4
 	gorm.io/gorm v0.2.8

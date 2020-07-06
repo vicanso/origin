@@ -440,7 +440,10 @@ func (ctrl productCtrl) getMainImage(c *elton.Context) (err error) {
 		file = product.Pics[product.MainPic]
 	}
 	arr := strings.Split(file, "/")
-	data, header, err := fileSrv.GetData(arr[len(arr)-2], arr[len(arr)-1])
+	data, header, err := imageSrv.GetImageFromBucket(arr[len(arr)-2], arr[len(arr)-1], service.ImageOptimParams{
+		Type:    "webp",
+		Quality: 70,
+	})
 	if err != nil {
 		return
 	}

@@ -10,3 +10,8 @@ postgres:
 minio:
   endpoint: 192.168.1.6:9000
   secretAccessKey: Origin0517
+
+# tiny服务的配置
+tiny:
+  host: 172.18.109.188
+  port: 7002

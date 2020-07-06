@@ -25,6 +25,7 @@ import (
 
 	"github.com/disintegration/imaging"
 	"github.com/minio/minio-go/v6"
+	"github.com/vicanso/elton"
 	"github.com/vicanso/origin/config"
 )
 
@@ -73,8 +74,8 @@ func (srv *FileSrv) GetData(bucket, filename string) (data []byte, header http.H
 		return
 	}
 	header = make(http.Header)
-	header.Set("ETag", statsInfo.ETag)
-	header.Set("Content-Type", statsInfo.ContentType)
+	header.Set(elton.HeaderETag, statsInfo.ETag)
+	header.Set(elton.HeaderContentType, statsInfo.ContentType)
 
 	data, err = ioutil.ReadAll(object)
 	if err != nil {
@@ -117,18 +118,3 @@ func (srv *FileSrv) OptimImage(reader io.Reader, imageType string, width, height
 	}
 	return
 }
-
-// func imageDecode(buf []byte, sourceType EncodeType) (img image.Image, err error) {
-// 	reader := bytes.NewReader(buf)
-// 	switch sourceType {
-// 	default:
-// 		img, _, err = image.Decode(reader)
-// 	case EncodeTypeWEBP:
-// 		img, err = WebpDecode(reader)
-// 	case EncodeTypePNG:
-// 		img, err = png.Decode(reader)
-// 	case EncodeTypeJPEG:
-// 		img, err = jpeg.Decode(reader)
-// 	}
-// 	return
-// }

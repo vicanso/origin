@@ -83,6 +83,12 @@ type (
 		SecretAccessKey string `validate:"min=6"`
 		SSL             bool
 	}
+
+	// TinyConfig tiny config
+	TinyConfig struct {
+		Host string `validate:"ip"`
+		Port int    `validate:"number"`
+	}
 )
 
 const (
@@ -401,5 +407,17 @@ func GetMinioConfig() MinioConfig {
 		SecretAccessKey: GetStringFromENV(prefix + "secretAccessKey"),
 		SSL:             GetBool(prefix + "ssl"),
 	}
+	validatePanic(&minioConfig)
 	return minioConfig
+}
+
+// GetTinyConfig get tiny config
+func GetTinyConfig() TinyConfig {
+	prefix := "tiny."
+	tinyConfig := TinyConfig{
+		Host: GetString(prefix + "host"),
+		Port: GetInt(prefix + "port"),
+	}
+	validatePanic(&tinyConfig)
+	return tinyConfig
 }
