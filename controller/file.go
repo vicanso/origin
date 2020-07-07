@@ -70,7 +70,13 @@ func init() {
 		ctrl.uploadImage,
 	)
 
+	// 文件预览
 	g.GET(filePreviwRoute, ctrl.preview)
+	// 图片预览
+	g.GET(
+		filePreviwRoute+"/{quality}-{width}-{height}.{ext}",
+		ctrl.imagePreview,
+	)
 }
 
 // uploadImage image upload
@@ -126,9 +132,38 @@ func (ctrl fileCtrl) uploadImage(c *elton.Context) (err error) {
 func (ctrl fileCtrl) preview(c *elton.Context) (err error) {
 	bucket := c.Param("bucket")
 	filename := c.Param("filename")
+	data, header, err := fileSrv.GetData(bucket, filename)
+	// data, header, err := imageSrv.GetImageFromBucket(bucket, filename, service.ImageOptimParams{
+	// 	Type:    "webp",
+	// 	Quality: 70,
+	// })
+	if err != nil {
+		return
+	}
+	// 客户端缓存一周，缓存服务器缓存10分钟
+	c.CacheMaxAge("168h", "10m")
+	for k, values := range header {
+		for _, v := range values {
+			c.AddHeader(k, v)
+		}
+	}
+	c.BodyBuffer = bytes.NewBuffer(data)
+	return
+}
+
+// imagePreview image preivew
+func (ctrl fileCtrl) imagePreview(c *elton.Context) (err error) {
+	bucket := c.Param("bucket")
+	filename := c.Param("filename")
+	quality, _ := strconv.Atoi(c.Param("quality"))
+	width, _ := strconv.Atoi(c.Param("width"))
+	height, _ := strconv.Atoi(c.Param("height"))
+
 	data, header, err := imageSrv.GetImageFromBucket(bucket, filename, service.ImageOptimParams{
-		Type:    "webp",
-		Quality: 70,
+		Type:    c.Param("ext"),
+		Quality: quality,
+		Width:   width,
+		Height:  height,
 	})
 	if err != nil {
 		return

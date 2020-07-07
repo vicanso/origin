@@ -16,6 +16,7 @@ package controller
 
 import (
 	"bytes"
+	"strconv"
 	"strings"
 	"time"
 
@@ -163,7 +164,7 @@ func init() {
 	)
 	// 获取产品主图
 	g.GET(
-		"/v1/{id}/cover",
+		"/v1/{id}/cover/{quality}-{width}-{height}.{ext}",
 		ctrl.getMainImage,
 	)
 	// 更新产品
@@ -431,6 +432,9 @@ func (ctrl productCtrl) getMainImage(c *elton.Context) (err error) {
 	if err != nil {
 		return
 	}
+	quality, _ := strconv.Atoi(c.Param("quality"))
+	width, _ := strconv.Atoi(c.Param("width"))
+	height, _ := strconv.Atoi(c.Param("height"))
 	product, err := productSrv.FindByID(id)
 	if err != nil {
 		return
@@ -441,8 +445,10 @@ func (ctrl productCtrl) getMainImage(c *elton.Context) (err error) {
 	}
 	arr := strings.Split(file, "/")
 	data, header, err := imageSrv.GetImageFromBucket(arr[len(arr)-2], arr[len(arr)-1], service.ImageOptimParams{
-		Type:    "webp",
-		Quality: 70,
+		Type:    c.Param("ext"),
+		Quality: quality,
+		Width:   width,
+		Height:  height,
 	})
 	if err != nil {
 		return
