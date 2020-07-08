@@ -117,7 +117,7 @@ func (srv *ImageSrv) GetImageFromBucket(bucket, filename string, params ImageOpt
 		return
 	}
 	contentType := header.Get("Content-Type")
-	source := strings.Split(contentType, "/")[0]
+	source := strings.Split(contentType, "/")[1]
 	params.Data = data
 	params.SourceType = source
 	data, err = srv.optim(&params)

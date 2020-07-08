@@ -34,6 +34,6 @@ require (
 	golang.org/x/image v0.0.0-20200618115811-c13761719519
 	google.golang.org/grpc v1.30.0
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
-	gorm.io/driver/postgres v0.2.4
-	gorm.io/gorm v0.2.8
+	gorm.io/driver/postgres v0.2.5
+	gorm.io/gorm v0.2.19
 )
