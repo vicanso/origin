@@ -125,6 +125,16 @@ type (
 		Province      string `json:"province,omitempty" gorm:"type:varchar(64)"`
 		City          string `json:"city,omitempty" gorm:"type:varchar(64)"`
 		ISP           string `json:"isp,omitempty" gorm:"type:varchar(64)"`
+
+		Width         int    `json:"width,omitempty"`
+		Height        int    `json:"height,omitempty"`
+		PixelRatio    int    `json:"pixelRatio,omitempty"`
+		Platform      string `json:"platform,omitempty"`
+		UUID          string `json:"uuid,omitempty"`
+		SystemVersion string `json:"systemVersion,omitempty"`
+		Brand         string `json:"brand,omitempty"`
+		Version       string `json:"version,omitempty"`
+		BuildNumber   string `json:"buildNumber,omitempty"`
 	}
 	// UserTrackRecord user track record
 	UserTrackRecord struct {

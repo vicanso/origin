@@ -64,6 +64,19 @@ type (
 )
 
 type (
+	// 设备参数
+	deviceInfoParams struct {
+		Width         int    `json:"width,omitempty"`
+		Height        int    `json:"height,omitempty"`
+		PixelRatio    int    `json:"pixelRatio,omitempty"`
+		Platform      string `json:"platform,omitempty"`
+		UUID          string `json:"uuid,omitempty"`
+		SystemVersion string `json:"systemVersion,omitempty"`
+		Brand         string `json:"brand,omitempty"`
+		Version       string `json:"version,omitempty"`
+		BuildNumber   string `json:"buildNumber,omitempty"`
+	}
+
 	// 注册与登录参数
 	registerLoginUserParams struct {
 		// 账户
@@ -72,6 +85,8 @@ type (
 		// 密码，密码为sha256后的加密串
 		// Example: JgX9742WqzaNHVP+YiPy/RXP0eoX29k00hEF3BdghGU=
 		Password string `json:"password,omitempty" validate:"xUserPassword"`
+		// 设备信息
+		Device deviceInfoParams `json:"device,omitempty"`
 	}
 
 	listUserParams struct {
@@ -157,7 +172,7 @@ func init() {
 		newTracker(cs.ActionRegister),
 		captchaValidate,
 		// 限制相同IP在60秒之内只能调用5次
-		newIPLimit(5, 60*time.Second, cs.ActionLogin),
+		newIPLimit(5, 60*time.Second, cs.ActionRegister),
 		shouldBeAnonymous,
 		ctrl.register,
 	)
@@ -434,6 +449,7 @@ func (ctrl userCtrl) login(c *elton.Context) (err error) {
 		err = errUserStatusInvalid
 		return
 	}
+	deviceInfo := params.Device
 	loginRecord := &service.UserLoginRecord{
 		Account:       params.Account,
 		UserAgent:     c.GetRequestHeader("User-Agent"),
@@ -441,6 +457,16 @@ func (ctrl userCtrl) login(c *elton.Context) (err error) {
 		TrackID:       util.GetTrackID(c),
 		SessionID:     util.GetSessionID(c),
 		XForwardedFor: c.GetRequestHeader("X-Forwarded-For"),
+
+		Width:         deviceInfo.Width,
+		Height:        deviceInfo.Height,
+		PixelRatio:    deviceInfo.PixelRatio,
+		Platform:      deviceInfo.Platform,
+		UUID:          deviceInfo.UUID,
+		SystemVersion: deviceInfo.SystemVersion,
+		Brand:         deviceInfo.Brand,
+		Version:       deviceInfo.Version,
+		BuildNumber:   deviceInfo.BuildNumber,
 	}
 	_ = userSrv.AddLoginRecord(loginRecord, c)
 	omitUserInfo(u)
