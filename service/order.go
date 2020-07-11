@@ -66,7 +66,7 @@ type (
 	}
 	// 订单状态时间线
 	OrderStatusTimelineItem struct {
-		CreatedAt  time.Time   `json:"createdAt,omitempty"`
+		CreatedAt  *time.Time  `json:"createdAt,omitempty"`
 		Status     OrderStatus `json:"status,omitempty"`
 		StatusDesc string      `json:"statusDesc,omitempty"`
 	}
@@ -178,8 +178,9 @@ const (
 )
 
 const (
+	OrderStatusUnknown OrderStatus = iota
 	// 初始化
-	OrderStatusInited OrderStatus = iota + 1
+	OrderStatusInited
 	// 待支付
 	OrderStatusPendingPayment
 	// 正在支付
@@ -199,8 +200,9 @@ const (
 )
 
 const (
+	SubOrderStatusUnknown SubOrderStatus = iota
 	// 初始化
-	SubOrderStatusInited SubOrderStatus = iota + 1
+	SubOrderStatusInited
 	// 待发货
 	SubOrderStatusToBeShipped
 	// 已发货
@@ -394,8 +396,9 @@ func (timeline *OrderStatusTimeline) Scan(input interface{}) error {
 
 // Add add status to timeline
 func (timeline OrderStatusTimeline) Add(status OrderStatus) OrderStatusTimeline {
+	now := time.Now()
 	timeline = append(timeline, OrderStatusTimelineItem{
-		CreatedAt:  time.Now(),
+		CreatedAt:  &now,
 		Status:     status,
 		StatusDesc: status.String(),
 	})
@@ -408,6 +411,27 @@ func (status OrderStatus) String() string {
 		return ""
 	}
 	return value
+}
+
+func (status OrderStatus) Next() OrderStatus {
+	nextStatus := OrderStatusUnknown
+	switch status {
+	case OrderStatusInited:
+		nextStatus = OrderStatusPaymenting
+	case OrderStatusPendingPayment:
+		nextStatus = OrderStatusPaymenting
+	case OrderStatusPaymenting:
+		nextStatus = OrderStatusPaid
+	case OrderStatusPaid:
+		nextStatus = OrderStatusToBeShipped
+	case OrderStatusToBeShipped:
+		nextStatus = OrderStatusShipped
+	case OrderStatusShipped:
+		nextStatus = OrderStatusDone
+	case OrderStatusDone:
+		nextStatus = OrderStatusClosed
+	}
+	return nextStatus
 }
 
 func (status SubOrderStatus) String() string {
@@ -655,6 +679,21 @@ func (order *Order) AfterFind(_ *gorm.DB) (err error) {
 
 	// 收货地址不展示国家
 	order.ReceiverBaseAddressDesc, _ = regionSrv.GetNameFromCache(order.ReceiverBaseAddress, 1)
+	if len(order.StatusTimeline) != 0 {
+		lastStatus := order.StatusTimeline[len(order.StatusTimeline)-1].Status
+		// 最多只获取后5个状态
+		for i := 0; i < 5; i++ {
+			if lastStatus.Next() != OrderStatusUnknown {
+				lastStatus = lastStatus.Next()
+				order.StatusTimeline = append(order.StatusTimeline, OrderStatusTimelineItem{
+					Status:     lastStatus,
+					StatusDesc: lastStatus.String(),
+				})
+			}
+		}
+
+	}
+
 	return
 }
 
