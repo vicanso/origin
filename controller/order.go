@@ -379,6 +379,7 @@ func (orderCtrl) detail(c *elton.Context) (err error) {
 	if err != nil {
 		return
 	}
+	order.FillAllStatusTimeline()
 	subOrders, err := orderSrv.FindSubOrdersByOrderID(order.ID)
 	if err != nil {
 		return

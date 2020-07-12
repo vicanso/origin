@@ -58,7 +58,7 @@ export default {
       inited: false,
       region,
       query: {
-        limit: 100,
+        limit: 90,
         status: 1,
         fields: "code,name",
         order: "-priority"

@@ -673,12 +673,7 @@ func (order *Order) BeforeCreate(_ *gorm.DB) (err error) {
 	return
 }
 
-func (order *Order) AfterFind(_ *gorm.DB) (err error) {
-	order.StatusDesc = order.Status.String()
-	order.CourierName, _ = userSrv.GetNameFromCache(order.Courier)
-
-	// 收货地址不展示国家
-	order.ReceiverBaseAddressDesc, _ = regionSrv.GetNameFromCache(order.ReceiverBaseAddress, 1)
+func (order *Order) FillAllStatusTimeline() {
 	if len(order.StatusTimeline) != 0 {
 		lastStatus := order.StatusTimeline[len(order.StatusTimeline)-1].Status
 		// 最多只获取后5个状态
@@ -691,8 +686,15 @@ func (order *Order) AfterFind(_ *gorm.DB) (err error) {
 				})
 			}
 		}
-
 	}
+}
+
+func (order *Order) AfterFind(_ *gorm.DB) (err error) {
+	order.StatusDesc = order.Status.String()
+	order.CourierName, _ = userSrv.GetNameFromCache(order.Courier)
+
+	// 收货地址不展示国家
+	order.ReceiverBaseAddressDesc, _ = regionSrv.GetNameFromCache(order.ReceiverBaseAddress, 1)
 
 	return
 }
