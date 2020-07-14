@@ -214,6 +214,7 @@ func init() {
 		newTracker(cs.ActionOrderChangeCourierToMe),
 		checkLogisticsGroup,
 		orderUpdateLimit,
+		ctrl.changeCourierToMe,
 	)
 	// 订单设置为待发货
 	g.PATCH(
