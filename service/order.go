@@ -52,7 +52,7 @@ type (
 		UserID    uint
 		PayAmount float64
 		SN        string
-		Source    string
+		PaySource string
 	}
 	// 创建订单参数
 	CreateOrderParams struct {
@@ -109,7 +109,7 @@ type (
 
 		// TODO 添加source
 		// 支付渠道
-		Source string `json:"source,omitempty"`
+		PaySource string `json:"paySource,omitempty"`
 
 		// 状态时间线
 		StatusTimeline OrderStatusTimeline `json:"statusTimeline,omitempty"`
@@ -957,7 +957,7 @@ func (srv *OrderSrv) Pay(params PayParams) (order *Order, err error) {
 			orderPayment = &OrderPayment{
 				MainOrder: order.ID,
 				UserID:    order.UserID,
-				Source:    params.Source,
+				Source:    params.PaySource,
 				PayAmount: params.PayAmount,
 			}
 			// TODO 添加支付流水
@@ -967,7 +967,7 @@ func (srv *OrderSrv) Pay(params PayParams) (order *Order, err error) {
 			}
 			// 同时更新父订单的支付渠道
 			err = order.UpdateStatus(OrderStatusPaymenting, Order{
-				Source: params.Source,
+				PaySource: params.PaySource,
 			})
 			if err != nil {
 				return

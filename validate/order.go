@@ -38,7 +38,7 @@ func init() {
 	AddAlias("xOrderCourier", "number,min=1")
 
 	// 支付来源
-	Add("xSource", func(fl validator.FieldLevel) bool {
+	Add("xPaySource", func(fl validator.FieldLevel) bool {
 		return isInString(fl, []string{
 			"wechat",
 			"alipay",

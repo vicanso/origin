@@ -34,3 +34,7 @@ export const REGIONS_LIST_CATEGORIES = "/regions/v1/categories";
 export const ADVERTISEMENTS = "/advertisements/v1";
 export const ADVERTISEMENT_CATEGORIES = "/advertisements/v1/categories";
 export const ADVERTISEMENTS_ID = "/advertisements/v1/:id";
+
+export const ORDERS = "/orders/v1";
+export const ORDERS_ID = "/orders/v1/:sn";
+export const ORDERS_STATUSES = "/orders/v1/statuses";

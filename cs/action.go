@@ -68,6 +68,8 @@ const (
 	ActionOrderShipped = "shipped-order"
 	// ActionOrderChangeCourier change order courier
 	ActionOrderChangeCourier = "change-order-courier"
+	// ActionOrderChangeCourierToMe change order courier to me
+	ActionOrderChangeCourierToMe = "change-order-courier-to-me"
 
 	// ActionSupplierAdd add supplier
 	ActionSupplierAdd = "add-supplier"

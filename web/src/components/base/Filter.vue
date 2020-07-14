@@ -77,7 +77,7 @@ export default {
       if (item.type === "filter") {
         return;
       }
-      current[item.key] = "";
+      current[item.key] = item.defaultValue || "";
     });
     return {
       processing: false,

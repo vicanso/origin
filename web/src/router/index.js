@@ -18,7 +18,8 @@ import {
   REGIONS,
   SUPPLIERS,
   PRODUCT_CATEGORIES,
-  ADVERTISEMENTS
+  ADVERTISEMENTS,
+  ORDERS
 } from "@/constants/route";
 import Home from "@/views/Home.vue";
 import Login from "@/views/Login.vue";
@@ -36,6 +37,7 @@ import Regions from "@/views/Regions.vue";
 import ProductCategories from "@/views/ProductCategories.vue";
 import Suppliers from "@/views/Suppliers.vue";
 import Advertisements from "@/views/Advertisements.vue";
+import Orders from "@/views/Orders.vue";
 
 Vue.use(VueRouter);
 
@@ -164,6 +166,14 @@ const routes = [
     path: "/advertisements",
     name: ADVERTISEMENTS,
     component: Advertisements,
+    meta: {
+      requiresAuth: true
+    }
+  },
+  {
+    path: "/orders",
+    name: ORDERS,
+    component: Orders,
     meta: {
       requiresAuth: true
     }

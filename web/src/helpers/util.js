@@ -109,6 +109,12 @@ export function tomorrow() {
 export function yesterday() {
   return new Date(today().getTime() - oneDayMS);
 }
+export function formatBegin(begin) {
+  return begin.toISOString();
+}
+export function formatEnd(end) {
+  return new Date(end.getTime() + 24 * 3600 * 1000 - 1).toISOString();
+}
 
 // contains 判断是否包括该元素
 export function contains(arr, value) {

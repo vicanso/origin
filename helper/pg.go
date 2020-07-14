@@ -234,11 +234,25 @@ func PGFormatSelect(fields string) string {
 // PGStats get pg stats
 func PGStats() map[string]interface{} {
 	queryProcessing, updateProcessing, total := pgStatsHook.getProcessingAndTotal()
-	return map[string]interface{}{
+	c, _ := pgClient.DB()
+
+	stats := map[string]interface{}{
 		"queryProcessing":  queryProcessing,
 		"updateProcessing": updateProcessing,
 		"total":            total,
 	}
+	if c != nil {
+		dbStats := c.Stats()
+		stats["maxOpenConnections"] = dbStats.MaxOpenConnections
+		stats["openConnections"] = dbStats.OpenConnections
+		stats["inUse"] = dbStats.InUse
+		stats["idle"] = dbStats.Idle
+		stats["waitCount"] = dbStats.WaitCount
+		stats["waitDuration"] = dbStats.WaitDuration
+		stats["maxIdleClosed"] = dbStats.MaxIdleClosed
+		stats["maxLifetimeClosed"] = dbStats.MaxLifetimeClosed
+	}
+	return stats
 }
 
 // PGQuery pg query

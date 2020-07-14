@@ -67,17 +67,11 @@
 </template>
 <script>
 import { mapActions, mapState } from "vuex";
-import { today, yesterday } from "@/helpers/util";
+import { today, yesterday, formatBegin, formatEnd } from "@/helpers/util";
 import BaseTable from "@/components/base/Table.vue";
 import BaseFilter from "@/components/base/Filter.vue";
 
-function formatBegin(begin) {
-  return begin.toISOString();
-}
-function formatEnd(end) {
-  return new Date(end.getTime() + 24 * 3600 * 1000 - 1).toISOString();
-}
-
+const defaultDateRange = [yesterday(), today()];
 const filterFields = [
   {
     label: "账号：",
@@ -91,6 +85,7 @@ const filterFields = [
     key: "dateRange",
     type: "dateRange",
     placeholder: ["开始日期", "结束日期"],
+    defaultValue: defaultDateRange,
     span: 12
   },
   {
@@ -109,7 +104,6 @@ export default {
   },
   data() {
     const pageSizes = [10, 20, 30, 50];
-    const defaultDateRange = [yesterday(), today()];
     return {
       filterFields,
       query: {

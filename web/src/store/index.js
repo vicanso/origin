@@ -10,6 +10,7 @@ import regionStore from "@/store/modules/region";
 import productCategoryStore from "@/store/modules/productCategory";
 import supplierStore from "@/store/modules/supplier";
 import advertisementStrore from "@/store/modules/advertisement";
+import orderStore from "@/store/modules/order";
 
 Vue.use(Vuex);
 
@@ -26,6 +27,7 @@ export default new Vuex.Store({
     region: regionStore,
     productCategory: productCategoryStore,
     supplier: supplierStore,
-    advertisement: advertisementStrore
+    advertisement: advertisementStrore,
+    order: orderStore
   }
 });

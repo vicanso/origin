@@ -102,7 +102,7 @@ var (
 	checkMarketingGroup = newCheckGroupsMiddleware([]string{
 		cs.UserGroupMarketing,
 	})
-	// checkLogisticsGroup 判断用户组是否logistics
+	// checkLogisticsGroup 判断用户组是否logistics，物流部门
 	checkLogisticsGroup = newCheckGroupsMiddleware([]string{
 		cs.UserGroupLogistics,
 	})

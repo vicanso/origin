@@ -24,3 +24,5 @@ export const SUPPLIERS = "Suppliers";
 export const REGIONS = "Regions";
 
 export const ADVERTISEMENTS = "Advertisements";
+
+export const ORDERS = "Orders";

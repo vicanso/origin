@@ -53,7 +53,8 @@ import {
   PRODUCT_CATEGORIES,
   SUPPLIERS,
   REGIONS,
-  ADVERTISEMENTS
+  ADVERTISEMENTS,
+  ORDERS
 } from "@/constants/route";
 import { USER_ADMIN, USER_SU, GROUP_MARKETING } from "@/constants/user";
 import { mapState } from "vuex";
@@ -61,10 +62,14 @@ import { isAllowedUser } from "@/helpers/util";
 
 const navs = [
   {
-    name: "产品",
+    name: "业务",
     icon: "el-icon-files",
     groups: [GROUP_MARKETING],
     children: [
+      {
+        name: "订单",
+        route: ORDERS
+      },
       {
         name: "品牌",
         route: BRANDS

@@ -49,7 +49,7 @@ type (
 	// 支付参数
 	payOrderParams struct {
 		PayAmount float64 `json:"payAmount,omitempty" validate:"xOrderAmount"`
-		Source    string  `json:"source,omitempty" validate:"xSource"`
+		PaySource string  `json:"paySource,omitempty" validate:"xPaySource"`
 	}
 	// 订单待发货参数
 	toBeShippedOrderParams struct {
@@ -205,6 +205,15 @@ func init() {
 		checkMarketingGroup,
 		orderUpdateLimit,
 		ctrl.changeCourier,
+	)
+	// 抢接派单
+	g.PATCH(
+		"/v1/{sn}/assign-courier-to-me",
+		loadUserSession,
+		shouldBeLogined,
+		newTracker(cs.ActionOrderChangeCourierToMe),
+		checkLogisticsGroup,
+		orderUpdateLimit,
 	)
 	// 订单设置为待发货
 	g.PATCH(
@@ -426,7 +435,7 @@ func (orderCtrl) pay(c *elton.Context) (err error) {
 		UserID:    us.GetID(),
 		PayAmount: params.PayAmount,
 		SN:        sn,
-		Source:    params.Source,
+		PaySource: params.PaySource,
 	})
 	if err != nil {
 		return
@@ -443,6 +452,17 @@ func (orderCtrl) changeCourier(c *elton.Context) (err error) {
 		return
 	}
 	err = orderSrv.ChangeCourier(c.Param("sn"), params.Courier)
+	if err != nil {
+		return
+	}
+	c.NoContent()
+	return
+}
+
+// changeCourierToMe change courier to me
+func (orderCtrl) changeCourierToMe(c *elton.Context) (err error) {
+	us := getUserSession(c)
+	err = orderSrv.ChangeCourier(c.Param("sn"), us.GetID())
 	if err != nil {
 		return
 	}
