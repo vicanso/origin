@@ -86,6 +86,7 @@ function commitUserInfo(commit, data) {
     mutationUserInfo,
     Object.assign(data, {
       account: data.account || "",
+      name: data.name || "",
       trackID: data.trackID || "",
       roles: data.roles || [],
       groups: data.groups || [],

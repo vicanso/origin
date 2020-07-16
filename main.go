@@ -46,6 +46,7 @@ import (
 	"github.com/dustin/go-humanize"
 	warner "github.com/vicanso/count-warner"
 	"github.com/vicanso/elton"
+	compress "github.com/vicanso/elton-compress"
 	M "github.com/vicanso/elton/middleware"
 	"github.com/vicanso/hes"
 	"github.com/vicanso/origin/config"
@@ -60,6 +61,8 @@ import (
 	"github.com/vicanso/origin/util"
 	"go.uber.org/automaxprocs/maxprocs"
 	"go.uber.org/zap"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 )
 
 var (
@@ -234,6 +237,7 @@ func main() {
 				zap.Uint32("connecting", info.Connecting),
 				zap.String("consuming", info.Consuming.String()),
 				zap.String("size", humanize.Bytes(uint64(info.Size))),
+				zap.Int("bytes", info.Size),
 			)
 			tags := map[string]string{
 				"method": info.Method,
@@ -253,6 +257,20 @@ func main() {
 		},
 	})
 	e.SetFunctionName(fn, "stats")
+	e.Use(fn)
+
+	// 配置只针对snappy与lz4压缩（主要用于减少内网线路带宽，对外的压缩由前置反向代理 完成）
+	compressMinLength := 5 * 1024
+	compressConfig := M.NewCompressConfig(
+		&compress.SnappyCompressor{
+			MinLength: compressMinLength,
+		},
+		&compress.Lz4Compressor{
+			MinLength: compressMinLength,
+		},
+	)
+	fn = M.NewCompress(compressConfig)
+	e.SetFunctionName(fn, "compress")
 	e.Use(fn)
 
 	// 错误处理，将错误转换为json响应
@@ -313,10 +331,16 @@ func main() {
 		)
 		panic(err)
 	}
-	logger.Info("start to linstening...",
-		zap.String("listen", config.GetListen()),
-	)
-	err = e.ListenAndServe(config.GetListen())
+
+	listen := config.GetListen()
+	// http1与http2均支持
+	e.Server = &http.Server{
+		Handler: h2c.NewHandler(e, &http2.Server{}),
+	}
+
+	logger.Info("server will listen on " + listen)
+	err = e.ListenAndServe(listen)
+
 	if err != nil {
 		service.AlarmError("listen and serve fail, " + err.Error())
 		panic(err)
