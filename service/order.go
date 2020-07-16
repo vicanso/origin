@@ -298,6 +298,11 @@ var (
 		StatusCode: http.StatusBadRequest,
 		Category:   errOrderCategory,
 	}
+	errCourierExists = &hes.Error{
+		Message:    "该订单已分配派送员",
+		StatusCode: http.StatusBadRequest,
+		Category:   errOrderCategory,
+	}
 )
 
 func init() {
@@ -1023,6 +1028,10 @@ func (srv *OrderSrv) Pay(params PayParams) (order *Order, err error) {
 func (srv *OrderSrv) ChangeCourier(sn string, courier uint) (err error) {
 	order, err := srv.FindBySN(sn)
 	if err != nil {
+		return
+	}
+	if order.Courier != 0 {
+		err = errCourierExists
 		return
 	}
 	err = srv.UpdateByID(order.ID, Order{
