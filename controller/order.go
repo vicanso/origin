@@ -159,6 +159,14 @@ func init() {
 		checkLogisticsGroup,
 		ctrl.listDeliveryOrder,
 	)
+	// 查询未分派订单
+	g.GET(
+		"/v1/no-delivery",
+		loadUserSession,
+		shouldBeLogined,
+		checkLogisticsGroup,
+		ctrl.listNoDelivery,
+	)
 
 	// TODO 查订单详情是否只允许本人或管理人员查
 	g.GET(
@@ -228,7 +236,7 @@ func init() {
 	)
 	// 订单设置为已发货
 	g.PATCH(
-		"/v1/{sn}/shipped",
+		"/v1/{sn}/ship",
 		loadUserSession,
 		shouldBeLogined,
 		newTracker(cs.ActionOrderShipped),
@@ -452,7 +460,8 @@ func (orderCtrl) changeCourier(c *elton.Context) (err error) {
 	if err != nil {
 		return
 	}
-	err = orderSrv.ChangeCourier(c.Param("sn"), params.Courier)
+	// 如果由后台调整，则可强制调整派送员
+	err = orderSrv.ChangeCourier(c.Param("sn"), params.Courier, true)
 	if err != nil {
 		return
 	}
@@ -463,7 +472,7 @@ func (orderCtrl) changeCourier(c *elton.Context) (err error) {
 // changeCourierToMe change courier to me
 func (orderCtrl) changeCourierToMe(c *elton.Context) (err error) {
 	us := getUserSession(c)
-	err = orderSrv.ChangeCourier(c.Param("sn"), us.GetID())
+	err = orderSrv.ChangeCourier(c.Param("sn"), us.GetID(), false)
 	if err != nil {
 		return
 	}
@@ -584,5 +593,23 @@ func (ctrl orderCtrl) listMineSummary(c *elton.Context) (err error) {
 	}{
 		summaryList,
 	}
+	return
+}
+
+// listNoDelivery
+func (ctrl orderCtrl) listNoDelivery(c *elton.Context) (err error) {
+	params := listOrderParams{}
+	err = validate.Do(&params, c.Query())
+	if err != nil {
+		return
+	}
+	// 未指定派送，courier为0
+	params.Courier = "0"
+	params.Status = strconv.Itoa(int(service.OrderStatusPaid))
+	resp, err := ctrl.listOrder(params)
+	if err != nil {
+		return
+	}
+	c.Body = resp
 	return
 }

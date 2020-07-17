@@ -23,9 +23,9 @@ import (
 	"time"
 
 	"github.com/go-redis/redis/v7"
+	"github.com/vicanso/hes"
 	"github.com/vicanso/origin/config"
 	"github.com/vicanso/origin/cs"
-	"github.com/vicanso/hes"
 	"go.uber.org/zap"
 )
 
@@ -243,11 +243,16 @@ func (srv *Redis) LockWithDone(key string, ttl time.Duration) (bool, RedisDone, 
 }
 
 // IncWithTTL inc value with ttl
-func (srv *Redis) IncWithTTL(key string, ttl time.Duration) (count int64, err error) {
+func (srv *Redis) IncWithTTL(key string, ttl time.Duration, value ...int64) (count int64, err error) {
 	pipe := redisClient.TxPipeline()
 	// 保证只有首次会设置ttl
 	pipe.SetNX(key, 0, ttl)
-	incr := pipe.Incr(key)
+	var incr *redis.IntCmd
+	if len(value) != 0 {
+		incr = pipe.IncrBy(key, value[0])
+	} else {
+		incr = pipe.Incr(key)
+	}
 	_, err = pipe.Exec()
 	if err != nil {
 		return

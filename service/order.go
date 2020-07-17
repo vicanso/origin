@@ -909,7 +909,9 @@ func (srv *OrderSrv) UpdateByID(id uint, order Order) (err error) {
 // FindSubOrdersByOrderID find sub orders by order id
 func (srv *OrderSrv) FindSubOrdersByOrderID(orderID uint) (subOrders SubOrders, err error) {
 	subOrders = make(SubOrders, 0)
-	err = pgGetClient().Find(&subOrders, "main_order = ?", orderID).Error
+	err = pgQuery(PGQueryParams{
+		Order: "id",
+	}).Find(&subOrders, "main_order = ?", orderID).Error
 	return
 }
 
@@ -1025,12 +1027,12 @@ func (srv *OrderSrv) Pay(params PayParams) (order *Order, err error) {
 }
 
 // ChangeCourier change order's courier
-func (srv *OrderSrv) ChangeCourier(sn string, courier uint) (err error) {
+func (srv *OrderSrv) ChangeCourier(sn string, courier uint, forced bool) (err error) {
 	order, err := srv.FindBySN(sn)
 	if err != nil {
 		return
 	}
-	if order.Courier != 0 {
+	if !forced && order.Courier != 0 {
 		err = errCourierExists
 		return
 	}
@@ -1168,8 +1170,27 @@ func (srv *OrderSrv) Close(sn string, userID uint) (err error) {
 }
 
 // Finish finish the order
-func (srv *OrderSrv) Finish(sn string, userID uint) (err error) {
-	return srv.changeStaus(sn, userID, OrderStatusDone)
+func (srv *OrderSrv) Finish(sn string, courier uint) (err error) {
+	order, err := srv.FindBySN(sn)
+	if err != nil {
+		return
+	}
+	// 非送货员不可处理订单
+	err = order.ValidateCourier(courier)
+	if err != nil {
+		return
+	}
+	// 判断下一状态
+	err = order.Status.ValidateNext(OrderStatusDone)
+	if err != nil {
+		return
+	}
+	// 更新订单状态
+	err = order.UpdateStatus(OrderStatusDone)
+	if err != nil {
+		return
+	}
+	return
 }
 
 // ListStatusSummary list order status summary
