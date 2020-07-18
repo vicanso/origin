@@ -260,7 +260,7 @@ func main() {
 	e.Use(fn)
 
 	// 配置只针对snappy与lz4压缩（主要用于减少内网线路带宽，对外的压缩由前置反向代理 完成）
-	compressMinLength := 5 * 1024
+	compressMinLength := 2 * 1024
 	compressConfig := M.NewCompressConfig(
 		&compress.SnappyCompressor{
 			MinLength: compressMinLength,
