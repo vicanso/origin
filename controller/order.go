@@ -76,6 +76,8 @@ type (
 		User              string    `json:"user,omitempty" validate:"omitempty,xOrderUser"`
 		Courier           string    `json:"courier,omitempty" validate:"omitempty,xOrderCourier"`
 		IncludingSubOrder string    `json:"includingSubOrder,omitempty"`
+		// 未派送订单
+		NoDelivery string `json:"noDelivery,omitempty"`
 	}
 	// listOrderResp 订单列表响应
 	listOrderResp struct {
@@ -257,6 +259,12 @@ func init() {
 
 func (params listOrderParams) toConditions() (conditions []interface{}) {
 	conds := queryConditions{}
+	// 未分配派送订单
+	if params.NoDelivery != "" {
+		params.Courier = "0"
+		params.Status = strconv.Itoa(int(service.OrderStatusPaid))
+	}
+
 	if params.Status != "" {
 		conds.add("status = ?", params.Status)
 	}
@@ -603,9 +611,7 @@ func (ctrl orderCtrl) listNoDelivery(c *elton.Context) (err error) {
 	if err != nil {
 		return
 	}
-	// 未指定派送，courier为0
-	params.Courier = "0"
-	params.Status = strconv.Itoa(int(service.OrderStatusPaid))
+	params.NoDelivery = "1"
 	resp, err := ctrl.listOrder(params)
 	if err != nil {
 		return
