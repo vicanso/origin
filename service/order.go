@@ -18,9 +18,11 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
+	"math"
 	"net/http"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/vicanso/hes"
@@ -71,6 +73,15 @@ type (
 		StatusDesc string      `json:"statusDesc,omitempty"`
 	}
 	OrderStatusTimeline []OrderStatusTimelineItem
+
+	// LocationTimelineItem 定位的timeline元素
+	LocationTimelineItem struct {
+		CreatedAt time.Time `json:"createdAt,omitempty"`
+		Latitude  float64   `json:"latitude,omitempty"`
+		Longitude float64   `json:"longitude,omitempty"`
+	}
+	// LocationTimeline location timeline
+	LocationTimeline []LocationTimelineItem
 
 	Orders []*Order
 	// 订单记录
@@ -163,6 +174,9 @@ type (
 		UserID    uint   `json:"userID,omitempty" gorm:"index:idx_order_delivery_user;not null"`
 		SN        string `json:"sn,omitempty"`
 		Company   string `json:"company,omitempty"`
+
+		// 定位的timeline
+		LocationTimeline LocationTimeline `json:"locationTimeline,omitempty"`
 	}
 	// OrderStatusSummary 订单状态概要
 	OrderStatusSummary struct {
@@ -385,6 +399,26 @@ func (timeline OrderStatusTimeline) Value() (driver.Value, error) {
 }
 
 func (timeline *OrderStatusTimeline) Scan(input interface{}) error {
+	switch value := input.(type) {
+	case string:
+		return json.Unmarshal([]byte(value), timeline)
+	case []byte:
+		return json.Unmarshal(value, timeline)
+	default:
+		return &hes.Error{
+			Message:    "不支持的时间轴类型",
+			Category:   errOrderCategory,
+			StatusCode: http.StatusBadRequest,
+		}
+	}
+}
+
+func (timeline LocationTimeline) Value() (driver.Value, error) {
+	buf, err := json.Marshal(timeline)
+	return string(buf), err
+}
+
+func (timeline *LocationTimeline) Scan(input interface{}) error {
 	switch value := input.(type) {
 	case string:
 		return json.Unmarshal([]byte(value), timeline)
@@ -770,6 +804,29 @@ func (payment *OrderPayment) BeforeCreate(_ *gorm.DB) (err error) {
 	return
 }
 
+// AddTimeline add timeline
+func (orderDelivery *OrderDelivery) AddTimeline(item LocationTimelineItem) (err error) {
+	item.CreatedAt = time.Now()
+	if len(orderDelivery.LocationTimeline) == 0 {
+		orderDelivery.LocationTimeline = make(LocationTimeline, 0)
+	}
+	timeline := orderDelivery.LocationTimeline
+	// 如果变化区域较少，则不更新
+	if len(timeline) > 0 {
+		last := timeline[len(timeline)-1]
+		min := 0.01
+		if math.Abs(item.Latitude-last.Latitude) < min &&
+			math.Abs(item.Longitude-last.Longitude) < min {
+			return
+		}
+	}
+	timeline = append(orderDelivery.LocationTimeline, item)
+	err = pgGetClient().Model(orderDelivery).Updates(OrderDelivery{
+		LocationTimeline: timeline,
+	}).Error
+	return
+}
+
 func (srv *OrderSrv) genSN() string {
 	return util.GenUlid()
 }
@@ -926,6 +983,13 @@ func (srv *OrderSrv) FindSubOrdersByOrderIDList(orderIDList []uint) (subOrders S
 func (srv *OrderSrv) FindPaymentByOrderID(orderID uint) (orderPayment *OrderPayment, err error) {
 	orderPayment = new(OrderPayment)
 	err = pgGetClient().First(orderPayment, "main_order = ?", orderID).Error
+	return
+}
+
+// FindDeliveryByOrderID find delivery by order id
+func (srv *OrderSrv) FindDeliveryByOrderID(orderID uint) (orderDelivery *OrderDelivery, err error) {
+	orderDelivery = new(OrderDelivery)
+	err = pgGetClient().First(orderDelivery, "main_order = ?", orderID).Error
 	return
 }
 
@@ -1226,6 +1290,34 @@ func (srv *OrderSrv) ListStatusSummary(args ...interface{}) (summaryList []*Orde
 				StatusDesc: order.StatusDesc,
 				Count:      1,
 			})
+		}
+	}
+	return
+}
+
+// UpdateDeliveringLocation 更新正在派送中的订单定位
+func (srv *OrderSrv) UpdateDeliveringLocation(courier uint, timelineItem LocationTimelineItem) (err error) {
+	orders, err := srv.List(PGQueryParams{
+		Fields: "id",
+	}, "courier = ? AND status = ?", courier, OrderStatusShipped)
+	if err != nil || len(orders) == 0 {
+		return
+	}
+	orderIds := make([]string, len(orders))
+	for index, order := range orders {
+		orderIds[index] = strconv.Itoa(int(order.ID))
+	}
+	deliveries := make([]*OrderDelivery, 0)
+	err = pgQuery(PGQueryParams{
+		Fields: "id,locationTimeline",
+	}, "main_order IN (?)", strings.Join(orderIds, ",")).Find(&deliveries).Error
+	if err != nil {
+		return
+	}
+	for _, delivery := range deliveries {
+		err = delivery.AddTimeline(timelineItem)
+		if err != nil {
+			return
 		}
 	}
 	return

@@ -40,6 +40,10 @@ func init() {
 	// 文件路径，以/files为前缀的uri
 	AddAlias("xFile", "startswith=/files")
 
+	// 定位
+	AddAlias("xLatitude", "numeric")
+	AddAlias("xLongitude", "numeric")
+
 	durationRegexp := regexp.MustCompile("^[1-9][0-9]*(ms|[smh])$")
 	Add("xDuration", func(fl validator.FieldLevel) bool {
 		value, ok := toString(fl)

@@ -85,6 +85,12 @@ type (
 		SubOrders service.SubOrders `json:"subOrders,omitempty"`
 		Count     int64             `json:"count,omitempty"`
 	}
+
+	// updateLocationParams 更新定位参数(暂时不可能出现0, 0的定位，因此设置为required)
+	updateLocationParams struct {
+		Latitude  float64 `json:"latitude,omitempty" validate:"xLatitude,required"`
+		Longitude float64 `json:"longitude,omitempty" validate:"xLongitude,required"`
+	}
 )
 
 const (
@@ -245,6 +251,15 @@ func init() {
 		checkLogisticsGroup,
 		orderUpdateLimit,
 		ctrl.shipped,
+	)
+	// 更新正在派送订单的location
+	g.PATCH(
+		"/v1/delivering/loaction",
+		loadUserSession,
+		shouldBeLogined,
+		newTracker(cs.ActionOrderUpdateDeliveryLocation),
+		checkLogisticsGroup,
+		ctrl.updateDeliveringLocation,
 	)
 
 	g.GET(
@@ -423,18 +438,31 @@ func (orderCtrl) detail(c *elton.Context) (err error) {
 			return
 		}
 	}
+	var delivery *service.OrderDelivery
+	if order.Status == service.OrderStatusShipped {
+		delivery, err = orderSrv.FindDeliveryByOrderID(order.ID)
+		if err == gorm.ErrRecordNotFound {
+			delivery = nil
+			err = nil
+		}
+		if err != nil {
+			return
+		}
+	}
 
 	if err != nil {
 		return
 	}
 	c.Body = &struct {
-		Order     *service.Order        `json:"order,omitempty"`
-		SubOrders service.SubOrders     `json:"subOrders,omitempty"`
-		Payment   *service.OrderPayment `json:"payment,omitempty"`
+		Order     *service.Order         `json:"order,omitempty"`
+		SubOrders service.SubOrders      `json:"subOrders,omitempty"`
+		Payment   *service.OrderPayment  `json:"payment,omitempty"`
+		Delivery  *service.OrderDelivery `json:"delivery,omitempty"`
 	}{
 		order,
 		subOrders,
 		payment,
+		delivery,
 	}
 	return
 }
@@ -617,5 +645,24 @@ func (ctrl orderCtrl) listNoDelivery(c *elton.Context) (err error) {
 		return
 	}
 	c.Body = resp
+	return
+}
+
+// updateDeliveringLocation 更新正在派送的定位信息
+func (orderCtrl) updateDeliveringLocation(c *elton.Context) (err error) {
+	params := updateLocationParams{}
+	err = validate.Do(&params, c.RequestBody)
+	if err != nil {
+		return
+	}
+	us := getUserSession(c)
+	err = orderSrv.UpdateDeliveringLocation(us.GetID(), service.LocationTimelineItem{
+		Latitude:  params.Latitude,
+		Longitude: params.Longitude,
+	})
+	if err != nil {
+		return
+	}
+	c.NoContent()
 	return
 }

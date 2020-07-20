@@ -72,10 +72,10 @@ type (
 	}
 
 	Model struct {
-		ID        uint       `gorm:"primary_key" json:"id,omitempty"`
-		CreatedAt *time.Time `json:"createdAt,omitempty" gorm:"index"`
-		UpdatedAt *time.Time `json:"updatedAt,omitempty" gorm:"index"`
-		DeletedAt *time.Time `sql:"index" json:"deletedAt,omitempty"`
+		ID        uint           `gorm:"primary_key" json:"id,omitempty"`
+		CreatedAt *time.Time     `json:"createdAt,omitempty" gorm:"index"`
+		UpdatedAt *time.Time     `json:"updatedAt,omitempty" gorm:"index"`
+		DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 	}
 )
 

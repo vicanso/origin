@@ -15,37 +15,41 @@
 package service
 
 import (
-	"sync/atomic"
-	"unsafe"
+	"sync"
 
 	"github.com/vicanso/ips"
 )
 
 var (
 	ipBlocker = &IPBlocker{
-		IPS: ips.New(),
+		mutex: sync.RWMutex{},
+		IPS:   ips.New(),
 	}
 )
 
 type (
 	// IPBlocker ip blocker
 	IPBlocker struct {
-		IPS *ips.IPS
+		mutex sync.RWMutex
+		IPS   *ips.IPS
 	}
 )
 
 // ResetIPBlocker reset the ip blocker
 func ResetIPBlocker(ipList []string) {
-	iPS := ips.New()
+	list := ips.New()
 	for _, value := range ipList {
-		_ = iPS.Add(value)
+		_ = list.Add(value)
 	}
-	atomic.StorePointer((*unsafe.Pointer)(unsafe.Pointer(&ipBlocker.IPS)), unsafe.Pointer(iPS))
+	ipBlocker.mutex.Lock()
+	defer ipBlocker.mutex.Unlock()
+	ipBlocker.IPS = list
 }
 
 // IsBlockIP check the ip is blocked
 func IsBlockIP(ip string) bool {
-	iPS := (*ips.IPS)(atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&ipBlocker.IPS))))
-	blocked := iPS.Contains(ip)
+	ipBlocker.mutex.RLock()
+	defer ipBlocker.mutex.RUnlock()
+	blocked := ipBlocker.IPS.Contains(ip)
 	return blocked
 }

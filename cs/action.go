@@ -70,6 +70,8 @@ const (
 	ActionOrderChangeCourier = "change-order-courier"
 	// ActionOrderChangeCourierToMe change order courier to me
 	ActionOrderChangeCourierToMe = "change-order-courier-to-me"
+	// ActionOrderUpdateDeliveryLocation update order delivery location
+	ActionOrderUpdateDeliveryLocation = "update-order-delivery-location"
 
 	// ActionSupplierAdd add supplier
 	ActionSupplierAdd = "add-supplier"
