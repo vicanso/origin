@@ -34,8 +34,8 @@
           width="90"
         />
         <el-table-column
-          prop="courierName"
-          key="courierName"
+          prop="delivererName"
+          key="delivererName"
           label="送货员"
           width="100"
         />

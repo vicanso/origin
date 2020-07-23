@@ -61,8 +61,8 @@ type (
 		DeliveryCompany string `json:"deliveryCompany,omitempty" validate:"xOrderDeliveryCompnay"`
 	}
 	// 修改送货人参数
-	changeOrderCourierParams struct {
-		Courier uint `json:"courier,omitempty" validate:"xOrderCourier"`
+	changeOrderDelivererParams struct {
+		Deliverer uint `json:"deliverer,omitempty" validate:"xOrderDeliverer"`
 	}
 
 	listOrderParams struct {
@@ -74,7 +74,7 @@ type (
 		Begin             time.Time `json:"begin,omitempty"`
 		End               time.Time `json:"end,omitempty"`
 		User              string    `json:"user,omitempty" validate:"omitempty,xOrderUser"`
-		Courier           string    `json:"courier,omitempty" validate:"omitempty,xOrderCourier"`
+		Deliverer         string    `json:"deliverer,omitempty" validate:"omitempty,xOrderDeliverer"`
 		IncludingSubOrder string    `json:"includingSubOrder,omitempty"`
 		// 未派送订单
 		NoDelivery string `json:"noDelivery,omitempty"`
@@ -214,23 +214,23 @@ func init() {
 
 	// 分派送货员
 	g.PATCH(
-		"/v1/{sn}/assign-courier",
+		"/v1/{sn}/assign-deliverer",
 		loadUserSession,
 		shouldBeLogined,
-		newTracker(cs.ActionOrderChangeCourier),
+		newTracker(cs.ActionOrderChangeDeliverer),
 		checkMarketingGroup,
 		orderUpdateLimit,
-		ctrl.changeCourier,
+		ctrl.changeDeliverer,
 	)
 	// 抢接派单
 	g.PATCH(
-		"/v1/{sn}/assign-courier-to-me",
+		"/v1/{sn}/assign-deliverer-to-me",
 		loadUserSession,
 		shouldBeLogined,
-		newTracker(cs.ActionOrderChangeCourierToMe),
+		newTracker(cs.ActionOrderChangeDelivererToMe),
 		checkLogisticsGroup,
 		orderUpdateLimit,
-		ctrl.changeCourierToMe,
+		ctrl.changeDelivererToMe,
 	)
 	// 订单设置为待发货
 	g.PATCH(
@@ -276,7 +276,7 @@ func (params listOrderParams) toConditions() (conditions []interface{}) {
 	conds := queryConditions{}
 	// 未分配派送订单
 	if params.NoDelivery != "" {
-		params.Courier = "0"
+		params.Deliverer = "0"
 		params.Status = strconv.Itoa(int(service.OrderStatusPaid))
 	}
 
@@ -298,9 +298,9 @@ func (params listOrderParams) toConditions() (conditions []interface{}) {
 		conds.add("user_id = ?", id)
 	}
 
-	if params.Courier != "" {
-		id, _ := strconv.Atoi(params.Courier)
-		conds.add("courier = ?", id)
+	if params.Deliverer != "" {
+		id, _ := strconv.Atoi(params.Deliverer)
+		conds.add("deliverer = ?", id)
 	}
 	if params.Statuses != "" {
 		conds.add("status in (?)", strings.Split(params.Statuses, ","))
@@ -489,15 +489,15 @@ func (orderCtrl) pay(c *elton.Context) (err error) {
 	return
 }
 
-// changeCourier change courier
-func (orderCtrl) changeCourier(c *elton.Context) (err error) {
-	params := changeOrderCourierParams{}
+// changeDeliverer change deliverer
+func (orderCtrl) changeDeliverer(c *elton.Context) (err error) {
+	params := changeOrderDelivererParams{}
 	err = validate.Do(&params, c.RequestBody)
 	if err != nil {
 		return
 	}
 	// 如果由后台调整，则可强制调整派送员
-	err = orderSrv.ChangeCourier(c.Param("sn"), params.Courier, true)
+	err = orderSrv.ChangeDeliverer(c.Param("sn"), params.Deliverer, true)
 	if err != nil {
 		return
 	}
@@ -505,10 +505,10 @@ func (orderCtrl) changeCourier(c *elton.Context) (err error) {
 	return
 }
 
-// changeCourierToMe change courier to me
-func (orderCtrl) changeCourierToMe(c *elton.Context) (err error) {
+// changeDelivererToMe change deliverer to me
+func (orderCtrl) changeDelivererToMe(c *elton.Context) (err error) {
 	us := getUserSession(c)
-	err = orderSrv.ChangeCourier(c.Param("sn"), us.GetID(), false)
+	err = orderSrv.ChangeDeliverer(c.Param("sn"), us.GetID(), false)
 	if err != nil {
 		return
 	}
@@ -585,7 +585,7 @@ func (ctrl orderCtrl) listDeliveryOrder(c *elton.Context) (err error) {
 	us := getUserSession(c)
 	// 避免通过user参数查询
 	params.User = ""
-	params.Courier = strconv.Itoa(int(us.GetID()))
+	params.Deliverer = strconv.Itoa(int(us.GetID()))
 	resp, err := ctrl.listOrder(params)
 	if err != nil {
 		return

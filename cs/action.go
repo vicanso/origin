@@ -66,10 +66,10 @@ const (
 	ActionOrderToBeShipped = "be-shipped-order"
 	// ActionOrderShipped shipped order
 	ActionOrderShipped = "shipped-order"
-	// ActionOrderChangeCourier change order courier
-	ActionOrderChangeCourier = "change-order-courier"
-	// ActionOrderChangeCourierToMe change order courier to me
-	ActionOrderChangeCourierToMe = "change-order-courier-to-me"
+	// ActionOrderChangeDeliverer change order deliverer
+	ActionOrderChangeDeliverer = "change-order-deliverer"
+	// ActionOrderChangeDelivererToMe change order deliverer to me
+	ActionOrderChangeDelivererToMe = "change-order-deliverer-to-me"
 	// ActionOrderUpdateDeliveryLocation update order delivery location
 	ActionOrderUpdateDeliveryLocation = "update-order-delivery-location"
 

@@ -227,6 +227,7 @@ func main() {
 			}
 			sid := util.GetSessionID(c)
 			logger.Info("access log",
+				zap.String("uuid", c.GetRequestHeader("X-UUID")),
 				zap.String("id", info.CID),
 				zap.String("ip", info.IP),
 				zap.String("sid", sid),

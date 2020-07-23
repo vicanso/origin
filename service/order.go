@@ -102,8 +102,8 @@ type (
 		Status     OrderStatus `json:"status,omitempty" gorm:"index:idx_order_status"`
 		StatusDesc string      `json:"statusDesc,omitempty" gorm:"-"`
 		// 送货员
-		Courier     uint   `json:"courier,omitempty" gorm:"index:idx_order_courier"`
-		CourierName string `json:"courierName,omitempty" gorm:"-"`
+		Deliverer     uint   `json:"deliverer,omitempty" gorm:"index:idx_order_deliverer"`
+		DelivererName string `json:"delivererName,omitempty" gorm:"-"`
 
 		// 收货人
 		ReceiverName   string `json:"receiverName,omitempty" gorm:"not null"`
@@ -302,7 +302,7 @@ var (
 		StatusCode: http.StatusBadRequest,
 		Category:   errOrderCategory,
 	}
-	errOrderCourierInvalid = &hes.Error{
+	errOrderDelivererInvalid = &hes.Error{
 		Message:    "该订单不属于你的配送订单或未分派配送员",
 		StatusCode: http.StatusBadRequest,
 		Category:   errOrderCategory,
@@ -312,7 +312,7 @@ var (
 		StatusCode: http.StatusBadRequest,
 		Category:   errOrderCategory,
 	}
-	errCourierExists = &hes.Error{
+	errDelivererExists = &hes.Error{
 		Message:    "该订单已分配派送员",
 		StatusCode: http.StatusBadRequest,
 		Category:   errOrderCategory,
@@ -730,7 +730,7 @@ func (order *Order) FillAllStatusTimeline() {
 
 func (order *Order) AfterFind(_ *gorm.DB) (err error) {
 	order.StatusDesc = order.Status.String()
-	order.CourierName, _ = userSrv.GetNameFromCache(order.Courier)
+	order.DelivererName, _ = userSrv.GetNameFromCache(order.Deliverer)
 
 	// 收货地址不展示国家
 	order.ReceiverBaseAddressDesc, _ = regionSrv.GetNameFromCache(order.ReceiverBaseAddress, 1)
@@ -782,10 +782,10 @@ func (order *Order) UpdateStatus(status OrderStatus, updateDatas ...Order) (err 
 	return
 }
 
-// ValidateCourier validate courier
-func (order *Order) ValidateCourier(courier uint) error {
-	if order.Courier != courier {
-		return errOrderCourierInvalid
+// ValidateDeliverer validate deliverer
+func (order *Order) ValidateDeliverer(deliverer uint) error {
+	if order.Deliverer != deliverer {
+		return errOrderDelivererInvalid
 	}
 	return nil
 }
@@ -1090,18 +1090,18 @@ func (srv *OrderSrv) Pay(params PayParams) (order *Order, err error) {
 	return
 }
 
-// ChangeCourier change order's courier
-func (srv *OrderSrv) ChangeCourier(sn string, courier uint, forced bool) (err error) {
+// ChangeDeliverer change order's deliverer
+func (srv *OrderSrv) ChangeDeliverer(sn string, deliverer uint, forced bool) (err error) {
 	order, err := srv.FindBySN(sn)
 	if err != nil {
 		return
 	}
-	if !forced && order.Courier != 0 {
-		err = errCourierExists
+	if !forced && order.Deliverer != 0 {
+		err = errDelivererExists
 		return
 	}
 	err = srv.UpdateByID(order.ID, Order{
-		Courier: courier,
+		Deliverer: deliverer,
 	})
 	if err != nil {
 		return
@@ -1110,14 +1110,14 @@ func (srv *OrderSrv) ChangeCourier(sn string, courier uint, forced bool) (err er
 }
 
 // ToBeShipped order to be shipped
-func (srv *OrderSrv) ToBeShipped(sn string, courier uint, subOrderID uint) (err error) {
+func (srv *OrderSrv) ToBeShipped(sn string, deliverer uint, subOrderID uint) (err error) {
 	order, err := srv.FindBySN(sn)
 	if err != nil {
 		return
 	}
 
 	// 非送货员不可处理订单
-	err = order.ValidateCourier(courier)
+	err = order.ValidateDeliverer(deliverer)
 	if err != nil {
 		return
 	}
@@ -1170,7 +1170,7 @@ func (srv *OrderSrv) Shipped(sn string, params OrderDelivery) (delivery *OrderDe
 		return
 	}
 	// 非送货员不可处理订单
-	err = order.ValidateCourier(params.UserID)
+	err = order.ValidateDeliverer(params.UserID)
 	if err != nil {
 		return
 	}
@@ -1234,13 +1234,13 @@ func (srv *OrderSrv) Close(sn string, userID uint) (err error) {
 }
 
 // Finish finish the order
-func (srv *OrderSrv) Finish(sn string, courier uint) (err error) {
+func (srv *OrderSrv) Finish(sn string, deliverer uint) (err error) {
 	order, err := srv.FindBySN(sn)
 	if err != nil {
 		return
 	}
 	// 非送货员不可处理订单
-	err = order.ValidateCourier(courier)
+	err = order.ValidateDeliverer(deliverer)
 	if err != nil {
 		return
 	}
@@ -1296,10 +1296,10 @@ func (srv *OrderSrv) ListStatusSummary(args ...interface{}) (summaryList []*Orde
 }
 
 // UpdateDeliveringLocation 更新正在派送中的订单定位
-func (srv *OrderSrv) UpdateDeliveringLocation(courier uint, timelineItem LocationTimelineItem) (err error) {
+func (srv *OrderSrv) UpdateDeliveringLocation(deliverer uint, timelineItem LocationTimelineItem) (err error) {
 	orders, err := srv.List(PGQueryParams{
 		Fields: "id",
-	}, "courier = ? AND status = ?", courier, OrderStatusShipped)
+	}, "deliverer = ? AND status = ?", deliverer, OrderStatusShipped)
 	if err != nil || len(orders) == 0 {
 		return
 	}

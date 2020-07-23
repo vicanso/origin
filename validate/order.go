@@ -35,7 +35,7 @@ func init() {
 	// 订单运输公司
 	AddAlias("xOrderDeliveryCompnay", "min=1,max=10")
 	// 订单送货人
-	AddAlias("xOrderCourier", "number,min=1")
+	AddAlias("xOrderDeliverer", "number,min=1")
 
 	// 支付来源
 	Add("xPaySource", func(fl validator.FieldLevel) bool {

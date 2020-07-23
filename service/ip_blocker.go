@@ -29,6 +29,7 @@ var (
 
 type (
 	// IPBlocker ip blocker
+
 	IPBlocker struct {
 		mutex sync.RWMutex
 		IPS   *ips.IPS
