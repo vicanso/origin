@@ -93,3 +93,9 @@ func (srv *ReceiverSrv) List(params PGQueryParams, args ...interface{}) (result 
 func (srv *ReceiverSrv) Count(args ...interface{}) (count int64, err error) {
 	return pgCount(&Receiver{}, args...)
 }
+
+// Delete delete the receiver
+func (srv *ReceiverSrv) Delete(id uint) (err error) {
+	err = pgGetClient().Where("id = ?", id).Delete(&Receiver{}).Error
+	return
+}

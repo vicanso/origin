@@ -82,6 +82,8 @@ const (
 	ActionReceiverAdd = "add-receiver"
 	// ActionReceiverUpdate update receiver
 	ActionReceiverUpdate = "update-receiver"
+	// ActionReceiverDelete delete receiver
+	ActionReceiverDelete = "delete-receiver"
 
 	// ActionAdvertisementAdd add advertisement
 	ActionAdvertisementAdd = "add-advertisement"

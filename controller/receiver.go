@@ -74,6 +74,11 @@ func init() {
 		newTracker(cs.ActionReceiverUpdate),
 		ctrl.updateByID,
 	)
+	g.DELETE(
+		"/v1/{id}",
+		newTracker(cs.ActionConfigurationDelete),
+		ctrl.deleteByID,
+	)
 
 }
 
@@ -100,8 +105,21 @@ func (receiverCtrl) add(c *elton.Context) (err error) {
 	return
 }
 
+func (receiverCtrl) validateOwner(c *elton.Context, id uint) (err error) {
+	result, err := receiverSrv.FindByID(id)
+	if err != nil {
+		return
+	}
+	us := getUserSession(c)
+	if result.UserID != us.GetID() {
+		err = errReceiverUserInvalid
+		return
+	}
+	return
+}
+
 // updateByID update receiver by id
-func (receiverCtrl) updateByID(c *elton.Context) (err error) {
+func (ctrl receiverCtrl) updateByID(c *elton.Context) (err error) {
 	id, err := getIDFromParams(c)
 	if err != nil {
 		return
@@ -111,13 +129,8 @@ func (receiverCtrl) updateByID(c *elton.Context) (err error) {
 	if err != nil {
 		return
 	}
-	result, err := receiverSrv.FindByID(id)
+	err = ctrl.validateOwner(c, id)
 	if err != nil {
-		return
-	}
-	us := getUserSession(c)
-	if result.UserID != us.GetID() {
-		err = errReceiverUserInvalid
 		return
 	}
 	err = receiverSrv.UpdateByID(id, service.Receiver{
@@ -147,5 +160,23 @@ func (receiverCtrl) list(c *elton.Context) (err error) {
 	}{
 		result,
 	}
+	return
+}
+
+// delete delete receiver
+func (ctrl receiverCtrl) deleteByID(c *elton.Context) (err error) {
+	id, err := getIDFromParams(c)
+	if err != nil {
+		return
+	}
+	err = ctrl.validateOwner(c, id)
+	if err != nil {
+		return
+	}
+	err = receiverSrv.Delete(id)
+	if err != nil {
+		return
+	}
+	c.NoContent()
 	return
 }
