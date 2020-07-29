@@ -11,8 +11,8 @@ require (
 	github.com/gobuffalo/packr/v2 v2.8.0
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
 	github.com/iancoleman/strcase v0.0.0-20191112232945-16388991a334
-	github.com/influxdata/influxdb-client-go v1.3.0
-	github.com/lib/pq v1.7.0
+	github.com/influxdata/influxdb-client-go v1.4.0
+	github.com/lib/pq v1.8.0
 	github.com/minio/minio-go/v6 v6.0.57
 	github.com/mozillazg/go-pinyin v0.18.0
 	github.com/oklog/ulid/v2 v2.0.2
@@ -25,7 +25,7 @@ require (
 	github.com/vicanso/elton v1.0.3
 	github.com/vicanso/elton-compress v1.0.0
 	github.com/vicanso/elton-session v1.0.0
-	github.com/vicanso/go-axios v0.1.2
+	github.com/vicanso/go-axios v0.1.3
 	github.com/vicanso/hes v0.2.2
 	github.com/vicanso/ips v1.0.0
 	github.com/vicanso/lru-ttl v0.1.0
@@ -36,6 +36,6 @@ require (
 	golang.org/x/net v0.0.0-20200707034311-ab3426394381
 	google.golang.org/grpc v1.30.0
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
-	gorm.io/driver/postgres v0.2.5
-	gorm.io/gorm v0.2.19
+	gorm.io/driver/postgres v0.2.6
+	gorm.io/gorm v0.2.25
 )

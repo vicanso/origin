@@ -178,14 +178,16 @@ func newTracker(action string) elton.Handler {
 			if us != nil && us.IsLogined() {
 				account = us.GetAccount()
 			}
+			ip := c.RealIP()
+			sid := util.GetSessionID(c)
 			fields := make([]zap.Field, 0, 10)
 			fields = append(
 				fields,
 				zap.String("action", action),
 				zap.String("cid", info.CID),
 				zap.String("account", account),
-				zap.String("ip", c.RealIP()),
-				zap.String("sid", util.GetSessionID(c)),
+				zap.String("ip", ip),
+				zap.String("sid", sid),
 				zap.Int("result", info.Result),
 			)
 			if info.Query != nil {
@@ -201,6 +203,15 @@ func newTracker(action string) elton.Handler {
 				fields = append(fields, zap.Error(info.Err))
 			}
 			logger.Info("tracker", fields...)
+			helper.GetInfluxSrv().Write(cs.MeasurementUserTracker, map[string]interface{}{
+				"cid":     info.CID,
+				"account": account,
+				"ip":      ip,
+				"sid":     sid,
+			}, map[string]string{
+				"action": action,
+				"result": strconv.Itoa(info.Result),
+			})
 		},
 	})
 }

@@ -6,6 +6,11 @@ redis:
 postgres:
   uri: PG_URI
 
+# influxdb 配置
+influxdb:
+  uri: http://172.18.109.188:9999
+  token: dd6CeAtuD51rcor5tYnkxP0NXSTuxbrgd31sc-U-j-hUty-loKg_Ad4M9zT_0svhMl3SylzJE089rS7j6ijtyw==
+
 minio:
   endpoint: 172.18.109.188:9000
   secretAccessKey: iAyeiXLVmuqOOhKvYHOR
