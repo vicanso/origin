@@ -9,7 +9,7 @@ postgres:
 # influxdb 配置
 influxdb:
   uri: http://172.18.109.188:9999
-  token: dd6CeAtuD51rcor5tYnkxP0NXSTuxbrgd31sc-U-j-hUty-loKg_Ad4M9zT_0svhMl3SylzJE089rS7j6ijtyw==
+  token: b9Z0oFJUAsrnKaRbUYSw9kCakv7AiXS5v2zsAJfypATpUc2xGaCdk25POUvC7GzKuB1UrPmXwo1j9odALGm5hQ==
 
 minio:
   endpoint: 172.18.109.188:9000
