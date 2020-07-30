@@ -134,8 +134,11 @@ func main() {
 				logger.Info("server will be closed",
 					zap.String("signal", s.String()),
 				)
+				// 设置状态为退出中，/ping请求返回出错，反向代理不再转发流量
+				config.SetApplicationStatus(config.ApplicationStatusStopping)
 				// docker 在10秒内退出，因此设置8秒后退出
-				e.GracefulClose(8 * time.Second)
+				time.Sleep(5 * time.Second)
+				e.GracefulClose(3 * time.Second)
 				closeOnce.Do(closeDeps)
 				os.Exit(0)
 			}
@@ -340,6 +343,7 @@ func main() {
 	}
 
 	logger.Info("server will listen on " + listen)
+	config.SetApplicationStatus(config.ApplicationStatusRunning)
 	err = e.ListenAndServe(listen)
 
 	if err != nil {

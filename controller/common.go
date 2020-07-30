@@ -18,6 +18,8 @@ import (
 	"bytes"
 	"strconv"
 
+	"github.com/vicanso/hes"
+	"github.com/vicanso/origin/config"
 	"github.com/vicanso/origin/service"
 	"github.com/vicanso/origin/util"
 	"github.com/vicanso/origin/validate"
@@ -74,6 +76,9 @@ type pongResponse struct {
 // Produces:
 // 	- plain/text
 func (ctrl commonCtrl) ping(c *elton.Context) error {
+	if !config.ApplicationIsRunning() {
+		return hes.New("application is not running")
+	}
 	c.BodyBuffer = bytes.NewBufferString("pong")
 	return nil
 }

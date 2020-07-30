@@ -20,6 +20,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/gobuffalo/packr/v2"
@@ -31,6 +32,12 @@ var (
 	box     = packr.New("config", "../configs")
 	env     = os.Getenv("GO_ENV")
 	appName string
+)
+
+const (
+	ApplicationStatusStopped int32 = iota
+	ApplicationStatusRunning
+	ApplicationStatusStopping
 )
 
 type (
@@ -105,6 +112,8 @@ const (
 
 var (
 	defaultViper = viper.New()
+
+	applicationStatus = ApplicationStatusStopped
 )
 
 func init() {
@@ -148,6 +157,16 @@ func validatePanic(v interface{}) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+// SetApplicationStatus set application status
+func SetApplicationStatus(status int32) {
+	atomic.StoreInt32(&applicationStatus, status)
+}
+
+// ApplicationIsRunning application is running
+func ApplicationIsRunning() bool {
+	return atomic.LoadInt32(&applicationStatus) == ApplicationStatusRunning
 }
 
 func GetAppName() string {

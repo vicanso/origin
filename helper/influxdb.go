@@ -20,6 +20,8 @@ import (
 	influxdb "github.com/influxdata/influxdb-client-go"
 	influxdbAPI "github.com/influxdata/influxdb-client-go/api"
 	"github.com/vicanso/origin/config"
+	"github.com/vicanso/origin/log"
+	"go.uber.org/zap"
 )
 
 var (
@@ -45,6 +47,13 @@ func init() {
 		v := influxbConfig.FlushInterval / time.Millisecond
 		opts.SetFlushInterval(uint(v))
 	}
+	log.Default().Info("new influxdb client",
+		zap.String("uri", influxbConfig.URI),
+		zap.String("org", influxbConfig.Org),
+		zap.String("bucket", influxbConfig.Bucket),
+		zap.Uint("batchSize", influxbConfig.BatchSize),
+		zap.Duration("interfal", influxbConfig.FlushInterval),
+	)
 	c := influxdb.NewClientWithOptions(influxbConfig.URI, influxbConfig.Token, opts)
 	writer := c.WriteApi(influxbConfig.Org, influxbConfig.Bucket)
 	defaultInfluxSrv = &InfluxSrv{
