@@ -25,7 +25,7 @@ require (
 	github.com/vicanso/elton v1.0.3
 	github.com/vicanso/elton-compress v1.0.0
 	github.com/vicanso/elton-session v1.0.0
-	github.com/vicanso/go-axios v0.1.3
+	github.com/vicanso/go-axios v0.1.4
 	github.com/vicanso/hes v0.2.2
 	github.com/vicanso/ips v1.0.0
 	github.com/vicanso/lru-ttl v0.1.0
@@ -34,7 +34,7 @@ require (
 	go.uber.org/zap v1.15.0
 	golang.org/x/image v0.0.0-20200618115811-c13761719519
 	golang.org/x/net v0.0.0-20200707034311-ab3426394381
-	google.golang.org/grpc v1.30.0
+	google.golang.org/grpc v1.31.0
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 	gorm.io/driver/postgres v0.2.6
 	gorm.io/gorm v0.2.25
