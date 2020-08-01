@@ -21,12 +21,14 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/vicanso/elton"
-	"github.com/vicanso/origin/service"
 	"github.com/vicanso/go-axios"
+	"github.com/vicanso/origin/config"
+	"github.com/vicanso/origin/service"
 )
 
 func TestCommonCtrl(t *testing.T) {
 	ctrl := commonCtrl{}
+	config.SetApplicationStatus(config.ApplicationStatusRunning)
 	t.Run("ping", func(t *testing.T) {
 		assert := assert.New(t)
 		c := elton.NewContext(nil, nil)

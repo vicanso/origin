@@ -18,11 +18,11 @@ require (
 	github.com/oklog/ulid/v2 v2.0.2
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
-	github.com/spf13/viper v1.7.0
+	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.6.1
 	github.com/tidwall/gjson v1.6.0
 	github.com/vicanso/count-warner v1.0.0
-	github.com/vicanso/elton v1.0.3
+	github.com/vicanso/elton v1.0.4
 	github.com/vicanso/elton-compress v1.0.0
 	github.com/vicanso/elton-session v1.0.0
 	github.com/vicanso/go-axios v0.1.4
@@ -37,5 +37,5 @@ require (
 	google.golang.org/grpc v1.31.0
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 	gorm.io/driver/postgres v0.2.6
-	gorm.io/gorm v0.2.25
+	gorm.io/gorm v0.2.26
 )

@@ -213,16 +213,12 @@ func main() {
 	}
 
 	// 捕捉panic异常，避免程序崩溃
-	fn := M.NewRecover()
-	e.SetFunctionName(fn, "recover")
-	e.Use(fn)
+	e.UseWithName(M.NewRecover(), "recover")
 
-	fn = middleware.NewEntry()
-	e.SetFunctionName(fn, "entry")
-	e.Use(fn)
+	e.UseWithName(middleware.NewEntry(), "entry")
 
 	// 接口相关统计信息
-	fn = M.NewStats(M.StatsConfig{
+	e.UseWithName(M.NewStats(M.StatsConfig{
 		OnStats: func(info *M.StatsInfo, c *elton.Context) {
 			// ping 的日志忽略
 			if info.URI == "/ping" {
@@ -259,9 +255,7 @@ func main() {
 			}
 			helper.GetInfluxSrv().Write(cs.MeasurementHTTP, fields, tags)
 		},
-	})
-	e.SetFunctionName(fn, "stats")
-	e.Use(fn)
+	}), "stats")
 
 	// 配置只针对snappy与lz4压缩（主要用于减少内网线路带宽，对外的压缩由前置反向代理 完成）
 	compressMinLength := 2 * 1024
@@ -273,51 +267,33 @@ func main() {
 			MinLength: compressMinLength,
 		},
 	)
-	fn = M.NewCompress(compressConfig)
-	e.SetFunctionName(fn, "compress")
-	e.Use(fn)
+	e.UseWithName(M.NewCompress(compressConfig), "compress")
 
 	// 错误处理，将错误转换为json响应
-	fn = M.NewError(M.ErrorConfig{
+	e.UseWithName(M.NewError(M.ErrorConfig{
 		ResponseType: "json",
-	})
-	e.SetFunctionName(fn, "error")
-	e.Use(fn)
+	}), "error")
 
 	// IP限制
-	fn = middleware.NewIPBlocker()
-	e.SetFunctionName(fn, "ip-blocker")
-	e.Use(fn)
+	e.UseWithName(middleware.NewIPBlocker(), "ip-blocker")
 
 	// 根据配置对路由mock返回
-	fn = middleware.NewRouterMocker()
-	e.SetFunctionName(fn, "router-mocker")
-	e.Use(fn)
+	e.UseWithName(middleware.NewRouterMocker(), "router-mocker")
 
 	// 路由并发限制
-	fn = M.NewRCL(M.RCLConfig{
+	e.UseWithName(M.NewRCL(M.RCLConfig{
 		Limiter: service.GetRouterConcurrencyLimiter(),
-	})
-	e.SetFunctionName(fn, "rcl")
-	e.Use(fn)
+	}), "rcl")
 
 	// etag与fresh的处理
-	fn = M.NewDefaultFresh()
-	e.SetFunctionName(fn, "fresh")
-	e.Use(fn)
-	fn = M.NewDefaultETag()
-	e.SetFunctionName(fn, "etag")
-	e.Use(fn)
+	e.UseWithName(M.NewDefaultFresh(), "fresh").
+		UseWithName(M.NewDefaultETag(), "etag")
 
 	// 对响应数据 c.Body 转换为相应的json响应
-	fn = M.NewDefaultResponder()
-	e.SetFunctionName(fn, "responder")
-	e.Use(fn)
+	e.UseWithName(M.NewDefaultResponder(), "responder")
 
 	// 读取读取body的数的，转换为json bytes
-	fn = M.NewDefaultBodyParser()
-	e.SetFunctionName(fn, "body-parser")
-	e.Use(fn)
+	e.UseWithName(M.NewDefaultBodyParser(), "body-parser")
 
 	// 初始化路由
 	for _, g := range router.GetGroups() {
