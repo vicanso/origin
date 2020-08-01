@@ -118,3 +118,8 @@ var (
 		AdvertisementCategory,
 	}
 )
+
+const (
+	// 热门搜索关键字
+	ProductSearchHotKeywords = "product-search-hot-keywords"
+)

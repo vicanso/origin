@@ -20,8 +20,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-redis/redis/v7"
 	"github.com/vicanso/elton"
+	"github.com/vicanso/hes"
 	"github.com/vicanso/origin/cs"
+	"github.com/vicanso/origin/helper"
 	"github.com/vicanso/origin/router"
 	"github.com/vicanso/origin/service"
 	"github.com/vicanso/origin/validate"
@@ -83,6 +86,7 @@ type (
 		Category    string `json:"category,omitempty" validate:"omitempty,xProductCategory"`
 		Status      string `json:"status,omitempty" validate:"omitempty,xStatus"`
 		Purchasable string `json:"purchasable,omitempty"`
+		Keyword     string `json:"keyword,omitempty" validate:"omitempty,xKeyword"`
 	}
 	addProductCategoryParams struct {
 		Name    string  `json:"name,omitempty" validate:"xProductCategoryName"`
@@ -117,6 +121,12 @@ func init() {
 		"/v1",
 		noCacheIfSetNoCache,
 		ctrl.list,
+	)
+
+	// 获取热门产品搜索关键字
+	g.GET(
+		"/v1/search-hot-keywords",
+		ctrl.listSearchHotKeywords,
 	)
 
 	// 获取产品分类
@@ -195,6 +205,10 @@ func (params listProductParams) toConditions() (conditions []interface{}) {
 		conds.add("ended_at > ?", now)
 	}
 
+	if params.Keyword != "" {
+		conds.add("name ILIKE ?", "%"+params.Keyword+"%")
+	}
+
 	return conds.toArray()
 }
 
@@ -251,6 +265,10 @@ func (ctrl productCtrl) list(c *elton.Context) (err error) {
 	err = validate.Do(&params, c.Query())
 	if err != nil {
 		return
+	}
+	if params.Keyword != "" {
+		// 添加关键字搜索数量
+		_, _ = helper.RedisGetClient().ZIncrBy(cs.ProductSearchHotKeywords, 1, params.Keyword).Result()
 	}
 	count := int64(-1)
 	args := params.toConditions()
@@ -461,5 +479,30 @@ func (ctrl productCtrl) getMainImage(c *elton.Context) (err error) {
 		}
 	}
 	c.BodyBuffer = bytes.NewBuffer(data)
+	return
+}
+
+// listSearchHotKeywords 热门搜索关键字
+func (productCtrl) listSearchHotKeywords(c *elton.Context) (err error) {
+	limit, _ := strconv.Atoi(c.QueryParam("limit"))
+	if limit == 0 {
+		limit = 5
+	}
+	if limit > 10 {
+		err = hes.New("热门关键字数量查询不能大于10")
+		return
+	}
+	result, err := helper.RedisGetClient().ZRevRangeByScore(cs.ProductSearchHotKeywords, &redis.ZRangeBy{
+		Min:   "-inf",
+		Max:   "+inf",
+		Count: int64(limit),
+	}).Result()
+	if err != nil {
+		return
+	}
+	c.CacheMaxAge("5m")
+	c.Body = map[string][]string{
+		"keywords": result,
+	}
 	return
 }
