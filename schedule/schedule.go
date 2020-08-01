@@ -31,6 +31,7 @@ func init() {
 	_, _ = c.AddFunc("@every 1m", configRefresh)
 	_, _ = c.AddFunc("@every 5m", redisStats)
 	_, _ = c.AddFunc("@every 1m", pgStats)
+	_, _ = c.AddFunc("00 00 * * *", resetProductSearchHotKeywords)
 	c.Start()
 }
 
@@ -63,4 +64,13 @@ func redisStats() {
 func pgStats() {
 	stats := helper.PGStats()
 	helper.GetInfluxSrv().Write(cs.MeasurementPGStats, stats, nil)
+}
+
+func resetProductSearchHotKeywords() {
+	_, err := helper.RedisGetClient().ZRemRangeByRank(cs.ProductSearchHotKeywords, 0, -1).Result()
+	if err != nil {
+		log.Default().Error("reset product search hot key words fail",
+			zap.Error(err),
+		)
+	}
 }
