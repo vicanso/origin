@@ -897,7 +897,12 @@ func (srv *OrderSrv) CreateWithSubOrders(user uint, params CreateOrderParams) (o
 				if subOrder.Product == p.ID {
 					found = true
 					subOrder.ProductName = p.Name
-					subOrder.ProductPrice = p.Price
+					if subOrder.ProductPrice != p.Price {
+						he := hes.New(p.Name + "价格异常，请重新刷新订单后提交")
+						he.Category = errOrderCategory
+						err = he
+						return
+					}
 					subOrder.ProductSpecsCount = p.Specs * subOrder.ProductCount
 					subOrder.ProductUnit = p.Unit
 					subOrder.MainOrder = order.ID

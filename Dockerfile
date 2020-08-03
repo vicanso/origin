@@ -33,7 +33,7 @@ USER go
 
 WORKDIR /home/go
 
-HEALTHCHECK --timeout=10s CMD [ "wget", "http://127.0.0.1:7001/ping", "-q", "-O", "-"]
+HEALTHCHECK --timeout=10s --interval=10s CMD [ "wget", "http://127.0.0.1:7001/ping", "-q", "-O", "-"]
 
 CMD ["origin"]
 

@@ -37,8 +37,9 @@ type (
 
 	addOrderParams struct {
 		Products []struct {
-			ProductID uint `json:"productID,omitempty" validate:"xOrderProductID"`
-			Count     uint `json:"count,omitempty" validate:"xOrderProductCount"`
+			ProductID uint    `json:"productID,omitempty" validate:"xOrderProductID"`
+			Count     uint    `json:"count,omitempty" validate:"xOrderProductCount"`
+			Price     float64 `json:"price,omitempty" validate:"xProductPrice"`
 		} `json:"products,omitempty"`
 		Amount              float64 `json:"amount,omitempty" validate:"required"`
 		ReceiverName        string  `json:"receiverName,omitempty"`
@@ -132,8 +133,11 @@ func init() {
 		"/v1",
 		loadUserSession,
 		shouldBeLogined,
-		// TODO 添加限制重复提交订单
 		newTracker(cs.ActionOrderAdd),
+		// 根据客户端提交的token限制同时提交
+		middleware.NewConcurrentLimitWithDone([]string{
+			"token",
+		}, time.Minute, ""),
 		ctrl.add,
 	)
 
@@ -326,6 +330,7 @@ func (orderCtrl) add(c *elton.Context) (err error) {
 		subOrders[index] = service.SubOrder{
 			Product:      prod.ProductID,
 			ProductCount: prod.Count,
+			ProductPrice: prod.Price,
 		}
 	}
 	order, err := orderSrv.CreateWithSubOrders(us.GetID(), service.CreateOrderParams{
