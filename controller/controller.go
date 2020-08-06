@@ -109,6 +109,9 @@ var (
 
 	// 图形验证码校验
 	captchaValidate elton.Handler
+
+	// 获取influx service
+	getInfluxSrv = helper.GetInfluxSrv
 )
 
 type (
@@ -203,7 +206,7 @@ func newTracker(action string) elton.Handler {
 				fields = append(fields, zap.Error(info.Err))
 			}
 			logger.Info("tracker", fields...)
-			helper.GetInfluxSrv().Write(cs.MeasurementUserTracker, map[string]interface{}{
+			getInfluxSrv().Write(cs.MeasurementUserTracker, map[string]interface{}{
 				"cid":     info.CID,
 				"account": account,
 				"ip":      ip,

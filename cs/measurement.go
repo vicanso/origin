@@ -22,4 +22,5 @@ const (
 	MeasurementRedisStats  = "redis-stats"
 	MeasurementPGStats     = "pg-stats"
 	MeasurementUserTracker = "user-tracker"
+	MeasurementUserLogin   = "user-login"
 )

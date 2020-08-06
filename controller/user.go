@@ -450,12 +450,16 @@ func (ctrl userCtrl) login(c *elton.Context) (err error) {
 		return
 	}
 	deviceInfo := params.Device
+	ip := c.RealIP()
+	trackID := util.GetTrackID(c)
+	sessionID := util.GetSessionID(c)
+	userAgent := c.GetRequestHeader("User-Agent")
 	loginRecord := &service.UserLoginRecord{
 		Account:       params.Account,
-		UserAgent:     c.GetRequestHeader("User-Agent"),
+		UserAgent:     userAgent,
 		IP:            c.RealIP(),
-		TrackID:       util.GetTrackID(c),
-		SessionID:     util.GetSessionID(c),
+		TrackID:       trackID,
+		SessionID:     sessionID,
 		XForwardedFor: c.GetRequestHeader("X-Forwarded-For"),
 
 		Width:         deviceInfo.Width,
@@ -468,6 +472,24 @@ func (ctrl userCtrl) login(c *elton.Context) (err error) {
 		Version:       deviceInfo.Version,
 		BuildNumber:   deviceInfo.BuildNumber,
 	}
+	// 记录用户登录行为
+	getInfluxSrv().Write(cs.MeasurementUserLogin, map[string]interface{}{
+		"account":    params.Account,
+		"userAgent":  userAgent,
+		"ip":         ip,
+		"trackID":    trackID,
+		"sessionID":  sessionID,
+		"width":      deviceInfo.Width,
+		"height":     deviceInfo.Height,
+		"pixelRatio": deviceInfo.PixelRatio,
+		"uuid":       deviceInfo.UUID,
+		"brand":      deviceInfo.Brand,
+	}, map[string]string{
+		"platform":      deviceInfo.Platform,
+		"systemVersion": deviceInfo.SystemVersion,
+		"version":       deviceInfo.Version,
+		"buildNumber":   deviceInfo.BuildNumber,
+	})
 	_ = userSrv.AddLoginRecord(loginRecord, c)
 	omitUserInfo(u)
 	_ = us.SetInfo(*u)

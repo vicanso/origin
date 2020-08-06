@@ -4,7 +4,7 @@ export GO111MODULE = on
 
 # for dev
 dev:
-	fresh
+	/usr/local/bin/gowatch
 
 doc:
 	swagger generate spec -o ./api.yml && swagger validate ./api.yml 
