@@ -181,6 +181,11 @@ func GetENV() string {
 	return env
 }
 
+// GetRequestLimit get request limit
+func GetRequestLimit() uint32 {
+	return GetUint32("requestLimit")
+}
+
 // GetBool viper get bool
 func GetBool(key string) bool {
 	return defaultViper.GetBool(key)

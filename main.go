@@ -257,6 +257,13 @@ func main() {
 		},
 	}), "stats")
 
+	maxRequestLimit := config.GetRequestLimit()
+	if maxRequestLimit != 0 {
+		e.UseWithName(M.NewGlobalConcurrentLimiter(M.GlobalConcurrentLimiterConfig{
+			Max: maxRequestLimit,
+		}), "request-limit")
+	}
+
 	// 配置只针对snappy与lz4压缩（主要用于减少内网线路带宽，对外的压缩由前置反向代理 完成）
 	compressMinLength := 2 * 1024
 	compressConfig := M.NewCompressConfig(

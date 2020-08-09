@@ -1,4 +1,5 @@
 app: origin 
+# 最大处理请求数
 requestLimit: 1024
 # apiPrefix: /api
 listen: ":7001"
