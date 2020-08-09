@@ -21,6 +21,7 @@ import (
 
 	"github.com/vicanso/elton"
 	"github.com/vicanso/hes"
+	"github.com/vicanso/origin/helper"
 	"github.com/vicanso/origin/service"
 )
 
@@ -35,9 +36,14 @@ var (
 		Message:    "query is not allowed",
 		Category:   errCommonCategory,
 	}
-	errCaptchIsInvalid = &hes.Error{
+	errCaptchaIsInvalid = &hes.Error{
 		StatusCode: http.StatusBadRequest,
 		Message:    "图形验证码错误",
+		Category:   errCommonCategory,
+	}
+	errCaptchaExpired = &hes.Error{
+		StatusCode: http.StatusBadRequest,
+		Message:    "图形验证码已过期，请刷新",
 		Category:   errCommonCategory,
 	}
 )
@@ -79,12 +85,12 @@ func ValidateCaptcha(magicalCaptcha string) elton.Handler {
 	return func(c *elton.Context) (err error) {
 		value := c.GetRequestHeader(xCaptchHeader)
 		if value == "" {
-			err = errCaptchIsInvalid
+			err = errCaptchaIsInvalid
 			return
 		}
 		arr := strings.Split(value, ":")
 		if len(arr) != 2 {
-			err = errCaptchIsInvalid
+			err = errCaptchaIsInvalid
 			return
 		}
 		// 如果有配置万能验证码，则判断是否相等
@@ -93,10 +99,13 @@ func ValidateCaptcha(magicalCaptcha string) elton.Handler {
 		}
 		valid, err := service.ValidateCaptcha(arr[0], arr[1])
 		if err != nil {
+			if helper.IsRedisNilError(err) {
+				err = errCaptchaExpired
+			}
 			return err
 		}
 		if !valid {
-			err = errCaptchIsInvalid
+			err = errCaptchaIsInvalid
 			return
 		}
 		return c.Next()
