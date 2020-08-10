@@ -26,6 +26,8 @@ const (
 	ActionUserInfoUpdate = "update-user-info"
 	// ActionUserMeUpdate update minie info
 	ActionUserMeUpdate = "update-user-me"
+	// ActionUserTrackAdd add user track
+	ActionUserTrackAdd = "add-user-track"
 
 	// ActionConfigurationAdd add configuration
 	ActionConfigurationAdd = "add-configuration"

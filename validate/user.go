@@ -41,4 +41,6 @@ func init() {
 		return isAllInString(fl, cs.UserGroups)
 	})
 	AddAlias("xUserEmail", "email")
+
+	AddAlias("xUserTrackCategory", "min=1,max=20")
 }

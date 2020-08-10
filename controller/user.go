@@ -89,6 +89,15 @@ type (
 		Device deviceInfoParams `json:"device,omitempty"`
 	}
 
+	// addUserTrackParams 用户行为记录参数
+	addUserTrackParams struct {
+		Category string `json:"category,omitempty" validate:"xUserTrackCategory"`
+		// 其它额外信息
+		Extra map[string]interface{} `json:"extra,omitempty"`
+		// 设备信息
+		Device deviceInfoParams `json:"device,omitempty"`
+	}
+
 	listUserParams struct {
 		listParams
 
@@ -216,6 +225,13 @@ func init() {
 		newTracker(cs.ActionLogout),
 		shouldBeLogined,
 		ctrl.logout,
+	)
+
+	// 添加用户行为日志
+	g.POST(
+		"/v1/tracks",
+		newTracker(cs.ActionUserTrackAdd),
+		ctrl.addUserTrack,
 	)
 
 	// 获取客户登录记录
@@ -412,6 +428,17 @@ func (ctrl userCtrl) register(c *elton.Context) (err error) {
 	}
 	omitUserInfo(u)
 	c.Created(u)
+	return
+}
+
+// addUserTrack add user track
+func (ctrl userCtrl) addUserTrack(c *elton.Context) (err error) {
+	params := addUserTrackParams{}
+	err = validate.Do(&params, c.RequestBody)
+	if err != nil {
+		return
+	}
+	c.NoContent()
 	return
 }
 
