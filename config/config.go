@@ -29,9 +29,11 @@ import (
 )
 
 var (
-	box     = packr.New("config", "../configs")
-	env     = os.Getenv("GO_ENV")
-	appName string
+	box       = packr.New("config", "../configs")
+	env       = os.Getenv("GO_ENV")
+	appName   string
+	version   string
+	buildedAt string
 )
 
 const (
@@ -171,6 +173,26 @@ func ApplicationIsRunning() bool {
 
 func GetAppName() string {
 	return appName
+}
+
+// GetVersion get application's version
+func GetVersion() string {
+	return version
+}
+
+// SetVersion set application's version
+func SetVersion(v string) {
+	version = v
+}
+
+// GetBuildedAt get the builded time of application
+func GetBuildedAt() string {
+	return buildedAt
+}
+
+// SetBuildedAt set the builded time of application
+func SetBuildedAt(v string) {
+	buildedAt = v
 }
 
 // GetENV get go env

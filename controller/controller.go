@@ -206,7 +206,7 @@ func newTracker(action string) elton.Handler {
 				fields = append(fields, zap.Error(info.Err))
 			}
 			logger.Info("tracker", fields...)
-			getInfluxSrv().Write(cs.MeasurementUserTracker, map[string]interface{}{
+			getInfluxSrv().Write(cs.MeasurementTracker, map[string]interface{}{
 				"cid":     info.CID,
 				"account": account,
 				"ip":      ip,

@@ -15,6 +15,7 @@
 package util
 
 import (
+	"math/rand"
 	"sync/atomic"
 	"time"
 )
@@ -94,4 +95,13 @@ func IsBetween(begin *time.Time, end *time.Time) bool {
 		return false
 	}
 	return true
+}
+
+// NewTimeWithRandomNS new a time with random nano seconds
+func NewTimeWithRandomNS(timestamp int64) time.Time {
+	rand.Seed(time.Now().UnixNano())
+	sec := timestamp / 1000
+	ms := timestamp % 1000
+	ns := ms*10e6 + time.Now().UnixNano()%10e6
+	return time.Unix(sec, ns)
 }

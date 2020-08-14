@@ -20,7 +20,7 @@ list-mod:
 
 build:
 	packr2
-	go build -ldflags "-X main.Version=0.0.1 -X 'main.BuildAt=`date`' -X 'main.GO=`go version`'" -o origin 
+	go build -ldflags "-X main.Version=0.0.1 -X 'main.BuildedAt=`date`'" -o origin 
 
 clean:
 	packr2 clean

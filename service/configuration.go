@@ -35,7 +35,7 @@ const (
 )
 
 var (
-	signedKeys = new(elton.AtomicSignedKeys)
+	signedKeys = new(elton.RWMutexSignedKeys)
 )
 
 type (

@@ -36,26 +36,27 @@ type (
 )
 
 func init() {
-	influxbConfig := config.GetInfluxdbConfig()
-	if influxbConfig.Disabled {
+	influxdbConfig := config.GetInfluxdbConfig()
+	if influxdbConfig.Disabled {
 		defaultInfluxSrv = new(InfluxSrv)
 		return
 	}
 	opts := influxdb.DefaultOptions()
-	opts.SetBatchSize(influxbConfig.BatchSize)
-	if influxbConfig.FlushInterval > time.Millisecond {
-		v := influxbConfig.FlushInterval / time.Millisecond
+	opts.SetBatchSize(influxdbConfig.BatchSize)
+	if influxdbConfig.FlushInterval > time.Millisecond {
+		v := influxdbConfig.FlushInterval / time.Millisecond
 		opts.SetFlushInterval(uint(v))
 	}
 	log.Default().Info("new influxdb client",
-		zap.String("uri", influxbConfig.URI),
-		zap.String("org", influxbConfig.Org),
-		zap.String("bucket", influxbConfig.Bucket),
-		zap.Uint("batchSize", influxbConfig.BatchSize),
-		zap.Duration("interfal", influxbConfig.FlushInterval),
+		zap.String("uri", influxdbConfig.URI),
+		zap.String("org", influxdbConfig.Org),
+		zap.String("bucket", influxdbConfig.Bucket),
+		zap.Uint("batchSize", influxdbConfig.BatchSize),
+		zap.String("token", influxdbConfig.Token[:5]+"..."),
+		zap.Duration("interval", influxdbConfig.FlushInterval),
 	)
-	c := influxdb.NewClientWithOptions(influxbConfig.URI, influxbConfig.Token, opts)
-	writer := c.WriteApi(influxbConfig.Org, influxbConfig.Bucket)
+	c := influxdb.NewClientWithOptions(influxdbConfig.URI, influxdbConfig.Token, opts)
+	writer := c.WriteApi(influxdbConfig.Org, influxdbConfig.Bucket)
 	defaultInfluxSrv = &InfluxSrv{
 		client: c,
 		writer: writer,
@@ -68,11 +69,18 @@ func GetInfluxSrv() *InfluxSrv {
 }
 
 // Write write metric to influxdb
-func (srv *InfluxSrv) Write(measurement string, fields map[string]interface{}, tags map[string]string) {
+func (srv *InfluxSrv) Write(measurement string, fields map[string]interface{}, tags map[string]string, ts ...time.Time) {
 	if srv.writer == nil {
 		return
 	}
-	srv.writer.WritePoint(influxdb.NewPoint(measurement, tags, fields, time.Now()))
+	var now time.Time
+	if len(ts) != 0 {
+		now = ts[0]
+	} else {
+		now = time.Now()
+	}
+
+	srv.writer.WritePoint(influxdb.NewPoint(measurement, tags, fields, now))
 }
 
 // Flush flush metric list

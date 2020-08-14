@@ -34,7 +34,6 @@ swagger:meta
 package main
 
 import (
-	"flag"
 	"fmt"
 	"net/http"
 	"os"
@@ -69,9 +68,7 @@ var (
 	// Version version of tiny
 	Version string
 	// BuildAt build at
-	BuildAt string
-	// GO go version
-	GO string
+	BuildedAt string
 )
 
 func init() {
@@ -79,6 +76,8 @@ func init() {
 		value := fmt.Sprintf(format, args...)
 		log.Default().Info(value)
 	}))
+	config.SetVersion(Version)
+	config.SetBuildedAt(BuildedAt)
 }
 
 // 相关依赖服务的校验，主要是数据库等
@@ -96,13 +95,6 @@ func dependServiceCheck() (err error) {
 }
 
 func main() {
-	showVersion := flag.Bool("v", false, "show version")
-
-	flag.Parse()
-	if *showVersion {
-		fmt.Printf("version %s\nbuild at %s\n%s\n", Version, BuildAt, GO)
-		return
-	}
 	closeOnce := sync.Once{}
 	closeDeps := func() {
 		// 关闭influxdb，flush统计数据
@@ -138,6 +130,7 @@ func main() {
 				config.SetApplicationStatus(config.ApplicationStatusStopping)
 				// docker 在10秒内退出，因此设置8秒后退出
 				time.Sleep(5 * time.Second)
+				// 所有新的请求均返回出错
 				e.GracefulClose(3 * time.Second)
 				closeOnce.Do(closeDeps)
 				os.Exit(0)
@@ -159,21 +152,28 @@ func main() {
 		service.AlarmError("too many uncaught exception")
 	})
 	e.OnError(func(c *elton.Context, err error) {
+		he := hes.Wrap(err)
 		if !util.IsProduction() {
-			he, ok := err.(*hes.Error)
-			if ok {
-				if he.Extra == nil {
-					he.Extra = make(map[string]interface{})
-				}
-				he.Extra["stack"] = util.GetStack(5)
+			if he.Extra == nil {
+				he.Extra = make(map[string]interface{})
 			}
+			he.Extra["stack"] = util.GetStack(5)
 		}
+		ip := c.RealIP()
+		uri := c.Request.RequestURI
+
+		helper.GetInfluxSrv().Write(cs.MeasurementException, map[string]interface{}{
+			"ip":  ip,
+			"uri": uri,
+		}, map[string]string{
+			"category": "routeError",
+		})
 
 		// 可以针对实际场景输出更多的日志信息
 		logger.DPanic("exception",
-			zap.String("ip", c.RealIP()),
-			zap.String("uri", c.Request.RequestURI),
-			zap.Error(err),
+			zap.String("ip", ip),
+			zap.String("uri", uri),
+			zap.Error(he.Err),
 		)
 		warnerException.Inc("exception", 1)
 	})
@@ -257,6 +257,7 @@ func main() {
 		},
 	}), "stats")
 
+	// 限制最大请求量
 	maxRequestLimit := config.GetRequestLimit()
 	if maxRequestLimit != 0 {
 		e.UseWithName(M.NewGlobalConcurrentLimiter(M.GlobalConcurrentLimiterConfig{

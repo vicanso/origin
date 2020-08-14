@@ -24,6 +24,7 @@ import (
 	"github.com/vicanso/hes"
 	"github.com/vicanso/origin/middleware"
 	"github.com/vicanso/origin/validate"
+	"go.uber.org/zap"
 
 	"github.com/vicanso/elton"
 	"github.com/vicanso/origin/config"
@@ -91,9 +92,12 @@ type (
 
 	// addUserTrackParams 用户行为记录参数
 	addUserTrackParams struct {
-		Category string `json:"category,omitempty" validate:"xUserTrackCategory"`
-		// 其它额外信息
-		Extra map[string]interface{} `json:"extra,omitempty"`
+		Tracks []struct {
+			Category  string `json:"category,omitempty" validate:"xUserTrackCategory"`
+			CreatedAt int64  `json:"createdAt,omitempty"`
+			// 其它额外信息
+			Extra map[string]interface{} `json:"extra,omitempty"`
+		} `json:"tracks,omitempty"`
 		// 设备信息
 		Device deviceInfoParams `json:"device,omitempty"`
 	}
@@ -231,7 +235,7 @@ func init() {
 	g.POST(
 		"/v1/tracks",
 		newTracker(cs.ActionUserTrackAdd),
-		ctrl.addUserTrack,
+		ctrl.addTrack,
 	)
 
 	// 获取客户登录记录
@@ -335,7 +339,7 @@ func (ctrl userCtrl) me(c *elton.Context) (err error) {
 	// ulid的长度为26
 	if cookie == nil || len(cookie.Value) != 26 {
 		uid := util.GenUlid()
-		_ = c.AddCookie(&http.Cookie{
+		c.AddCookie(&http.Cookie{
 			Name:     key,
 			Value:    uid,
 			Path:     "/",
@@ -431,14 +435,40 @@ func (ctrl userCtrl) register(c *elton.Context) (err error) {
 	return
 }
 
-// addUserTrack add user track
-func (ctrl userCtrl) addUserTrack(c *elton.Context) (err error) {
+// addTrack add user track
+func (ctrl userCtrl) addTrack(c *elton.Context) (err error) {
 	params := addUserTrackParams{}
 	err = validate.Do(&params, c.RequestBody)
 	if err != nil {
 		return
 	}
-	c.NoContent()
+	deviceInfo := params.Device
+	for _, track := range params.Tracks {
+		now := time.Now()
+		if track.CreatedAt != 0 {
+			now = util.NewTimeWithRandomNS(track.CreatedAt)
+		}
+		fields := util.MergeMapStringInterface(map[string]interface{}{
+			"width":      deviceInfo.Width,
+			"height":     deviceInfo.Height,
+			"pixelRatio": deviceInfo.PixelRatio,
+			"uuid":       deviceInfo.UUID,
+			"brand":      deviceInfo.Brand,
+		}, track.Extra)
+		tags := map[string]string{
+			"category":      track.Category,
+			"platform":      deviceInfo.Platform,
+			"systemVersion": deviceInfo.SystemVersion,
+			"version":       deviceInfo.Version,
+			"buildNumber":   deviceInfo.BuildNumber,
+		}
+		logger.Info("user track",
+			zap.Any("tags", tags),
+			zap.Any("fields", fields),
+		)
+		getInfluxSrv().Write(cs.MeasurementUserTracker, fields, tags, now)
+	}
+	c.Created(nil)
 	return
 }
 
@@ -554,16 +584,13 @@ func (ctrl userCtrl) refresh(c *elton.Context) (err error) {
 		return
 	}
 	// 更新session
-	err = c.AddSignedCookie(&http.Cookie{
+	c.AddSignedCookie(&http.Cookie{
 		Name:     scf.Key,
 		Value:    cookie.Value,
 		Path:     scf.CookiePath,
 		MaxAge:   int(scf.TTL.Seconds()),
 		HttpOnly: true,
 	})
-	if err != nil {
-		return
-	}
 
 	c.NoContent()
 	return

@@ -16,7 +16,9 @@ package controller
 
 import (
 	"bytes"
+	"runtime"
 	"strconv"
+	"time"
 
 	"github.com/vicanso/hes"
 	"github.com/vicanso/origin/config"
@@ -37,6 +39,8 @@ type (
 	}
 )
 
+var applicationStartedAt = time.Now()
+
 func init() {
 	ctrl := commonCtrl{}
 	g := router.NewGroup("")
@@ -56,6 +60,8 @@ func init() {
 	g.GET("/commons/statuses", ctrl.listStatus)
 
 	g.GET("/commons/qrcode", ctrl.qrcode)
+
+	g.GET("/commons/application", ctrl.getApplicationInfo)
 }
 
 // 服务检测ping的响应
@@ -187,5 +193,28 @@ func (ctrl commonCtrl) qrcode(c *elton.Context) (err error) {
 	c.SetContentTypeByExt(".png")
 	c.BodyBuffer = bytes.NewBuffer(info.Data)
 
+	return
+}
+
+// getApplicationInfo get application's informations
+func (commonCtrl) getApplicationInfo(c *elton.Context) (err error) {
+	c.CacheMaxAge("1m")
+	c.Body = &struct {
+		Version   string `json:"version,omitempty"`
+		BuildedAt string `json:"buildedAt,omitempty"`
+		Uptime    string `json:"uptime,omitempty"`
+		OS        string `json:"os,omitempty"`
+		GO        string `json:"go,omitempty"`
+		ARCH      string `json:"arch,omitempty"`
+		ENV       string `json:"env,omitempty"`
+	}{
+		config.GetVersion(),
+		config.GetBuildedAt(),
+		time.Since(applicationStartedAt).String(),
+		runtime.GOOS,
+		runtime.Version(),
+		runtime.GOARCH,
+		config.GetENV(),
+	}
 	return
 }

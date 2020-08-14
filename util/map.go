@@ -1,4 +1,4 @@
-// Copyright 2019 tree xie
+// Copyright 2020 tree xie
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,17 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cs
+package util
 
-const (
-	MeasurementHTTPRequest = "http-request"
-	MeasurementPG          = "pg-stats"
-	MeasurementRedis       = "redis-stats"
-	MeasurementHTTP        = "http-stats"
-	MeasurementRedisStats  = "redis-stats"
-	MeasurementPGStats     = "pg-stats"
-	MeasurementTracker     = "tracker"
-	MeasurementUserTracker = "user-tracker"
-	MeasurementUserLogin   = "user-login"
-	MeasurementException   = "exception"
-)
+// MergeMapStringInterface merage map[string]interface{}
+func MergeMapStringInterface(target, source map[string]interface{}) map[string]interface{} {
+	for key, value := range source {
+		if value != nil {
+			target[key] = value
+		}
+	}
+	return target
+}
