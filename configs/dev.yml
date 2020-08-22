@@ -2,3 +2,4 @@
 
 influxdb:
   flushInterval: 2s
+  disabled: true

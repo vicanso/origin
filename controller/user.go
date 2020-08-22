@@ -147,6 +147,11 @@ var (
 		StatusCode: http.StatusBadRequest,
 		Category:   errUserCategory,
 	}
+	errUserAccountExists = &hes.Error{
+		Message:    "该账户已注册",
+		StatusCode: http.StatusBadRequest,
+		Category:   errUserCategory,
+	}
 )
 
 func init() {
@@ -421,6 +426,11 @@ func (ctrl userCtrl) register(c *elton.Context) (err error) {
 	params := registerLoginUserParams{}
 	err = validate.Do(&params, c.RequestBody)
 	if err != nil {
+		return
+	}
+	user, _ := userSrv.FindOneByAccount(params.Account)
+	if user != nil {
+		err = errUserAccountExists
 		return
 	}
 	u, err := userSrv.Add(service.User{
