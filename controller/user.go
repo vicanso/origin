@@ -429,7 +429,7 @@ func (ctrl userCtrl) register(c *elton.Context) (err error) {
 		return
 	}
 	user, _ := userSrv.FindOneByAccount(params.Account)
-	if user != nil {
+	if user.ID != 0 {
 		err = errUserAccountExists
 		return
 	}
