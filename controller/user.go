@@ -88,6 +88,8 @@ type (
 		Password string `json:"password,omitempty" validate:"xUserPassword"`
 		// 设备信息
 		Device deviceInfoParams `json:"device,omitempty"`
+		// 推荐人
+		Recommender uint `json:"recommender,omitempty" validate:"omitempty,xUserID"`
 	}
 
 	// addUserTrackParams 用户行为记录参数
@@ -149,6 +151,11 @@ var (
 	}
 	errUserAccountExists = &hes.Error{
 		Message:    "该账户已注册",
+		StatusCode: http.StatusBadRequest,
+		Category:   errUserCategory,
+	}
+	errUserRcmderNotExists = &hes.Error{
+		Message:    "推荐人编号不存在，请重新填写",
 		StatusCode: http.StatusBadRequest,
 		Category:   errUserCategory,
 	}
@@ -428,14 +435,23 @@ func (ctrl userCtrl) register(c *elton.Context) (err error) {
 	if err != nil {
 		return
 	}
+
 	user, _ := userSrv.FindOneByAccount(params.Account)
 	if user.ID != 0 {
 		err = errUserAccountExists
 		return
 	}
+	if params.Recommender != 0 {
+		rcmder, _ := userSrv.FindByID(params.Recommender)
+		if rcmder.ID == 0 {
+			err = errUserRcmderNotExists
+			return
+		}
+	}
 	u, err := userSrv.Add(service.User{
-		Account:  params.Account,
-		Password: params.Password,
+		Account:     params.Account,
+		Password:    params.Password,
+		Recommender: params.Recommender,
 	})
 	if err != nil {
 		return

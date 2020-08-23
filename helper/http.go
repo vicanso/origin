@@ -17,6 +17,7 @@ package helper
 import (
 	"errors"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/tidwall/gjson"
@@ -24,8 +25,8 @@ import (
 
 	"github.com/vicanso/hes"
 
-	"github.com/vicanso/origin/cs"
 	"github.com/vicanso/go-axios"
+	"github.com/vicanso/origin/cs"
 	"go.uber.org/zap"
 )
 
@@ -97,18 +98,15 @@ func newConvertResponseToError(serviceName string) axios.ResponseInterceptor {
 // newOnError new an error listener
 func newOnError(serviceName string) axios.OnError {
 	return func(err error, conf *axios.Config) (newErr error) {
-		e, ok := err.(*axios.Error)
 		id := conf.GetString(cs.CID)
-		if !ok {
-			e = &axios.Error{
-				Message: err.Error(),
-			}
+		code := -1
+		if conf.Response != nil {
+			code = conf.Response.Status
 		}
-		code := e.Code
 
 		he := &hes.Error{
 			StatusCode: code,
-			Message:    e.Message,
+			Message:    err.Error(),
 			ID:         id,
 		}
 		if code < http.StatusBadRequest {
@@ -117,7 +115,8 @@ func newOnError(serviceName string) axios.OnError {
 		}
 
 		// 请求超时
-		if e.Timeout() {
+		e, ok := err.(*url.Error)
+		if ok && e.Timeout() {
 			he.Message = "Timeout"
 		}
 		if !isProduction() {

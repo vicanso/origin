@@ -80,7 +80,7 @@ type (
 		helper.Model
 
 		Account  string `json:"account,omitempty" gorm:"type:varchar(20);not null;unique_index:idx_users_account"`
-		Password string `json:"-" gorm:"type:varchar(128);not null"`
+		Password string `json:"-,omitempty" gorm:"type:varchar(128);not null"`
 		Name     string `json:"name,omitempty"`
 
 		// 用户角色
@@ -98,6 +98,9 @@ type (
 		StatusDesc string `json:"statusDesc,omitempty" gorm:"-"`
 		Email      string `json:"email,omitempty"`
 		Mobile     string `json:"mobile,omitempty"`
+		// 推荐人
+		Recommender     uint   `json:"recommender,omitempty"`
+		RecommenderName string `json:"recommenderName,omitempty" gorm:"-"`
 	}
 	// UserRole user role
 	UserRole struct {
@@ -226,6 +229,14 @@ func (u *User) AfterFind(_ *gorm.DB) (err error) {
 		}
 	}
 	u.GroupsDesc = userGroupsDesc
+
+	if u.Recommender != 0 {
+		rcmder, _ := userSrv.FindByID(u.Recommender)
+		u.RecommenderName = rcmder.Name
+		if len(rcmder.Name) != 0 {
+			u.RecommenderName = rcmder.Account
+		}
+	}
 
 	return
 }
