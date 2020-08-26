@@ -40,12 +40,14 @@ var (
 
 	logger = log.Default()
 
-	redisSrv   = new(helper.Redis)
-	productSrv = new(ProductSrv)
-	regionSrv  = new(RegionSrv)
-	brandSrv   = new(BrandSrv)
-	userSrv    = new(UserSrv)
-	fileSrv    = new(FileSrv)
+	redisSrv          = new(helper.Redis)
+	productSrv        = new(ProductSrv)
+	regionSrv         = new(RegionSrv)
+	brandSrv          = new(BrandSrv)
+	userSrv           = new(UserSrv)
+	fileSrv           = new(FileSrv)
+	orderSrv          = new(OrderSrv)
+	orderComissionSrv = new(OrderCommissionSrv)
 
 	statusInfoList StatusInfoList
 	statusMap      map[int]string

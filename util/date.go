@@ -18,6 +18,8 @@ import (
 	"math/rand"
 	"sync/atomic"
 	"time"
+
+	"github.com/jinzhu/now"
 )
 
 var (
@@ -78,9 +80,29 @@ func FormatTime(t time.Time) string {
 }
 
 // ChinaNow get the now time of china
-func ChinaNow() time.Time {
-	loc, _ := time.LoadLocation("Asia/Shanghai")
-	return Now().In(loc)
+func ChinaNow() (time.Time, error) {
+	t := Now()
+	loc, err := time.LoadLocation("Asia/Shanghai")
+	if err != nil {
+		return t, err
+	}
+	return t.In(loc), nil
+}
+
+// ChinaToday china today
+func ChinaToday() (time.Time, error) {
+	t, err := ChinaNow()
+	return now.With(t).BeginningOfDay(), err
+}
+
+// ChinaYesterday china yesterday
+func ChinaYesterday() (time.Time, error) {
+	t, err := ChinaNow()
+	if err != nil {
+		return t, err
+	}
+	t = t.AddDate(0, 0, -1)
+	return now.With(t).BeginningOfDay(), err
 }
 
 // IsBetween now is between begin and end

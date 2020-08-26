@@ -86,6 +86,9 @@ export default {
         const { data } = await request.get(CONFIGS, {
           params
         });
+        if (!data.configs) {
+          data.configs = [];
+        }
         data.configs.forEach(item => {
           item.isJSON = false;
           if (item.data[0] === "{") {

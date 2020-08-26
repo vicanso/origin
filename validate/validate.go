@@ -12,10 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// !!!important!!!
-// common custom tag should allow empty
-// !!!important!!!
-
 package validate
 
 import (

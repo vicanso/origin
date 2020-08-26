@@ -63,6 +63,8 @@ var (
 	regionSrv = new(service.RegionSrv)
 	// 订单服务
 	orderSrv = new(service.OrderSrv)
+	// 订单佣金服务
+	orderCommissionSrv = new(service.OrderCommissionSrv)
 	// 供应商服务
 	supplierSrv = new(service.SupplierSrv)
 	// 收货人服务

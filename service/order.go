@@ -122,6 +122,9 @@ type (
 		// 支付渠道
 		PaySource string `json:"paySource,omitempty"`
 
+		// 推荐人
+		Recommender uint `json:"recommender,omitempty"`
+
 		// 状态时间线
 		StatusTimeline OrderStatusTimeline `json:"statusTimeline,omitempty"`
 	}
@@ -708,7 +711,12 @@ func (order *Order) BeforeCreate(_ *gorm.DB) (err error) {
 	timeline := make(OrderStatusTimeline, 0)
 	timeline = timeline.Add(OrderStatusInited)
 	order.StatusTimeline = timeline
-	// order.StatusTimelineRaw = timeline.String()
+
+	user, _ := userSrv.FindByID(order.UserID)
+	if user.Recommender != 0 {
+		order.Recommender = user.Recommender
+	}
+
 	return
 }
 

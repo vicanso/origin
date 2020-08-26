@@ -153,6 +153,14 @@ type (
 	}
 	// UserSrv user service
 	UserSrv struct{}
+
+	// UserAmount user amount
+	UserAmount struct {
+		UpdatedAt     *time.Time `json:"updatedAt,omitempty"`
+		EnabledAmount float64    `json:"enabledAmount,omitempty"`
+		FrozenAmount  float64    `json:"frozenAmount,omitempty"`
+		Amount        float64    `json:"amount,omitempty"`
+	}
 )
 
 func init() {
@@ -448,6 +456,33 @@ func (srv *UserSrv) GetNameFromCache(id uint) (name string, err error) {
 	}
 	name = user.Name
 	userNameCache.Add(id, name)
+	return
+}
+
+// GetAmount get user's amount
+func (*UserSrv) GetAmount(id uint) (userAmout *UserAmount, err error) {
+	commissions, err := orderComissionSrv.ListAll(PGQueryParams{
+		Fields: "commissionAmount,updatedAt",
+	}, "recommender = ?", id)
+	if err != nil {
+		return
+	}
+	amount := 0.0
+	frozenAmount := 0.0
+	initTime := time.Unix(0, 0)
+	updatedAt := &initTime
+	for _, commission := range commissions {
+		if commission.UpdatedAt.Unix() > updatedAt.Unix() {
+			updatedAt = commission.UpdatedAt
+		}
+		amount += commission.CommissionAmount
+	}
+	userAmout = &UserAmount{
+		UpdatedAt:     updatedAt,
+		EnabledAmount: amount - frozenAmount,
+		Amount:        amount,
+		FrozenAmount:  frozenAmount,
+	}
 	return
 }
 

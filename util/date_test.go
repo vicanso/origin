@@ -36,5 +36,15 @@ func TestTime(t *testing.T) {
 	assert.Nil(err)
 	assert.Equal("2020-04-26T20:34:33+08:00", FormatTime(value))
 
-	assert.Equal("2020-04-26T20:34:33+08:00", FormatTime(ChinaNow()))
+	chinaNow, err := ChinaNow()
+	assert.Nil(err)
+	assert.Equal("2020-04-26T20:34:33+08:00", FormatTime(chinaNow))
+
+	chinaToday, err := ChinaToday()
+	assert.Nil(err)
+	assert.Equal("2020-04-26T00:00:00+08:00", FormatTime(chinaToday))
+
+	chinaYesterday, err := ChinaYesterday()
+	assert.Nil(err)
+	assert.Equal("2020-04-25T00:00:00+08:00", FormatTime(chinaYesterday))
 }

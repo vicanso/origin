@@ -10,6 +10,8 @@ import {
   CONFIG_SIGNED_KEY,
   CONFIG_ROUTER,
   CONFIG_ROUTER_CONCURRENCY,
+  CONFIG_ORDER_COMMISSION,
+  CONFIG_MARKETING_GROUP,
   USERS,
   PROFILE,
   LOGINS,
@@ -29,6 +31,8 @@ import BlockIP from "@/views/configs/BlockIP.vue";
 import SignedKey from "@/views/configs/SignedKey.vue";
 import Router from "@/views/configs/Router.vue";
 import RouterConcurrency from "@/views/configs/RouterConcurrency.vue";
+import OrderCommission from "@/views/configs/OrderCommission.vue";
+import MarketingGroup from "@/views/configs/MarketingGroup.vue";
 import Users from "@/views/Users.vue";
 import Logins from "@/views/Logins.vue";
 import Brands from "@/views/Brands.vue";
@@ -93,6 +97,22 @@ const routes = [
     path: "/configs/router-concurrency",
     name: CONFIG_ROUTER_CONCURRENCY,
     component: RouterConcurrency,
+    meta: {
+      requiresAuth: true
+    }
+  },
+  {
+    path: "/configs/order-commission",
+    name: CONFIG_ORDER_COMMISSION,
+    component: OrderCommission,
+    meta: {
+      requiresAuth: true
+    }
+  },
+  {
+    path: "/configs/marketing-group",
+    name: CONFIG_MARKETING_GROUP,
+    component: MarketingGroup,
     meta: {
       requiresAuth: true
     }

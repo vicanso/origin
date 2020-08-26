@@ -257,6 +257,13 @@ func init() {
 		ctrl.listLoginRecord,
 	)
 
+	// 获取账户金额
+	g.GET(
+		"/v1/amount",
+		shouldBeLogined,
+		ctrl.getAmount,
+	)
+
 	gNoneSession.GET(
 		"/v1/roles",
 		ctrl.listRole,
@@ -794,5 +801,16 @@ func (ctrl userCtrl) listGroup(c *elton.Context) (err error) {
 	c.Body = map[string][]*service.UserGroup{
 		"groups": userSrv.ListGroup(),
 	}
+	return
+}
+
+// getAmount get amount
+func (userCtrl) getAmount(c *elton.Context) (err error) {
+	us := getUserSession(c)
+	userAmount, err := userSrv.GetAmount(us.GetID())
+	if err != nil {
+		return
+	}
+	c.Body = userAmount
 	return
 }

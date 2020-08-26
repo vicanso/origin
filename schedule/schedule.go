@@ -32,6 +32,8 @@ func init() {
 	_, _ = c.AddFunc("@every 5m", redisStats)
 	_, _ = c.AddFunc("@every 1m", pgStats)
 	_, _ = c.AddFunc("00 00 * * *", resetProductSearchHotKeywords)
+	// 测试暂时每5分钟自动生成
+	_, _ = c.AddFunc("@every 5m", generateOrderCommission)
 	c.Start()
 }
 
@@ -52,7 +54,7 @@ func configRefresh() {
 		log.Default().Error("config refresh fail",
 			zap.Error(err),
 		)
-		service.AlarmError("config refresh fail")
+		service.AlarmError("config refresh fail, " + err.Error())
 	}
 }
 
@@ -72,5 +74,16 @@ func resetProductSearchHotKeywords() {
 		log.Default().Error("reset product search hot key words fail",
 			zap.Error(err),
 		)
+	}
+}
+
+func generateOrderCommission() {
+	orderCommissionSrv := new(service.OrderCommissionSrv)
+	err := orderCommissionSrv.Do()
+	if err != nil {
+		log.Default().Error("order commission generate fail",
+			zap.Error(err),
+		)
+		service.AlarmError("order commission geerate fail, " + err.Error())
 	}
 }

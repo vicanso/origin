@@ -15,6 +15,7 @@
 package service
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -32,6 +33,10 @@ const (
 	blockIPCategory           = "blockIP"
 	routerConfigCategory      = "router"
 	routerConcurrencyCategory = "routerConcurrency"
+	// 佣金配置
+	orderCommissionCategory = "orderCommission"
+	// 营销分组
+	marketingGroupCategory = "marketingGroup"
 )
 
 var (
@@ -163,6 +168,10 @@ func (srv *ConfigurationSrv) Refresh() (err error) {
 			blockIPList = append(blockIPList, item.Data)
 		case routerConcurrencyCategory:
 			routerConcurrencyConfigs = append(routerConcurrencyConfigs, item.Data)
+		case orderCommissionCategory:
+			fmt.Println(orderCommissionCategory)
+		case marketingGroupCategory:
+			fmt.Println(marketingGroupCategory)
 		}
 	}
 

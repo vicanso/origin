@@ -13,6 +13,7 @@ require (
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
 	github.com/iancoleman/strcase v0.1.0
 	github.com/influxdata/influxdb-client-go v1.4.0
+	github.com/jinzhu/now v1.1.1
 	github.com/lib/pq v1.8.0
 	github.com/minio/minio-go/v6 v6.0.57
 	github.com/mozillazg/go-pinyin v0.18.0
