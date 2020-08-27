@@ -2,11 +2,7 @@
   <div class="marketingGroupData">
     <el-col :span="12">
       <el-form-item label="分组名称：">
-        <el-input
-          type="text"
-          placeholder="请输入分组名称"
-          v-model="groupName"
-        />
+        <el-input type="text" placeholder="请输入分组名称" v-model="name" />
       </el-form-item>
     </el-col>
     <el-col :span="12">
@@ -14,7 +10,7 @@
         <el-input
           type="number"
           placeholder="请输入群组归属人员账户ID"
-          v-model="userID"
+          v-model="owner"
         />
       </el-form-item>
     </el-col>
@@ -28,8 +24,8 @@ export default {
   },
   data() {
     const data = {
-      groupName: "",
-      userID: null
+      name: "",
+      owner: null
     };
     if (this.$props.data) {
       Object.assign(data, JSON.parse(this.$props.data));
@@ -37,21 +33,21 @@ export default {
     return data;
   },
   watch: {
-    groupName() {
+    name() {
       this.handleChange();
     },
-    userID() {
+    owner() {
       this.handleChange();
     }
   },
   methods: {
     handleChange() {
-      const { groupName, userID } = this;
+      const { name, owner } = this;
       let value = "";
-      if (groupName) {
+      if (name) {
         value = JSON.stringify({
-          groupName,
-          userID
+          name,
+          owner: Number(owner)
         });
       }
       this.$emit("change", value);

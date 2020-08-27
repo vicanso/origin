@@ -93,6 +93,9 @@ type (
 		// 用户群组描述
 		GroupsDesc []string `json:"groupsDesc,omitempty" gorm:"-"`
 
+		// 用户销售分组
+		MarketingGroup string `json:"marketingGroup,omitempty"`
+
 		// 用户状态
 		Status     int    `json:"status,omitempty"`
 		StatusDesc string `json:"statusDesc,omitempty" gorm:"-"`
@@ -461,7 +464,7 @@ func (srv *UserSrv) GetNameFromCache(id uint) (name string, err error) {
 
 // GetAmount get user's amount
 func (*UserSrv) GetAmount(id uint) (userAmout *UserAmount, err error) {
-	commissions, err := orderComissionSrv.ListAll(PGQueryParams{
+	commissions, err := orderCommissionSrv.ListAll(PGQueryParams{
 		Fields: "commissionAmount,updatedAt",
 	}, "recommender = ?", id)
 	if err != nil {

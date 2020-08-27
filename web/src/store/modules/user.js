@@ -6,6 +6,7 @@ import {
   USERS_ID,
   USERS_ROLE,
   USERS_GROUPS,
+  USERS_MARKETING_GROUPS,
   USERS_LOGINS
 } from "@/constants/url";
 import {
@@ -31,8 +32,11 @@ const mutationUserListProcessing = `${mutationUserList}.processing`;
 const mutationUserListRole = `${mutationUserList}.role`;
 const mutationUserListRoleProcessing = `${mutationUserListRole}.processing`;
 
-const mutationuserListGroup = `${mutationUserList}.group`;
-const mutationUserListGroupProcessing = `${mutationuserListGroup}.processing`;
+const mutationUserListGroup = `${mutationUserList}.group`;
+const mutationUserListGroupProcessing = `${mutationUserListGroup}.processing`;
+
+const mutationUserListMarketingGroup = `${mutationUserList}.marketingGroup`;
+const mutationUserListMarketingGroupProcessing = `${mutationUserListMarketingGroup}.processing`;
 
 const mutationUserUpdate = `${prefix}.update`;
 const mutationUserUpdateProcessing = `${mutationUserUpdate}.processing`;
@@ -51,6 +55,10 @@ const state = {
   // 用户分组
   groupListProcessing: false,
   groups: null,
+
+  // 市场分组
+  marketingGroupListProcessing: false,
+  marketingGroups: null,
 
   // 默认为处理中（程序一开始则拉取用户信息）
   processing: true,
@@ -132,10 +140,32 @@ async function listUserGroup({ commit }) {
     const { data } = await request.get(USERS_GROUPS, {
       params: addNoCacheQueryParam()
     });
-    commit(mutationuserListGroup, data);
+    commit(mutationUserListGroup, data);
     return data;
   } finally {
     commit(mutationUserListGroupProcessing, false);
+  }
+}
+
+// listUserMarketingGroup 获取用户市场分组
+async function listUserMarketingGroup({ commit }) {
+  if (state.marketingGroups) {
+    return {
+      marketingGroups: state.marketingGroups
+    };
+  }
+  commit(mutationUserListMarketingGroupProcessing, true);
+  try {
+    const { data } = await request.get(USERS_MARKETING_GROUPS, {
+      params: addNoCacheQueryParam()
+    });
+    data.marketingGroups.forEach(item => {
+      item.value = item.name;
+    });
+    commit(mutationUserListMarketingGroup, data);
+    return data;
+  } finally {
+    commit(mutationUserListMarketingGroupProcessing, false);
   }
 }
 
@@ -167,8 +197,14 @@ export default {
     [mutationUserListGroupProcessing](state, processing) {
       state.groupListProcessing = processing;
     },
-    [mutationuserListGroup](state, { groups = [] }) {
+    [mutationUserListGroup](state, { groups = [] }) {
       state.groups = groups;
+    },
+    [mutationUserListMarketingGroupProcessing](state, processing) {
+      state.marketingGroupListProcessing = processing;
+    },
+    [mutationUserListMarketingGroup](state, { marketingGroups = [] }) {
+      state.marketingGroups = marketingGroups;
     },
     [mutationUserUpdateProcessing](state, processing) {
       state.updateProcessing = processing;
@@ -316,10 +352,16 @@ export default {
     listUserRole,
     listUserStatus: listStatus,
     listUserGroup,
+    listUserMarketingGroup,
     // updateUserByID 更新用户信息
     async updateUserByID({ commit }, { id, data }) {
       commit(mutationUserUpdateProcessing, true);
       try {
+        ["groups"].forEach(key => {
+          if (data[key] && data[key].length === 0) {
+            delete data[key];
+          }
+        });
         await request.patch(USERS_ID.replace(":id", id), data);
         commit(mutationUserUpdate, {
           id,

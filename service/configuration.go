@@ -15,8 +15,9 @@
 package service
 
 import (
-	"fmt"
+	"encoding/json"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/vicanso/elton"
@@ -41,6 +42,8 @@ const (
 
 var (
 	signedKeys = new(elton.RWMutexSignedKeys)
+
+	defaultMarketingGroups = new(MarketingGroups)
 )
 
 type (
@@ -66,6 +69,16 @@ type (
 	}
 	// ConfigurationSrv configuration service
 	ConfigurationSrv struct {
+	}
+
+	MarketingGroup struct {
+		Name  string `json:"name,omitempty"`
+		Owner uint   `json:"owner,omitempty"`
+	}
+	// MarketingGroups marketing groups
+	MarketingGroups struct {
+		sync.RWMutex
+		groups []*MarketingGroup
 	}
 )
 
@@ -100,6 +113,37 @@ func (conf *Configuration) IsValid() bool {
 	return util.IsBetween(conf.BeginDate, conf.EndDate)
 }
 
+// Set set groups
+func (mg *MarketingGroups) Set(data []string) {
+	groups := make([]*MarketingGroup, 0)
+	for _, item := range data {
+		group := &MarketingGroup{}
+		_ = json.Unmarshal([]byte(item), group)
+		if group.Name != "" {
+			groups = append(groups, group)
+		}
+	}
+	mg.Lock()
+	defer mg.Unlock()
+	mg.groups = groups
+}
+
+// List list marketing groups
+func (mg *MarketingGroups) List() (groups []*MarketingGroup) {
+	mg.RLock()
+	defer mg.RUnlock()
+	if len(mg.groups) == 0 {
+		return nil
+	}
+	list := mg.groups[0:]
+	return list
+}
+
+// ListMarketingGroup list marketing group
+func ListMarketingGroup() (groups []*MarketingGroup) {
+	return defaultMarketingGroups.List()
+}
+
 // createByID create a configuration by id
 func (srv *ConfigurationSrv) createByID(id uint) *Configuration {
 	c := &Configuration{}
@@ -131,7 +175,9 @@ func (srv *ConfigurationSrv) FindByID(id uint) (config *Configuration, err error
 func (srv *ConfigurationSrv) Available() (configs []*Configuration, err error) {
 	configs = make([]*Configuration, 0)
 	now := time.Now()
-	err = pgGetClient().Where("status = ? and begin_date < ? and end_date > ?", cs.StatusEnabled, now, now).Find(&configs).Error
+	err = pgQuery(PGQueryParams{
+		Order: "-updatedAt",
+	}, "status = ? and begin_date < ? and end_date > ?", cs.StatusEnabled, now, now).Find(&configs).Error
 	if err != nil {
 		return
 	}
@@ -150,6 +196,8 @@ func (srv *ConfigurationSrv) Refresh() (err error) {
 	var signedKeysConfig *Configuration
 	blockIPList := make([]string, 0)
 	routerConcurrencyConfigs := make([]string, 0)
+	orderCommissionConfigs := make([]string, 0)
+	groupConfigs := make([]string, 0)
 
 	for _, item := range configs {
 		if item.Name == mockTimeKey {
@@ -169,9 +217,9 @@ func (srv *ConfigurationSrv) Refresh() (err error) {
 		case routerConcurrencyCategory:
 			routerConcurrencyConfigs = append(routerConcurrencyConfigs, item.Data)
 		case orderCommissionCategory:
-			fmt.Println(orderCommissionCategory)
+			orderCommissionConfigs = append(orderCommissionConfigs, item.Data)
 		case marketingGroupCategory:
-			fmt.Println(marketingGroupCategory)
+			groupConfigs = append(groupConfigs, item.Data)
 		}
 	}
 
@@ -189,6 +237,10 @@ func (srv *ConfigurationSrv) Refresh() (err error) {
 		keys := strings.Split(signedKeysConfig.Data, ",")
 		signedKeys.SetKeys(keys)
 	}
+
+	defaultOrderCommissionConfigs.Set(orderCommissionConfigs)
+
+	defaultMarketingGroups.Set(groupConfigs)
 
 	// 更新router configs
 	updateRouterConfigs(routerConfigs)

@@ -272,9 +272,13 @@ func init() {
 		"/v1/groups",
 		ctrl.listGroup,
 	)
+	gNoneSession.GET(
+		"/v1/marketing-groups",
+		ctrl.listMarketingGroup,
+	)
 }
 
-// toConditions get conditions of list user
+// toConditions get conditions	fmt.Println(groups) of list user
 func (params listUserParams) toConditions() (conditions []interface{}) {
 	conds := queryConditions{}
 	if params.Role != "" {
@@ -812,5 +816,13 @@ func (userCtrl) getAmount(c *elton.Context) (err error) {
 		return
 	}
 	c.Body = userAmount
+	return
+}
+
+// listMarketingGroup list marketing group
+func (userCtrl) listMarketingGroup(c *elton.Context) (err error) {
+	c.Body = map[string][]*service.MarketingGroup{
+		"marketingGroups": service.ListMarketingGroup(),
+	}
 	return
 }

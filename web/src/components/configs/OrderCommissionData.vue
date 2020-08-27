@@ -47,15 +47,16 @@ export default {
   methods: {
     handleChange() {
       const { group, ratio } = this;
+      const ratioValue = Number(ratio);
       let value = "";
-      if (ratio > 0.1) {
+      if (ratioValue > 0.1) {
         this.$message.error("佣金比例不能大于0.1");
         return;
       }
       if (group) {
         value = JSON.stringify({
           group,
-          ratio
+          ratio: ratioValue
         });
       }
       this.$emit("change", value);
