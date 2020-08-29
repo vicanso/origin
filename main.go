@@ -116,6 +116,8 @@ func main() {
 		c.ServerTiming(infos, "origni-")
 	})
 
+	// 是否用户关闭
+	closedByUser := false
 	// 非开发环境，监听信号退出
 	if !util.IsDevelopment() {
 
@@ -126,6 +128,7 @@ func main() {
 				logger.Info("server will be closed",
 					zap.String("signal", s.String()),
 				)
+				closedByUser = true
 				// 设置状态为退出中，/ping请求返回出错，反向代理不再转发流量
 				config.SetApplicationStatus(config.ApplicationStatusStopping)
 				// docker 在10秒内退出，因此设置8秒后退出
@@ -330,7 +333,8 @@ func main() {
 	config.SetApplicationStatus(config.ApplicationStatusRunning)
 	err = e.ListenAndServe(listen)
 
-	if err != nil {
+	// 如果出错而且非用户关闭，则发送告警
+	if err != nil && !closedByUser {
 		service.AlarmError("listen and serve fail, " + err.Error())
 		panic(err)
 	}
