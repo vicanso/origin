@@ -20,7 +20,7 @@
       <el-form-item label="佣金比例：">
         <el-input
           type="number"
-          placeholder="请输入佣金比例（小数）"
+          placeholder="请输入佣金比例（不大于0.1）"
           v-model="ratio"
         />
       </el-form-item>

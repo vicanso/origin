@@ -138,13 +138,14 @@ const navs = [
         name: "路由并发配置",
         route: CONFIG_ROUTER_CONCURRENCY
       },
-      {
-        name: "订单佣金配置",
-        route: CONFIG_ORDER_COMMISSION
-      },
+
       {
         name: "销售分组配置",
         route: CONFIG_MARKETING_GROUP
+      },
+      {
+        name: "订单佣金配置",
+        route: CONFIG_ORDER_COMMISSION
       }
     ]
   }
