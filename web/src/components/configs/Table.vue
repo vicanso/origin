@@ -7,6 +7,9 @@
         <el-checkbox title="仅展示有效的" v-model="available"
           >仅展示有效配置</el-checkbox
         >
+        <el-checkbox title="展开所有配置" v-model="expanded"
+          >展开所有配置</el-checkbox
+        >
       </span>
     </div>
     <el-table
@@ -45,9 +48,17 @@
         label="结束时间"
         width="180"
       />
-      <el-table-column prop="data" key="data" label="配置数据">
+      <el-table-column
+        prop="data"
+        key="data"
+        label="配置数据"
+        :width="configWidth"
+      >
         <template slot-scope="scope">
-          <el-tooltip placement="bottom" v-if="scope.row.isJSON">
+          <pre v-if="expanded">
+            {{ scope.row.isJSON ? `\n${scope.row.data}` : scope.row.data }}
+          </pre>
+          <el-tooltip placement="bottom" v-else-if="scope.row.isJSON">
             <pre slot="content">{{ scope.row.data }}</pre>
             <i class="el-icon-info" />
           </el-tooltip>
@@ -103,37 +114,46 @@ export default {
   },
   data() {
     return {
+      expanded: false,
       available: false,
       query: {
         category: this.$props.category
       }
     };
   },
-  computed: mapState({
-    configs: function(state) {
-      const { available } = this;
-      const arr = (state.config.items || []).filter(item => {
-        // 如果非选择仅展示有效的
-        if (!available) {
-          return true;
-        }
-        if (item.status !== CONFIG_ENABLED) {
-          return false;
-        }
-        const now = Date.now();
-        const beginDate = new Date(item.beginDate).getTime();
-        const endDate = new Date(item.endDate).getTime();
-        // 如果未到开始时间或者已结束
-        if (beginDate > now || endDate < now) {
-          return false;
-        }
-        return true;
-      });
-      return arr;
+  computed: {
+    configWidth() {
+      if (this.expanded) {
+        return 200;
+      }
+      return 80;
     },
-    processing: state => state.config.processing,
-    userAccount: state => state.user.info.account
-  }),
+    ...mapState({
+      configs: function(state) {
+        const { available } = this;
+        const arr = (state.config.items || []).filter(item => {
+          // 如果非选择仅展示有效的
+          if (!available) {
+            return true;
+          }
+          if (item.status !== CONFIG_ENABLED) {
+            return false;
+          }
+          const now = Date.now();
+          const beginDate = new Date(item.beginDate).getTime();
+          const endDate = new Date(item.endDate).getTime();
+          // 如果未到开始时间或者已结束
+          if (beginDate > now || endDate < now) {
+            return false;
+          }
+          return true;
+        });
+        return arr;
+      },
+      processing: state => state.config.processing,
+      userAccount: state => state.user.info.account
+    })
+  },
   methods: {
     ...mapActions(["listConfig", "removeConfigByID"]),
     modify(item) {
