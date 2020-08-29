@@ -17,7 +17,6 @@ package service
 import (
 	"encoding/json"
 	"sync"
-	"time"
 
 	"github.com/vicanso/origin/helper"
 	"github.com/vicanso/origin/util"
@@ -188,13 +187,12 @@ func (srv *OrderCommissionSrv) Do() (err error) {
 	if err != nil {
 		return
 	}
-	start = time.Unix(0, 0)
-	// end, err := util.ChinaToday()
-	// if err != nil {
-	// 	return
-	// }
+	end, err := util.ChinaToday()
+	if err != nil {
+		return
+	}
 	// 暂时mock为当前时间
-	end := time.Now()
+	// end := time.Now()
 	for {
 		if count >= maxCount {
 			// TODO 输出异常
