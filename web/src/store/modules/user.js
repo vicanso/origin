@@ -159,6 +159,9 @@ async function listUserMarketingGroup({ commit }) {
     const { data } = await request.get(USERS_MARKETING_GROUPS, {
       params: addNoCacheQueryParam()
     });
+    if (!data.marketingGroups) {
+      data.marketingGroups = [];
+    }
     data.marketingGroups.forEach(item => {
       item.value = item.name;
     });
