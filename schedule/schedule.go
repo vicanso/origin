@@ -15,6 +15,8 @@
 package schedule
 
 import (
+	"time"
+
 	"github.com/vicanso/origin/cs"
 
 	"github.com/robfig/cron/v3"
@@ -34,6 +36,10 @@ func init() {
 	_, _ = c.AddFunc("00 00 * * *", resetProductSearchHotKeywords)
 	// 测试暂时每5分钟自动生成
 	_, _ = c.AddFunc("@every 5m", generateOrderCommission)
+	go func() {
+		time.Sleep(time.Second)
+		generateOrderCommission()
+	}()
 	c.Start()
 }
 

@@ -139,6 +139,19 @@ func (mg *MarketingGroups) List() (groups []*MarketingGroup) {
 	return list
 }
 
+// GetOwner get group owner
+func (mg *MarketingGroups) GetOwner(group string) (owner uint) {
+	mg.RLock()
+	defer mg.RUnlock()
+	for _, item := range mg.groups {
+		if item.Name == group {
+			owner = item.Owner
+			break
+		}
+	}
+	return
+}
+
 // ListMarketingGroup list marketing group
 func ListMarketingGroup() (groups []*MarketingGroup) {
 	return defaultMarketingGroups.List()

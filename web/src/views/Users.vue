@@ -47,6 +47,12 @@
             </template>
           </el-table-column>
           <el-table-column
+            prop="marketingGroup"
+            key="marketingGroup"
+            label="销售组"
+            width="100"
+          />
+          <el-table-column
             prop="updatedAtDesc"
             key="updatedAtDesc"
             label="更新于"

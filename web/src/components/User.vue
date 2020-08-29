@@ -118,6 +118,10 @@ export default {
       userStatuses.length = 0;
       userStatuses.push(...statuses);
       userMarketingGroups.length = 0;
+      userMarketingGroups.push({
+        name: "NULL",
+        value: "NULL"
+      });
       userMarketingGroups.push(...marketingGroups);
       this.fields = fields;
     } catch (err) {

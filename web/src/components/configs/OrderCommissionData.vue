@@ -2,11 +2,18 @@
   <div class="orderCommissionData">
     <el-col :span="12">
       <el-form-item label="佣金分组：">
-        <el-input
-          type="text"
-          placeholder="请输入佣金分组，通用的则填 *"
+        <el-select
+          class="orderCommissionGroupSelect"
+          placeholder="请输入佣金分组，通用的则选择 *"
           v-model="group"
-        />
+        >
+          <el-option
+            v-for="item in marketingGroups"
+            :key="item.value"
+            :label="item.name"
+            :value="item.value"
+          />
+        </el-select>
       </el-form-item>
     </el-col>
     <el-col :span="12">
@@ -21,6 +28,10 @@
   </div>
 </template>
 <script>
+import { mapActions } from "vuex";
+
+const marketingGroups = [];
+
 export default {
   name: "OrderCommissionData",
   props: {
@@ -28,6 +39,8 @@ export default {
   },
   data() {
     const data = {
+      marketingGroups,
+      processing: false,
       group: "",
       ratio: 0
     };
@@ -45,6 +58,7 @@ export default {
     }
   },
   methods: {
+    ...mapActions(["listUserMarketingGroup"]),
     handleChange() {
       const { group, ratio } = this;
       const ratioValue = Number(ratio);
@@ -61,6 +75,26 @@ export default {
       }
       this.$emit("change", value);
     }
+  },
+  async beforeMount() {
+    this.processing = true;
+    try {
+      const { marketingGroups } = await this.listUserMarketingGroup();
+      this.marketingGroups.length = 0;
+      this.marketingGroups.push({
+        name: "*",
+        value: "*"
+      });
+      this.marketingGroups.push(...marketingGroups);
+    } catch (err) {
+      this.$message.error(err.message);
+    } finally {
+      this.processing = false;
+    }
   }
 };
 </script>
+<style lang="sass" scoped>
+.orderCommissionGroupSelect
+  width: 100%
+</style>

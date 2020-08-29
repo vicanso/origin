@@ -114,9 +114,10 @@ type (
 	}
 
 	updateUserParams struct {
-		Roles  []string `json:"roles,omitempty" validate:"omitempty,xUserRoles"`
-		Groups []string `json:"groups,omitempty" validate:"omitempty,xUserGroups"`
-		Status int      `json:"status,omitempty" validate:"omitempty,xStatus"`
+		Roles          []string `json:"roles,omitempty" validate:"omitempty,xUserRoles"`
+		Groups         []string `json:"groups,omitempty" validate:"omitempty,xUserGroups"`
+		Status         int      `json:"status,omitempty" validate:"omitempty,xStatus"`
+		MarketingGroup string   `json:"marketingGroup,omitempty" validate:"omitempty,xUserMarketingGroup"`
 	}
 	updateMeParams struct {
 		Name        string `json:"name,omitempty" validate:"omitempty,xUserName"`
@@ -751,6 +752,7 @@ func (ctrl userCtrl) updateByID(c *elton.Context) (err error) {
 	if len(params.Groups) != 0 {
 		user.Groups = pq.StringArray(params.Groups)
 	}
+	user.MarketingGroup = params.MarketingGroup
 	err = userSrv.UpdateByID(id, user)
 	if err != nil {
 		return

@@ -58,6 +58,9 @@ var (
 
 	// userNameCache 用户名字缓存
 	userNameCache *lruTTL.Cache
+
+	// userMarketingGroupCache 用户销售市场分组
+	userMarketingGroupCache *lruTTL.Cache
 )
 
 type (
@@ -194,6 +197,8 @@ func init() {
 		ttl = time.Second
 	}
 	userNameCache = lruTTL.New(100, ttl)
+
+	userMarketingGroupCache = lruTTL.New(100, ttl)
 }
 
 // AfterCreate after create hook
@@ -459,6 +464,24 @@ func (srv *UserSrv) GetNameFromCache(id uint) (name string, err error) {
 	}
 	name = user.Name
 	userNameCache.Add(id, name)
+	return
+}
+
+// GetMarketingGroupFromCache get user marketing group from cache
+func (srv *UserSrv) GetMarketingGroupFromCache(id uint) (marketingGroup string, err error) {
+	if id == 0 {
+		return
+	}
+	value, ok := userMarketingGroupCache.Get(id)
+	if ok {
+		return value.(string), nil
+	}
+	user, err := srv.FindByID(id)
+	if err != nil {
+		return
+	}
+	marketingGroup = user.MarketingGroup
+	userMarketingGroupCache.Add(id, marketingGroup)
 	return
 }
 

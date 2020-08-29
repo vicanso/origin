@@ -21,6 +21,7 @@ import (
 
 	"github.com/vicanso/origin/helper"
 	"github.com/vicanso/origin/util"
+	"go.uber.org/zap"
 )
 
 type (
@@ -29,11 +30,13 @@ type (
 		helper.Model
 
 		UserID  uint   `json:"userID,omitempty" gorm:"index:idx_order_commission_user_id;not null"`
-		OrderSN string `json:"orderSN,omitempty" gorm:"unique_index:idx_order_commission_order_sn;not null"`
+		OrderSN string `json:"orderSN,omitempty" gorm:"unique_index:idx_order_commission_order_sn_recommender;not null"`
 		// 推荐人
-		Recommender      uint    `json:"recommender,omitempty" gorm:"index:idx_order_commission_recommender;not null"`
+		Recommender      uint    `json:"recommender,omitempty" gorm:"unique_index:idx_order_commission_order_sn_recommender;not null"`
 		PayAmount        float64 `json:"payAmount,omitempty" gorm:"not null"`
 		CommissionAmount float64 `json:"commissionAmount,omitempty" gorm:"not null"`
+		// 该佣金对应的分组
+		CommissionGroup string `json:"commissionGroup,omitempty" gorm:"not null"`
 	}
 
 	OrderCommissions []*OrderCommission
@@ -84,14 +87,24 @@ func (orderCommissionConfigs *OrderCommissionConfigs) Set(items []string) {
 	orderCommissionConfigs.configs = confs
 }
 
-func (orderCommissionConfigs *OrderCommissionConfigs) Get(group string) (ratio float64) {
+func (orderCommissionConfigs *OrderCommissionConfigs) Get(group string) (conf *OrderCommissionConfig) {
 	orderCommissionConfigs.RLock()
 	defer orderCommissionConfigs.RUnlock()
 	for _, item := range orderCommissionConfigs.configs {
 		if item.Group == group {
-			ratio = item.Ratio
+			conf = item
+			break
 		}
 	}
+	return
+}
+
+func (orderCommissionConfigs *OrderCommissionConfigs) GetRatio(group string) (ratio float64) {
+	conf := orderCommissionConfigs.Get(group)
+	if conf == nil {
+		return
+	}
+	ratio = conf.Ratio
 	return
 }
 
@@ -99,7 +112,7 @@ func (srv *OrderCommissionSrv) createOrUpdate(order *Order) (err error) {
 	if order.Recommender == 0 {
 		return
 	}
-	ratio := defaultOrderCommissionConfigs.Get(orderCommissionAllGroup)
+	ratio := defaultOrderCommissionConfigs.GetRatio(orderCommissionAllGroup)
 	if ratio == 0 {
 		return
 	}
@@ -109,10 +122,52 @@ func (srv *OrderCommissionSrv) createOrUpdate(order *Order) (err error) {
 		Recommender:      order.Recommender,
 		PayAmount:        order.PayAmount,
 		CommissionAmount: order.PayAmount * ratio,
+		CommissionGroup:  orderCommissionAllGroup,
 	}
 	err = pgGetClient().FirstOrCreate(orderCommission, OrderCommission{
-		OrderSN: order.SN,
+		OrderSN:     order.SN,
+		Recommender: order.Recommender,
 	}).Error
+	if err != nil {
+		return
+	}
+
+	// 判断推荐人所在的销售分组
+	marketingGroup, err := userSrv.GetMarketingGroupFromCache(order.Recommender)
+	if err != nil {
+		logger.Info("get marketing group fail",
+			zap.Uint("recommender", order.Recommender),
+			zap.Error(err),
+		)
+		err = nil
+		return
+	}
+	if marketingGroup == "" {
+		return
+	}
+	conf := defaultOrderCommissionConfigs.Get(marketingGroup)
+	if conf == nil || conf.Ratio == 0 {
+		return
+	}
+	owner := defaultMarketingGroups.GetOwner(marketingGroup)
+	if owner == 0 {
+		return
+	}
+	orderCommission = &OrderCommission{
+		UserID:           order.UserID,
+		OrderSN:          order.SN,
+		Recommender:      owner,
+		PayAmount:        order.PayAmount,
+		CommissionAmount: order.PayAmount * conf.Ratio,
+		CommissionGroup:  marketingGroup,
+	}
+	err = pgGetClient().FirstOrCreate(orderCommission, OrderCommission{
+		OrderSN:     order.SN,
+		Recommender: owner,
+	}).Error
+	if err != nil {
+		return
+	}
 	return
 }
 
@@ -133,6 +188,7 @@ func (srv *OrderCommissionSrv) Do() (err error) {
 	if err != nil {
 		return
 	}
+	start = time.Unix(0, 0)
 	// end, err := util.ChinaToday()
 	// if err != nil {
 	// 	return

@@ -30,6 +30,8 @@ func init() {
 
 	AddAlias("xUserID", "numeric")
 
+	AddAlias("xUserMarketingGroup", "ascii,min=1,max=10")
+
 	Add("xUserRole", func(fl validator.FieldLevel) bool {
 		return isInString(fl, cs.UserRoles)
 	})
