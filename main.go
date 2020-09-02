@@ -42,7 +42,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/dustin/go-humanize"
 	warner "github.com/vicanso/count-warner"
 	"github.com/vicanso/elton"
 	compress "github.com/vicanso/elton-compress"
@@ -180,40 +179,9 @@ func main() {
 		)
 		warnerException.Inc("exception", 1)
 	})
-	// 对于404的请求，不会执行中间件，一般都是因为攻击之类才会导致大量出现404，
-	// 因此可在此处汇总出错IP，针对较频繁出错IP，增加告警信息
-	// 如果1分钟同一个IP出现60次404
-	warner404 := warner.NewWarner(60*time.Second, 60)
-	warner404.ResetOnWarn = true
-	warner404.On(func(ip string, _ warner.Count) {
-		service.AlarmError("too many 404 request, client ip:" + ip)
-	})
-	go func() {
-		// 因为404是根据IP来告警，因此可能存在大量不同的key，因此定时清除过期数据
-		for range time.NewTicker(5 * time.Minute).C {
-			warner404.ClearExpired()
-		}
-	}()
 
-	e.NotFoundHandler = func(resp http.ResponseWriter, req *http.Request) {
-		ip := elton.GetClientIP(req)
-		logger.Info("404",
-			zap.String("ip", ip),
-			zap.String("method", req.Method),
-			zap.String("uri", req.RequestURI),
-		)
-		resp.Header().Set(elton.HeaderContentType, elton.MIMEApplicationJSON)
-		resp.WriteHeader(http.StatusNotFound)
-		_, err := resp.Write([]byte(`{"statusCode": 404,"message": "Not found"}`))
-		if err != nil {
-			logger.Info("404 response fail",
-				zap.String("ip", ip),
-				zap.String("uri", req.RequestURI),
-				zap.Error(err),
-			)
-		}
-		warner404.Inc(ip, 1)
-	}
+	e.NotFoundHandler = middleware.NewNotFoundHandler()
+	e.MethodNotAllowedHandler = middleware.NewMethodNotAllowedHandler()
 
 	// 捕捉panic异常，避免程序崩溃
 	e.UseWithName(M.NewRecover(), "recover")
@@ -221,44 +189,7 @@ func main() {
 	e.UseWithName(middleware.NewEntry(), "entry")
 
 	// 接口相关统计信息
-	e.UseWithName(M.NewStats(M.StatsConfig{
-		OnStats: func(info *M.StatsInfo, c *elton.Context) {
-			// ping 的日志忽略
-			if info.URI == "/ping" {
-				return
-			}
-			sid := util.GetSessionID(c)
-			logger.Info("access log",
-				zap.String("uuid", c.GetRequestHeader("X-UUID")),
-				zap.String("id", info.CID),
-				zap.String("ip", info.IP),
-				zap.String("sid", sid),
-				zap.String("method", info.Method),
-				zap.String("route", info.Route),
-				zap.String("uri", info.URI),
-				zap.Int("status", info.Status),
-				zap.Uint32("connecting", info.Connecting),
-				zap.String("consuming", info.Consuming.String()),
-				zap.String("size", humanize.Bytes(uint64(info.Size))),
-				zap.Int("bytes", info.Size),
-			)
-			tags := map[string]string{
-				"method": info.Method,
-				"route":  info.Route,
-			}
-			fields := map[string]interface{}{
-				"id":         info.CID,
-				"ip":         info.IP,
-				"sid":        sid,
-				"uri":        info.URI,
-				"status":     info.Status,
-				"use":        info.Consuming.Milliseconds(),
-				"size":       info.Size,
-				"connecting": info.Connecting,
-			}
-			helper.GetInfluxSrv().Write(cs.MeasurementHTTP, fields, tags)
-		},
-	}), "stats")
+	e.UseWithName(middleware.NewStats(), "stats")
 
 	// 限制最大请求量
 	maxRequestLimit := config.GetRequestLimit()
@@ -281,9 +212,7 @@ func main() {
 	e.UseWithName(M.NewCompress(compressConfig), "compress")
 
 	// 错误处理，将错误转换为json响应
-	e.UseWithName(M.NewError(M.ErrorConfig{
-		ResponseType: "json",
-	}), "error")
+	e.UseWithName(middleware.NewError(), "error")
 
 	// IP限制
 	e.UseWithName(middleware.NewIPBlocker(), "ip-blocker")

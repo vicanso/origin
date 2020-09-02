@@ -19,10 +19,13 @@ import (
 	"strings"
 	"time"
 
+	warner "github.com/vicanso/count-warner"
 	"github.com/vicanso/elton"
 	"github.com/vicanso/hes"
 	"github.com/vicanso/origin/helper"
 	"github.com/vicanso/origin/service"
+	"github.com/vicanso/tiny/log"
+	"go.uber.org/zap"
 )
 
 const (
@@ -120,5 +123,78 @@ func NewNoCacheWithCondition(key, value string) elton.Handler {
 			c.NoCache()
 		}
 		return
+	}
+}
+
+// NewNotFoundHandler new not found handler
+func NewNotFoundHandler() http.HandlerFunc {
+	// 对于404的请求，不会执行中间件，一般都是因为攻击之类才会导致大量出现404，
+	// 因此可在此处汇总出错IP，针对较频繁出错IP，增加告警信息
+	// 如果1分钟同一个IP出现60次404
+	warner404 := warner.NewWarner(60*time.Second, 60)
+	warner404.ResetOnWarn = true
+	warner404.On(func(ip string, _ warner.Count) {
+		service.AlarmError("too many 404 request, client ip:" + ip)
+	})
+	go func() {
+		// 因为404是根据IP来告警，因此可能存在大量不同的key，因此定时清除过期数据
+		for range time.NewTicker(5 * time.Minute).C {
+			warner404.ClearExpired()
+		}
+	}()
+	logger := log.Default()
+	notFoundErr := &hes.Error{
+		Message:    "Not Found",
+		StatusCode: http.StatusNotFound,
+		Category:   "defaultNotFound",
+	}
+	notFoundErrBytes := notFoundErr.ToJSON()
+	return func(resp http.ResponseWriter, req *http.Request) {
+		ip := elton.GetClientIP(req)
+		logger.Info("404",
+			zap.String("ip", ip),
+			zap.String("method", req.Method),
+			zap.String("uri", req.RequestURI),
+		)
+		resp.Header().Set(elton.HeaderContentType, elton.MIMEApplicationJSON)
+		resp.WriteHeader(http.StatusNotFound)
+		_, err := resp.Write(notFoundErrBytes)
+		if err != nil {
+			logger.Info("404 response fail",
+				zap.String("ip", ip),
+				zap.String("uri", req.RequestURI),
+				zap.Error(err),
+			)
+		}
+		warner404.Inc(ip, 1)
+	}
+}
+
+// NewMethodNotAllowedHandler new method not allow handler
+func NewMethodNotAllowedHandler() http.HandlerFunc {
+	logger := log.Default()
+	methodNotAllowedErr := &hes.Error{
+		Message:    "Method Not Allowed",
+		StatusCode: http.StatusMethodNotAllowed,
+		Category:   "defaultMethodNotAllowed",
+	}
+	methodNotAllowedErrBytes := methodNotAllowedErr.ToJSON()
+	return func(resp http.ResponseWriter, req *http.Request) {
+		ip := elton.GetClientIP(req)
+		logger.Info("method not allowed",
+			zap.String("ip", ip),
+			zap.String("method", req.Method),
+			zap.String("uri", req.RequestURI),
+		)
+		resp.Header().Set(elton.HeaderContentType, elton.MIMEApplicationJSON)
+		resp.WriteHeader(http.StatusMethodNotAllowed)
+		_, err := resp.Write(methodNotAllowedErrBytes)
+		if err != nil {
+			logger.Info("method not allowed response fail",
+				zap.String("ip", ip),
+				zap.String("uri", req.RequestURI),
+				zap.Error(err),
+			)
+		}
 	}
 }

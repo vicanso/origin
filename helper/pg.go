@@ -15,6 +15,7 @@
 package helper
 
 import (
+	"fmt"
 	"net/http"
 	"regexp"
 	"strings"
@@ -79,6 +80,34 @@ type (
 	}
 )
 
+func splitArgs(sql string) {
+	columnName := `[ ]*"?(\w+)"?[ ]*`
+	ops := []string{
+		"ILIKE",
+		"LIKE",
+		"IN",
+		">=",
+		"<=",
+		"<",
+		">",
+		"=",
+	}
+	arg := `((\$(\d+))|(\((\$(\d+,?))+\)))`
+	reg := regexp.MustCompile(fmt.Sprintf("%s(%s)[ ]*%s", columnName, strings.Join(ops, "|"), arg))
+	indexesArr := reg.FindAllStringIndex(sql, -1)
+	opsReg := regexp.MustCompile(strings.Join(ops, "|"))
+	for _, indexes := range indexesArr {
+		value := sql[indexes[0]:indexes[1]]
+		arr := opsReg.Split(value, -1)
+		if len(arr) != 2 {
+			// TODO 分割有问题
+			continue
+		}
+		fmt.Println(strings.ReplaceAll(arr[0], `"`, ""))
+		fmt.Println(arr[1])
+	}
+}
+
 func (ps *pgStats) getProcessingAndTotal() (uint32, uint32, uint64) {
 	queryProcessing := atomic.LoadUint32(&ps.queryProcessing)
 	updateProcessing := atomic.LoadUint32(&ps.updateProcessing)
@@ -125,6 +154,8 @@ func (ps *pgStats) After(category string) func(*gorm.DB) {
 		if !ok {
 			return
 		}
+		splitArgs(tx.Statement.SQL.String())
+
 		use := time.Since(startedAt)
 		if time.Since(startedAt) > ps.slow || tx.Error != nil {
 			message := ""

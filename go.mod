@@ -24,21 +24,21 @@ require (
 	github.com/stretchr/testify v1.6.1
 	github.com/tidwall/gjson v1.6.1
 	github.com/vicanso/count-warner v1.0.0
-	github.com/vicanso/elton v1.0.6
+	github.com/vicanso/elton v1.0.7
 	github.com/vicanso/elton-compress v1.0.0
 	github.com/vicanso/elton-session v1.0.1
-	github.com/vicanso/go-axios v0.1.7
+	github.com/vicanso/go-axios v0.1.8
 	github.com/vicanso/hes v0.2.2
 	github.com/vicanso/ips v1.0.0
 	github.com/vicanso/lru-ttl v0.1.0
 	github.com/vicanso/tiny v1.0.2
 	go.uber.org/automaxprocs v1.3.0
-	go.uber.org/zap v1.15.0
+	go.uber.org/zap v1.16.0
 	golang.org/x/image v0.0.0-20200801110659-972c09e46d76
 	golang.org/x/net v0.0.0-20200822124328-c89045814202
 	google.golang.org/grpc v1.31.1
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 	gorm.io/driver/postgres v1.0.0
-	gorm.io/gorm v1.9.19
+	gorm.io/gorm v1.20.0
 )
