@@ -89,7 +89,7 @@ type (
 		// 设备信息
 		Device deviceInfoParams `json:"device,omitempty"`
 		// 推荐人
-		Recommender uint `json:"recommender,omitempty" validate:"omitempty,xUserID"`
+		Recommender string `json:"recommender,omitempty" validate:"omitempty,xUserAccount"`
 	}
 
 	// addUserTrackParams 用户行为记录参数
@@ -453,17 +453,19 @@ func (ctrl userCtrl) register(c *elton.Context) (err error) {
 		err = errUserAccountExists
 		return
 	}
-	if params.Recommender != 0 {
-		rcmder, _ := userSrv.FindByID(params.Recommender)
+	var recommenderID uint
+	if params.Recommender != "" {
+		rcmder, _ := userSrv.FindOneByAccount(params.Recommender)
 		if rcmder.ID == 0 {
 			err = errUserRcmderNotExists
 			return
 		}
+		recommenderID = rcmder.ID
 	}
 	u, err := userSrv.Add(service.User{
 		Account:     params.Account,
 		Password:    params.Password,
-		Recommender: params.Recommender,
+		Recommender: recommenderID,
 	})
 	if err != nil {
 		return
