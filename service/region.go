@@ -58,7 +58,7 @@ func init() {
 		ttl = time.Second
 	}
 	regionNameCache = lruTTL.New(200, ttl)
-	err := pgGetClient().AutoMigrate(&Region{})
+	err := helper.PGAutoMigrate(&Region{})
 	if err != nil {
 		panic(err)
 	}

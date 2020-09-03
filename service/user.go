@@ -170,7 +170,7 @@ type (
 )
 
 func init() {
-	err := pgGetClient().AutoMigrate(
+	err := helper.PGAutoMigrate(
 		&User{},
 		&UserLoginRecord{},
 		&UserTrackRecord{},

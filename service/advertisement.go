@@ -64,7 +64,7 @@ func init() {
 		cs.AdvertisementHome:     "首页",
 		cs.AdvertisementCategory: "分类页",
 	}
-	err := pgGetClient().AutoMigrate(&Advertisement{})
+	err := helper.PGAutoMigrate(&Advertisement{})
 	if err != nil {
 		panic(err)
 	}

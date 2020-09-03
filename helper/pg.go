@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -47,6 +48,8 @@ var (
 		StatusCode: http.StatusInternalServerError,
 		Category:   "pg",
 	}
+
+	pgConfig config.PostgresConfig
 )
 
 const (
@@ -80,7 +83,7 @@ type (
 	}
 )
 
-func splitArgs(sql string) {
+func splitArgs(sql string, vars []interface{}) (query map[string]interface{}, updated map[string]interface{}) {
 	columnName := `[ ]*"?(\w+)"?[ ]*`
 	ops := []string{
 		"ILIKE",
@@ -96,16 +99,54 @@ func splitArgs(sql string) {
 	reg := regexp.MustCompile(fmt.Sprintf("%s(%s)[ ]*%s", columnName, strings.Join(ops, "|"), arg))
 	indexesArr := reg.FindAllStringIndex(sql, -1)
 	opsReg := regexp.MustCompile(strings.Join(ops, "|"))
+	varReg := regexp.MustCompile(`\$\d+`)
+	whereIndex := strings.Index(sql, " WHERE ")
+	updated = make(map[string]interface{})
+	query = make(map[string]interface{})
+	maskKey := regexp.MustCompile(`password`)
 	for _, indexes := range indexesArr {
+		// 如果小于wereIndex的，则为update参数
+		// 大于则是query条件
+		isQuery := indexes[0] > whereIndex
 		value := sql[indexes[0]:indexes[1]]
 		arr := opsReg.Split(value, -1)
 		if len(arr) != 2 {
 			// TODO 分割有问题
 			continue
 		}
-		fmt.Println(strings.ReplaceAll(arr[0], `"`, ""))
-		fmt.Println(arr[1])
+		key := strings.TrimSpace(strings.ReplaceAll(arr[0], `"`, ""))
+
+		values := make([]interface{}, 0)
+		for _, index := range varReg.FindAllString(arr[1], -1) {
+			i, e := strconv.Atoi(strings.ReplaceAll(index, "$", ""))
+			if e != nil {
+				logger.Warn("sql var index parse fail",
+					zap.String("value", index),
+				)
+				continue
+			}
+			values = append(values, vars[i-1])
+		}
+		if len(values) == 0 {
+			continue
+		}
+		var result interface{}
+		if len(values) > 1 {
+			result = values
+		} else {
+			result = values[0]
+		}
+		if maskKey.MatchString(key) {
+			result = "***"
+		}
+
+		if isQuery {
+			query[key] = result
+		} else {
+			updated[key] = result
+		}
 	}
+	return
 }
 
 func (ps *pgStats) getProcessingAndTotal() (uint32, uint32, uint64) {
@@ -154,7 +195,7 @@ func (ps *pgStats) After(category string) func(*gorm.DB) {
 		if !ok {
 			return
 		}
-		splitArgs(tx.Statement.SQL.String())
+		splitArgs(tx.Statement.SQL.String(), tx.Statement.Vars)
 
 		use := time.Since(startedAt)
 		if time.Since(startedAt) > ps.slow || tx.Error != nil {
@@ -187,7 +228,7 @@ func (ps *pgStats) After(category string) func(*gorm.DB) {
 
 func init() {
 	str := config.GetPostgresConnectString()
-	pgConfig := config.GetPostgresConfig()
+	pgConfig = config.GetPostgresConfig()
 	reg := regexp.MustCompile(`password=\S*`)
 	maskStr := reg.ReplaceAllString(str, "password=***")
 	logger.Info("connect to pg",
@@ -326,4 +367,12 @@ func PGCount(model interface{}, args ...interface{}) (count int64, err error) {
 	}
 	err = db.Count(&count).Error
 	return
+}
+
+// PGAutoMigrate pg auto migrate
+func PGAutoMigrate(dst ...interface{}) error {
+	if pgConfig.DisableAutoMigrate {
+		return nil
+	}
+	return PGGetClient().AutoMigrate(dst...)
 }

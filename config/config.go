@@ -83,6 +83,7 @@ type (
 		Slow                time.Duration
 		MaxQueryProcessing  uint32
 		MaxUpdateProcessing uint32
+		DisableAutoMigrate  bool
 	}
 
 	// MinioConfig minio config
@@ -387,10 +388,12 @@ func GetPostgresConfig() PostgresConfig {
 	}
 	maxQueryProcessing := GetUint32Default(prefix+"maxQueryProcessing", 1000)
 	maxUpdateProcessing := GetUint32Default(prefix+"maxUpdateProcessing", 500)
+
 	return PostgresConfig{
 		Slow:                slow,
 		MaxQueryProcessing:  maxQueryProcessing,
 		MaxUpdateProcessing: maxUpdateProcessing,
+		DisableAutoMigrate:  GetBool(prefix + "disableAutoMigrate"),
 	}
 }
 

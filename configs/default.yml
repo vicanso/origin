@@ -32,6 +32,8 @@ postgres:
   slow: 1s
   maxQueryProcessing: 1000
   maxUpdateProcessing: 500
+  # 是否禁用auto migrate
+  disableAutoMigrate: false
 
 # influxdb 配置
 influxdb:

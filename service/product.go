@@ -124,7 +124,7 @@ func init() {
 	}
 	productCategoryNameCache = lruTTL.New(1000, ttl)
 
-	err := pgGetClient().AutoMigrate(
+	err := helper.PGAutoMigrate(
 		&Product{},
 		&ProductCategory{},
 	)
@@ -219,7 +219,7 @@ func (product *Product) IsAvailable() bool {
 // CheckAvailable check product is available
 func (product *Product) CheckAvailable() error {
 	if !product.IsAvailable() {
-		
+
 		return errProductUnavailable.CloneWithMessage(fmt.Sprintf(errProductUnavailable.Message, product.Name))
 	}
 	return nil

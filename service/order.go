@@ -323,7 +323,7 @@ var (
 )
 
 func init() {
-	err := pgGetClient().AutoMigrate(
+	err := helper.PGAutoMigrate(
 		&Order{},
 		&SubOrder{},
 		&OrderPayment{},

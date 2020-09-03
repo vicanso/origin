@@ -40,7 +40,7 @@ type (
 )
 
 func init() {
-	err := pgGetClient().AutoMigrate(&Supplier{})
+	err := helper.PGAutoMigrate(&Supplier{})
 	if err != nil {
 		panic(err)
 	}

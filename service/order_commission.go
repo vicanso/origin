@@ -63,7 +63,7 @@ const (
 )
 
 func init() {
-	err := pgGetClient().AutoMigrate(
+	err := helper.PGAutoMigrate(
 		&OrderCommission{},
 	)
 	if err != nil {

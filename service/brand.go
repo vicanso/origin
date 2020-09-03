@@ -50,7 +50,7 @@ func init() {
 		ttl = time.Second
 	}
 	brandNameCache = lruTTL.New(500, ttl)
-	err := pgGetClient().AutoMigrate(&Brand{})
+	err := helper.PGAutoMigrate(&Brand{})
 	if err != nil {
 		panic(err)
 	}
